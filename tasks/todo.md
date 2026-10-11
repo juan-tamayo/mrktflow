@@ -148,6 +148,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 ### T008: Staff session and permission foundation
 
 - [ ] Complete T008.
+- **Progress:** Backend owner/installation transaction, principal separation, permission presets, final-owner access rules and digest-only invitations verified locally; HTTP/session/UI work remains. See [identity evidence](../docs/identity-progress.md).
 - **Module / requirements:** `identity` · ID-02, ID-04.
 - **Depends on:** T005.
 - **Acceptance:** Staff login/invitation and permission policy prevent customer privilege escalation; final-owner protection is enforced. Application setup coordination creates the initial owner and finalizes T005's persistent installation lock without a reverse platform import.

@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Domain\Identity\Models\StaffAccount;
+use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Support\TestDatabaseGuard;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach (StaffPermissions::all() as $permission) {
+            Gate::define($permission, fn (?Authenticatable $principal): bool => $principal instanceof StaffAccount && $principal->hasPermission($permission));
+        }
         if (! $this->app->environment('local', 'testing')) {
             config(['app.debug' => false, 'session.secure' => true]);
         }
