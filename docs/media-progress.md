@@ -1,0 +1,15 @@
+# Media boundary implementation
+
+T007 is in progress. October 10, 2026: private intake is implemented and locally verified; safe public derivatives, processing recovery and cleanup remain subsequent slices.
+
+`StoreMedia::store(UploadedFile, kind, MediaUploadAuthorization)` accepts only `public_image` or `private_file`. The authorization object is server-owned: identity must authorize the current staff session and return its UUID; it must never be populated from submitted owner/permission fields. There is no production implementation or HTTP upload route until T008 policies exist. Tests use synthetic authorization as specified by T007.
+
+Intake checks actual file bytes/MIME rather than browser labels, matching allowed filename extensions, uploaded-file validity, safe names and image dimensions/pixel count. Defaults: images at most 10 MiB / 6000 pixels per side / 16 million pixels; private files at most 500 MiB. The server-owned private MIME allowlist supports PDF, ZIP, plain text, MP3 and MP4; PHP, HTML and SVG are rejected. ZIP files are stored for download without extraction; template/archive extraction security belongs to its own import boundary.
+
+All originals use a generated private key. Client filenames are encrypted; SHA-256, actual size/type, owner and dimensions remain private metadata. Images stay pending with no public key. Private files are ready after validation and explicitly labeled `not_scanned`; no malware scanning claim is made. Scanner enablement/distribution policy remains a release decision. Readiness here does not grant a purchased download; fulfillment still requires payment/entitlement authorization.
+
+The intake action refuses an enclosing business transaction, records committed staging metadata before filesystem I/O, streams the write, then records readiness and minimal audit intent. A failure leaves a failed draft and fixed error code. A stopped process leaves an identifiable staging record; abandoned/failed-file cleanup and safe image processing are pending. No original is placed on the public disk, and no anonymous/admin media route is mounted.
+
+Evidence: six focused media tests / 36 assertions; full PHP suite 89 tests / 386 assertions, Pint and PHPStan level 8 passed. Tests cover private bytes/checksum/ownership/encrypted names, anonymous paths, denied authority, executable/spoofed/SVG/name rejection, actual byte/pixel/dimension limits, failed writes, and transaction refusal. No frontend behavior changed in this slice; prior frontend/build/browser checks remain current. Large-file streaming capacity on the reference host is later CAT-06/release evidence, not claimed by tiny fixtures.
+
+References: [Laravel file streaming/storage](https://laravel.com/framework/docs/13.x/filesystem#automatic-streaming), [PHP image decoding](https://www.php.net/manual/en/function.imagecreatefromstring.php). Public image decoding/re-encoding will happen before publication.
