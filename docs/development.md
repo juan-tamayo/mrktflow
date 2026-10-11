@@ -68,3 +68,20 @@ After migrations and required prerequisite checks, `bin/php artisan setup:check`
 ## Background work
 
 Durable intent, consumer receipts, scheduler health and queue wrappers are implemented. See [background work](background-work.md) for lane isolation, timeout/retry settings, private diagnostics and interrupted-worker recovery. Apply migrations before starting these services. Settings saves and identity actions create minimal audit intent. Worker/scheduler services do not grant public or administrative access.
+
+## Customer credential mail (internal foundation)
+
+Customer verification/recovery delivery currently has no public request/confirmation integration. Do not enable customer-facing sending until those handlers are implemented. The default log mailer is deliberately refused for credentials. Configure reviewed SMTP with MAIL_MAILER=smtp, MAIL_HOST, MAIL_PORT and provider credentials in the private environment; TLS and certificate validation remain required by configuration. MAIL_URL overrides are refused. Sender name/email come from store settings, and links use APP_URL (HTTPS in production). Never include credentials in diagnostic output.
+
+Run the identity lane independently of local outbox consumers:
+
+```sh
+bin/php artisan queue:work database-outbox --queue=identity-mail --timeout=60 --tries=1
+bin/php artisan identity:mail-recover
+bin/php artisan identity:mail-health
+bin/php artisan identity:mail-retry <delivery-uuid>
+```
+
+The normal scheduler runs bounded recovery every minute. Configure a supervised worker before exposing these workflows. SMTP timeout is ten seconds, the delivery claim lease is 120 seconds, and queued publication is leased for 90 seconds. Worker retry is one because the durable delivery record owns bounded retry scheduling. Health reports private counts only; it is not a provider delivery guarantee. A retry requires a failed, unexpired encrypted intent and sending rechecks challenge eligibility. Tokens expire after 24 hours for verification and one hour for recovery. Expired payloads are erased by recovery, including terminal failures. Preserve the application key securely: encrypted pending deliveries depend on it.
+
+A crash after transport acceptance can produce a duplicate email when the lease expires. Single-use challenge consumption remains authoritative; no exactly-once SMTP promise is made. A log/array transport must never be used as successful delivery in production; array is test-only.

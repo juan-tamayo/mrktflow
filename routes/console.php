@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Platform\Actions\CleanMedia;
 use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\PlatformHealth;
@@ -104,3 +105,52 @@ Artisan::command('media:clean', function (CleanMedia $cleanup): int {
 })->purpose('Clean abandoned media drafts and old generated orphans with bounded work');
 
 Schedule::command('media:clean')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('identity:mail-recover', function (QueueCustomerChallengeMail $queue): int {
+    $this->info('Published '.$queue->recover().' customer credential email job(s).');
+
+    return 0;
+})->purpose('Recover bounded customer credential-mail work and purge expired encrypted payloads');
+
+Schedule::command('identity:mail-recover')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('identity:mail-health', function (): int {
+    $pending = DB::table('customer_challenge_deliveries')->whereIn('status', ['pending', 'sending'])->count();
+    $failed = DB::table('customer_challenge_deliveries')->where('status', 'failed')->count();
+    $blocked = DB::table('customer_challenge_deliveries')->where('status', 'pending')->where('last_error_code', 'mail_configuration_unavailable')->count();
+    $this->line('pending: '.$pending);
+    $this->line('failed: '.$failed);
+    $this->line('configuration_blocked: '.$blocked);
+
+    return $failed === 0 && $blocked === 0 ? 0 : 1;
+})->purpose('Read private customer email counts without recipient or credential data');
+
+Artisan::command('identity:mail-retry {delivery}', function (QueueCustomerChallengeMail $queue): int {
+    $id = $this->argument('delivery');
+    if (! is_string($id) || ! Str::isUuid($id)) {
+        $this->error('Provide a delivery UUID.');
+
+        return 1;
+    }
+    $reset = DB::transaction(function () use ($id): bool {
+        $row = DB::table('customer_challenge_deliveries')->where('id', $id)->lockForUpdate()->first();
+        if ($row === null || $row->status !== 'failed' || $row->payload === null || now()->gte($row->expires_at)) {
+            return false;
+        }
+        DB::table('customer_challenge_deliveries')->where('id', $id)->update([
+            'status' => 'pending', 'attempts' => 0, 'claim_id' => null, 'lease_until' => null, 'queued_until' => null,
+            'last_error_code' => null, 'available_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return true;
+    });
+    if (! $reset) {
+        $this->error('Only an unexpired failed delivery can be retried.');
+
+        return 1;
+    }
+    $queue->safelyPublish($id);
+    $this->info('Delivery scheduled for recovery; current challenge eligibility is checked before sending.');
+
+    return 0;
+})->purpose('Explicitly retry a failed customer email after repairing its cause');
