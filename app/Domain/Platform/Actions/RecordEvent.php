@@ -9,9 +9,11 @@ use DomainException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use JsonException;
+use Throwable;
 
 final class RecordEvent
 {
@@ -54,6 +56,8 @@ final class RecordEvent
                     throw new DomainException('An event intent cannot be changed after recording.');
                 }
 
+                $this->publishAfterCommit($existing->id);
+
                 return $existing->id;
             }
             foreach (array_keys($bindings) as $consumer) {
@@ -63,7 +67,24 @@ final class RecordEvent
                 ]);
             }
 
+            $this->publishAfterCommit($id);
+
             return $id;
+        });
+    }
+
+    private function publishAfterCommit(string $eventId): void
+    {
+        DB::afterCommit(function () use ($eventId): void {
+            try {
+                app(PublishOutbox::class)->forEvent($eventId);
+            } catch (Throwable $exception) {
+                // The business transaction is already committed. Periodic recovery will retry publication.
+                Log::warning('outbox.publication_failed', [
+                    'event_id' => $eventId, 'error_code' => 'publication_failed',
+                    'exception_class' => $exception::class,
+                ]);
+            }
         });
     }
 

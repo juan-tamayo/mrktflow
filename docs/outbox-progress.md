@@ -13,3 +13,11 @@ Framework references: [Laravel encryption](https://laravel.com/framework/docs/13
 The local consumer runner now locks the event and receipt in a consistent order, verifies encrypted payload integrity/schema, then commits the consumer's database effects and completion receipt atomically. Completed redelivery does nothing. Failure rolls back partial effects, schedules a bounded retry, and quarantines the receipt after six failures. Failure diagnostics contain only event/consumer/correlation identifiers, attempt, exception class and a fixed error code; tests check that the private fixture exception message is absent.
 
 Evidence: ten focused outbox tests (41 assertions); full PHP suite 71 tests / 292 assertions. Pint and PHPStan passed. This slice has no HTTP/UI change. Publication and actual interrupted-worker recovery are still pending; this runner currently serves application-internal callers only.
+
+## Database publication and worker interruption
+
+Recording intent now tries publication after commit. If publication fails, committed intent remains recoverable and a redacted diagnostic identifies the event. The dedicated MySQL outbox queue inserts an encrypted ID-only job and a 90-second receipt lease in one transaction; overlapping publication does not create another job while that lease is active. Recovery scans bounded batches of due pending receipts. The regular database queue dispatches after commit; the dedicated long-work connection reserves for 360 seconds.
+
+Evidence: 15 focused outbox/worker tests (63 assertions), full PHP suite 76 tests / 314 assertions, Pint and PHPStan passed. The worker rehearsal starts a real isolated-test worker, pauses a fixture consumer after its database insert but before commit, kills it with SIGKILL, verifies no committed effect, expires only that fixture's reservation/lease, republishes and restarts the worker. Exactly one audit effect and completed receipt remain; the abandoned reservation becomes one framework failed job. Fixture consumers are never registered in production configuration. This proves process-interruption recovery locally, not hosted/provider delivery or exactly-once SMTP.
+
+Health, scheduler wiring, request correlation and worker runbook are still pending T006 work.

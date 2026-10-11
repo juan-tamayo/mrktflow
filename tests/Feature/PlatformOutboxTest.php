@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Domain\Platform\Actions\ConsumeEvent;
+use App\Domain\Platform\Actions\PublishOutbox;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Platform\Contracts\OutboxConsumer;
 use App\Domain\Platform\Data\OutboxEvent;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -133,4 +135,36 @@ it('PlatformOutbox reports only safe identifiers for consumer failures', functio
     expect($entries[0][1]['event_id'])->toBe($id);
     expect(json_encode($entries))->not->toContain('Private fixture payload');
     expect(array_keys($entries[0][1]))->toBe(['event_id', 'consumer', 'attempt', 'correlation_id', 'error_code', 'exception_class', 'quarantined']);
+});
+
+it('PlatformOutbox publishes one encrypted job while the receipt lease is active', function (): void {
+    $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:publish:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);
+    $publisher = app(PublishOutbox::class);
+    $publisher->forEvent($id);
+    $publisher->forEvent($id);
+    expect(DB::table('jobs')->where('queue', 'outbox')->count())->toBe(1);
+    expect(DB::table('jobs')->value('payload'))->not->toContain('fixture.saved');
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->value('queued_until'))->not->toBeNull();
+});
+
+it('PlatformOutbox recovers expired leases and does not enqueue completed receipts', function (): void {
+    $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:recover:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);
+    $publisher = app(PublishOutbox::class);
+    $publisher->recover();
+    DB::table('jobs')->delete(); // A lost queue reservation must not erase intent.
+    $this->travel(91)->seconds();
+    expect($publisher->recover())->toBe(1);
+    expect(DB::table('jobs')->count())->toBe(1);
+    app(ConsumeEvent::class)->consume($id, 'platform.audit');
+    DB::table('jobs')->delete();
+    expect($publisher->recover())->toBe(0);
+});
+
+it('PlatformOutbox rolls back publication leases when the queue write fails', function (): void {
+    config(['queue.connections.database-outbox.table' => 'missing_fixture_queue']);
+    $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:queue-failure:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);
+    expect(fn () => app(PublishOutbox::class)->forEvent($id))
+        ->toThrow(QueryException::class);
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->value('queued_until'))->toBeNull();
+    expect(DB::table('outbox_events')->where('id', $id)->exists())->toBeTrue();
 });

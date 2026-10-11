@@ -40,8 +40,27 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            'retry_after' => 90,
+            'after_commit' => true,
+        ],
+
+        // Intent publication must insert the job atomically with its receipt lease.
+        'database-outbox' => [
+            'driver' => 'database',
+            'connection' => 'mysql',
+            'table' => 'jobs',
+            'queue' => 'outbox',
+            'retry_after' => 90,
             'after_commit' => false,
+        ],
+
+        'database-long' => [
+            'driver' => 'database',
+            'connection' => 'mysql',
+            'table' => 'jobs',
+            'queue' => 'long-work',
+            'retry_after' => 360,
+            'after_commit' => true,
         ],
 
         'beanstalkd' => [
