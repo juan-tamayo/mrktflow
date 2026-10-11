@@ -91,3 +91,31 @@ Completed means all required physical shipment work and digital entitlement issu
 ## Time and retries
 
 Persist UTC timestamps and display in store timezone; evaluate rule windows from UTC instants. Preserve store timezone on historical reports. Monetary/provider intent IDs and webhook deduplication records live with the order retention lifecycle, not a short cache TTL. Provider idempotency retention is not the application's deduplication guarantee. [Stripe idempotency](https://docs.stripe.com/api/idempotent_requests).
+
+## Payment/reservation spike (T011)
+
+The implemented `PaymentGateway` boundary and immutable intent/evidence objects establish local contracts; no gateway adapter, payable route, order tables or catalog reservation service exists yet. Amounts are positive integer minor units bounded by JavaScript's safe integer limit, with a known ISO currency. This application limit is not a provider amount limit or a promise of provider currency support. Zero-total orders bypass this gateway. Future gateway mapping must validate currency exponent, provider limits and exact frozen component allocations before network I/O.
+
+Persist the frozen attempt, gateway account/environment, expiry and immutable outbound parameters before creating a session. `payment:<attempt UUID>` and `refund:<refund UUID>` are distinct stable operation keys. Retries must use identical parameters; never recompute expiry on retry or reuse the key for another cart revision. A provider timeout, connection reset, malformed/unbound response, server error or unrecognized status is **unknown**, not failure. The caller keeps stock/coupon/refund allocations held and schedules bounded reconciliation. Provider calls happen outside database transactions. The evidence DTOs deliberately have no credentials, raw response, shopper fields or redirect URL; reviewed hosted URL validation and provider mapping remain T035.
+
+| Operation / observation | Required behavior |
+| --- | --- |
+| Create session | Durable intent first; stable key; bind amount, currency, attempt, account and test/live mode before accepting evidence. Unknown keeps the same attempt. |
+| Retrieve session | Use the recorded session ID and original intent. If the ID was lost, resolve by the persisted attempt reference within bounded provider queries. Not found is unknown unless absence can be authoritatively established. |
+| Shopper back/cancel | Merely navigation. It cannot mark paid/failed, release stock, or authorize another payable attempt. |
+| Cancel / local deadline | Request provider expiry, then reconcile. A local clock or expiry API error alone cannot establish non-payability. |
+| Open or complete/unpaid | Keep reservation. Completed alone is not payment success. A terminal browser error is not a terminal provider state. |
+| Complete/paid | Require bound successful capture/payment reference; record success monotonically once under order locks. Stale expiry/failure cannot overwrite it. |
+| Expired/unpaid | Release only after authenticated reconciliation confirms no successful or unresolved underlying payment. The normalizer must inspect any related payment intent; it must not discard a processing/payment reference to manufacture this evidence. |
+| Refund request | Atomically claim cumulative refundable allocations first. The DTO enforces a single refund no larger than the frozen payment; cumulative/line-level limits require future database locks. |
+| Refund pending/requires_action/unknown | Keep allocations held; no additional refund for those quantities. Resolve against the same capture, refund reference, account and environment. |
+| Refund succeeded | Commit money/line eligibility changes once; never treat a refund as automatic restocking. |
+| Refund failed/canceled | Only bound authoritative terminal evidence releases that refund allocation. |
+
+When a mutation response loses the provider ID, retrieval accepts a null ID to require reference-based reconciliation. A future adapter must not interpret an empty bounded list as proof of absence, or silently create another payment/refund after a provider idempotency key ages out. Escalate unresolved attempts for staff reconciliation while preventing duplicate payable attempts. Provider idempotency retention is shorter than application financial retention; durable application keys remain authoritative.
+
+`PaymentSession` and `RefundResult` accept normalized **authenticated** evidence, not browser parameters or unsigned webhook fields. Their factories reject mismatched identities, money, account/mode and inconsistent status/capture combinations. Exceptions must be redacted and treated as unknown by the future adapter. These objects are observations, not a persisted order state machine: later consumers must enforce monotonic transitions and recheck eligibility under locks.
+
+The executable concurrency spike uses test-created InnoDB `spike_stock` and `spike_reservations` tables, separate PHP workers/connections, a parent-held row lock/readiness barrier, and a single synthetic unit. One worker reserves and one sees sold out. Rolling back a worker reverses both the decrement and reservation insert. Tables/readiness files are removed in cleanup; nothing is migrated into merchant/development databases. Multi-line sorted locks, reservation expiry/reconciliation, duplicate webhook/refund handling and crash recovery require their own later production tests.
+
+Official provider references checked October 10, 2026: [session status/payment status](https://docs.stripe.com/api/checkout/sessions/object), [explicit expiry of open sessions](https://docs.stripe.com/api/checkout/sessions/expire), [idempotent requests](https://docs.stripe.com/api/idempotent_requests), and [refund states](https://docs.stripe.com/api/refunds/object). These inform the contracts; no live sandbox call was made and no provider SDK was added. T035 remains pending for actual account/test-mode mapping, hosted URL safety, expiry windows, unknown-ID reconciliation, webhook authenticity and sandbox evidence.

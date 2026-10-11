@@ -186,7 +186,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T011: Payment and reservation risk spike
 
-- [ ] Complete T011.
+- [x] Complete T011 locally; live provider sandbox evidence remains T035.
+- **Implementation slices:** T011a defines frozen payment/refund intents and bound observation contracts; T011b demonstrates isolated MySQL locking/rollback and records provider reconciliation limits. Neither slice introduces a live provider adapter or production order/catalog schema.
+- **Evidence October 10:** 13 gateway contract tests and an independent-connection MySQL last-unit/rollback test executed. Full PHP suite: 245 tests / 1382 assertions; Pint, PHPStan level 8, frontend type/lint/format/build, 19 frontend tests and 10 Chromium journeys pass. Coverage gate fixture now includes implemented critical-domain files and proves every domain independently retains the 90% threshold; measured coverage/hosted CI remains T004b. No provider sandbox call or SDK added. [Contracts and limits](../docs/commerce-rules.md#paymentreservation-spike-t011).
 - **Module / requirements:** `checkout-orders` · ORDER-03, ORDER-04, CAT-05.
 - **Depends on:** T006.
 - **Acceptance:** Using isolated synthetic records, document payment session expiry/cancel/retrieve/refund and unknown-outcome contracts; demonstrate MySQL row locking without depending on future catalog/order tables. Run real provider sandbox checks only with test credentials.
