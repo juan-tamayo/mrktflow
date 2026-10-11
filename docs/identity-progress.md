@@ -45,3 +45,19 @@ Verification:
 - PHPStan level 8, Pint and whitespace checks pass. No dependencies or real merchant accounts were added; the browser owner exists only in the isolated fixture database.
 
 T008 is still open: invitation delivery/acceptance UI, staff-management policies/screens and concurrent final-owner evidence remain. Staff 2FA and sensitive-action reauthentication remain T013, and the complete store/launch scope remains unfinished. Rate-limited HTML currently uses the protected generic error response; a recoverable sign-in notice remains a UI follow-up.
+
+## T008 staff-management and owner-concurrency slice — October 10, 2026
+
+Owners can open the staff list from their workspace, review accounts, select a role preset and enable/disable access. Lists paginate at 50 accounts and expose only UUID, display name, email, role, active state and edit version. Every staff list/update checks `staff.manage` before looking up account records; managers, content editors and fulfillment staff receive the same denial for existing and unknown targets.
+
+Access updates now require the current account version under the security lock. Outdated edits receive a conflict; browser forms preserve their submitted version on failure and offer an explicit reload. Only a successful save advances the form version. Role/access changes continue to invalidate existing sessions through session-version enforcement. Final-owner conflicts return a focused, recoverable form error without changing the account.
+
+Verification:
+
+- Management HTTP tests failed on absent routes before implementation. Tests cover safe DTOs, all limited presets, existing/unknown target denial, last-owner conflict, successful role changes and rejection of stale edits.
+- A real MySQL concurrency rehearsal uses two independent guarded PHP processes and two active owners. Both processes start while the parent holds the shared security lock. After release they simultaneously attempt self-demotion: exactly one commits, the other returns 409, one active owner remains, one account advances its session version and one access-change audit intent persists.
+- Full PHP suite: **125 passed**. Assertion count varies with the bounded concurrency readiness checks (675 in the recorded full run).
+- Eleven Vue unit tests pass, including preserved edit versions and escaped account names. TypeScript, ESLint without warnings, Prettier, production build, PHPStan level 8 and Pint pass.
+- Ten real Chromium tests pass; the owner flow now opens staff management, receives a focused last-owner error, recovers with a valid save and reloads the persisted role. Staff management passes Axe and overflow checks at 320px; rendered mobile output inspected locally.
+
+T008 remains open for invitation delivery/acceptance screens. Reauthentication and mandatory privileged-staff 2FA remain T013 before launch. These screens operate only the implemented staff-account foundation; commerce, marketing and public-launch scope remain in the backlog.

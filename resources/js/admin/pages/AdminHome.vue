@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3'
 
-defineProps<{ staff: { name: string; role: string } }>()
+defineProps<{ staff: { name: string; role: string }; canManageStaff: boolean }>()
 const logout = useForm({})
 </script>
 
@@ -20,6 +20,7 @@ const logout = useForm({})
         Welcome, {{ staff.name }}. Installation is complete. Your storefront stays closed while you
         add products and finish launch checks.
       </p>
+      <p v-if="canManageStaff"><a class="text-link" href="/admin/staff">Manage staff</a></p>
       <form @submit.prevent="logout.post('/admin/logout')">
         <button type="submit" class="primary-button" :disabled="logout.processing">
           {{ logout.processing ? 'Signing out…' : 'Sign out' }}

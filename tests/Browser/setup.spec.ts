@@ -140,5 +140,28 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page 
     ).violations,
   ).toEqual([])
   await page.screenshot({ path: '.runtime/screenshots/owner-workspace.png', fullPage: true })
+  await page.getByRole('link', { name: 'Manage staff' }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Staff access.')
+  await page.getByLabel('Role for Example Owner').selectOption('manager')
+  await page.getByRole('button', { name: 'Save access for Example Owner' }).click()
+  await expect(page.getByRole('alert')).toContainText('another active owner')
+  await expect(page.getByRole('alert')).toBeFocused()
+  await page.getByLabel('Role for Example Owner').selectOption('owner')
+  await page.getByRole('button', { name: 'Save access for Example Owner' }).click()
+  await expect(page.getByRole('status')).toContainText('Staff access saved')
+  await page.reload()
+  await expect(page.getByLabel('Role for Example Owner')).toHaveValue('owner')
+  await page.setViewportSize({ width: 320, height: 900 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([])
+  await page.screenshot({ path: '.runtime/screenshots/staff-mobile.png', fullPage: true })
   expect(errors).toEqual([])
 })

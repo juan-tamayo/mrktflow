@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Application\Setup\CreateInitialOwner;
 use App\Domain\Identity\Models\StaffAccount;
+use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
@@ -136,4 +138,35 @@ it('IdentityStaff HTTP rejects forged owner, sign-in and sign-out requests', fun
     $this->postJson('/setup/owner', ['owner' => staffHttpInput()])->assertStatus(419);
     $this->postJson('/admin/login', ['email' => 'owner@example.test', 'password' => staffHttpInput()['password']])->assertStatus(419);
     $this->postJson('/admin/logout')->assertStatus(419);
+});
+
+it('IdentityStaff HTTP protects staff management before lookup and exposes only safe account fields', function (): void {
+    $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
+    $this->get('/admin/staff')->assertRedirect('/admin/login');
+    $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1])->get('/admin/staff')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->component('Staff')->where('accounts.data.0.email', $owner->email)
+            ->missing('accounts.data.0.password')->missing('accounts.data.0.remember_token')->missing('accounts.data.0.permissions'));
+    foreach (['manager', 'content_editor', 'fulfillment'] as $role) {
+        DB::table('staff_accounts')->where('id', $owner->id)->update(['role' => $role, 'permissions' => json_encode(StaffPermissions::forRole($role))]);
+        $this->getJson('/admin/staff')->assertForbidden();
+        foreach ([$owner->id, '00000000-0000-4000-8000-000000000000'] as $id) {
+            $this->patchJson('/admin/staff/'.$id, ['access' => ['role' => 'owner', 'is_active' => true, 'version' => 1]])->assertForbidden();
+        }
+    }
+});
+
+it('IdentityStaff HTTP preserves the final owner and rejects outdated management edits', function (): void {
+    $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
+    $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1]);
+    $this->patchJson('/admin/staff/'.$owner->id, ['access' => ['role' => 'manager', 'is_active' => true, 'version' => 1]])->assertConflict();
+    $this->from('/admin/staff')->patch('/admin/staff/'.$owner->id, ['access' => ['role' => 'owner', 'is_active' => false, 'version' => 1]])
+        ->assertRedirect('/admin/staff')->assertSessionHasErrors('access');
+    $staff = new StaffAccount;
+    $staff->forceFill(['name' => 'Example Editor', 'email' => 'editor@example.test', 'password' => Hash::make(staffHttpInput()['password']),
+        'role' => 'content_editor', 'permissions' => StaffPermissions::forRole('content_editor'), 'is_active' => true])->save();
+    $this->patch('/admin/staff/'.$staff->id, ['access' => ['role' => 'fulfillment', 'is_active' => true, 'version' => 1]])->assertRedirect('/admin/staff');
+    expect($staff->fresh()->role)->toBe('fulfillment');
+    expect($staff->fresh()->session_version)->toBe(2);
+    $this->patchJson('/admin/staff/'.$staff->id, ['access' => ['role' => 'owner', 'is_active' => true, 'version' => 1]])->assertConflict();
+    expect($staff->fresh()->role)->toBe('fulfillment');
 });

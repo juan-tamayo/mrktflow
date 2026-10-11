@@ -28,11 +28,13 @@ final class ChangeStaffAccess
                 throw new AuthorizationException;
             }
             $data = Validator::make(['access' => $input], [
-                'access' => ['required', 'array:role,is_active'],
+                'access' => ['required', 'array:role,is_active,version'],
                 'access.role' => ['required', Rule::in(['owner', 'manager', 'content_editor', 'fulfillment'])],
                 'access.is_active' => ['required', 'boolean'],
+                'access.version' => ['required', 'integer', 'min:1', 'max:4294967295'],
             ])->validate()['access'];
             $staff = StaffAccount::query()->whereKey($staffId)->lockForUpdate()->firstOrFail();
+            abort_if($staff->session_version !== (int) $data['version'], 409, 'This account changed. Reload the staff list before saving.');
             $active = (bool) $data['is_active'];
             if ($staff->role === 'owner' && $staff->is_active && ($data['role'] !== 'owner' || ! $active)) {
                 $owners = StaffAccount::query()->where('role', 'owner')->where('is_active', true)->lockForUpdate()->get();

@@ -107,7 +107,7 @@ it('IdentityStaff protects the final owner and invalidates sessions when privile
     $owner = app(CreateInitialOwner::class)->create(pendingOwnerGrant(), ownerFixtureInput());
     $change = app(ChangeStaffAccess::class);
     foreach ([['role' => 'manager', 'is_active' => true], ['role' => 'owner', 'is_active' => false]] as $input) {
-        expect(fn () => $change->change($owner, $owner->id, $input))->toThrow(HttpException::class);
+        expect(fn () => $change->change($owner, $owner->id, $input + ['version' => 1]))->toThrow(HttpException::class);
         expect($owner->fresh()->role)->toBe('owner');
         expect($owner->fresh()->is_active)->toBeTrue();
         expect($owner->fresh()->session_version)->toBe(1);
@@ -117,11 +117,11 @@ it('IdentityStaff protects the final owner and invalidates sessions when privile
         'name' => 'Fictional Replacement', 'email' => 'replacement@example.test', 'password' => Hash::make(ownerFixtureInput()['password']),
         'role' => 'owner', 'permissions' => StaffPermissions::forRole('owner'), 'is_active' => true,
     ])->save();
-    $changed = $change->change($owner, $owner->id, ['role' => 'manager', 'is_active' => true]);
+    $changed = $change->change($owner, $owner->id, ['role' => 'manager', 'is_active' => true, 'version' => 1]);
     expect($changed->role)->toBe('manager');
     expect($changed->hasPermission('staff.manage'))->toBeFalse();
     expect($changed->session_version)->toBe(2);
-    expect(fn () => $change->change($owner, $replacement->id, ['role' => 'manager', 'is_active' => true]))->toThrow(AuthorizationException::class);
+    expect(fn () => $change->change($owner, $replacement->id, ['role' => 'manager', 'is_active' => true, 'version' => 1]))->toThrow(AuthorizationException::class);
     expect($replacement->fresh()->role)->toBe('owner');
 });
 
