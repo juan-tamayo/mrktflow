@@ -89,4 +89,56 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page 
   await staleTab.close()
   await page.getByRole('heading', { level: 1 }).click()
   await page.screenshot({ path: '.runtime/screenshots/setup-saved-mobile.png', fullPage: true })
+  await page.getByLabel('Your name').fill('Example Owner')
+  await page.getByLabel('Owner email').fill('owner@example.test')
+  await page.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
+  await page.getByLabel('Confirm password').fill('Incorrect fictional confirmation')
+  await page.getByRole('button', { name: 'Create owner account' }).click()
+  await expect(page.getByRole('alert')).toContainText('confirmation')
+  await expect(page.getByRole('alert')).toBeFocused()
+  await expect(page.getByLabel('Password', { exact: true })).toHaveValue('')
+  await page.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
+  await page.getByLabel('Confirm password').fill('Fictional owner passphrase 471!')
+  await page.getByRole('button', { name: 'Create owner account' }).click()
+  await expect(page).toHaveURL(/\/admin$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your store starts here.')
+  await page.reload()
+  await expect(page.getByText('Welcome, Example Owner.', { exact: false })).toBeVisible()
+  expect((await page.request.get('/setup')).status()).toBe(404)
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await expect(page).toHaveURL(/\/admin\/login$/)
+  await page.getByLabel('Email', { exact: true }).fill('owner@example.test')
+  await page.getByLabel('Password', { exact: true }).fill('Wrong fictional passphrase')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('could not be verified')
+  await expect(page.getByRole('alert')).toBeFocused()
+  await expect(page.getByLabel('Password', { exact: true })).toHaveValue('')
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true)
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([])
+  }
+  await page.getByLabel('Email', { exact: true }).fill('OWNER@example.test')
+  await page.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page).toHaveURL(/\/admin$/)
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([])
+  await page.screenshot({ path: '.runtime/screenshots/owner-workspace.png', fullPage: true })
+  expect(errors).toEqual([])
 })

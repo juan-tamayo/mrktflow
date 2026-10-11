@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import CountryPicker from '../components/CountryPicker.vue'
+import OwnerSetup from '../components/OwnerSetup.vue'
 
 defineOptions({ name: 'StoreInstall' })
 
@@ -265,6 +266,7 @@ function save() {
             {{ form.processing ? 'Saving details…' : 'Save store details' }}
           </button>
         </form>
+        <OwnerSetup v-if="status === 'pending_owner'" :blocked="blocked" />
       </template>
     </main>
     <footer class="footer">

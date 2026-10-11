@@ -5,9 +5,12 @@ namespace App\Providers;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Support\TestDatabaseGuard;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +28,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('staff-login', function (Request $request): array {
+            $email = $request->input('email');
+            $identity = hash('sha256', is_string($email) ? mb_strtolower(trim($email), 'UTF-8') : '');
+
+            return [Limit::perMinute(5)->by('staff:'.$identity.':'.$request->ip()), Limit::perMinute(30)->by('staff-ip:'.$request->ip())];
+        });
         foreach (StaffPermissions::all() as $permission) {
             Gate::define($permission, fn (?Authenticatable $principal): bool => $principal instanceof StaffAccount && $principal->hasPermission($permission));
         }

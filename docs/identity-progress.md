@@ -24,3 +24,24 @@ Verification:
 Remaining T008 work: login/logout and session-version enforcement; protected first-owner UI; invitation delivery and acceptance UI; permission-protected staff management; concurrent final-owner rehearsal; HTTP, browser, frontend and full regression evidence. Staff 2FA and reauthentication remain T013, before public launch.
 
 Framework contracts were checked against [Laravel 13 authentication](https://laravel.com/framework/docs/13.x/authentication) and [authorization](https://laravel.com/framework/docs/13.x/authorization). Local checks are not hosted CI or production evidence.
+
+## T008 protected owner form and staff session slice — October 10, 2026
+
+The owner form now appears after saved settings. Creating the owner signs them into a protected workspace and permanently closes setup. Staff can sign in and sign out; unconfigured installations still show the closed admin page. The public storefront remains closed.
+
+Every mounted workspace route uses the staff-session middleware. It loads the current staff row, requires an active staff principal and a matching integer session version, then enforces `admin.access`. Disabled, deleted, foreign or outdated principals lose access. Invalid staff sessions are destroyed; an anonymous request to administration preserves signed guest intent. Login and logout rotate/invalidate sessions and CSRF tokens; remember-me is not exposed. Workspace props include only the display name and role.
+
+Sign-in failures are generic across unknown accounts, incorrect passwords and inactive staff. Limits are five attempts per normalized email/IP pair and thirty per IP each minute; email limiter keys use hashes. Setup unlock, settings and owner endpoints use distinct limiter prefixes so valid settings saves cannot exhaust owner-creation attempts. All mutations retain Laravel request-forgery protection.
+
+Nested owner credentials are excluded from validation flash data and Inertia remembered form data. Password fields clear after responses, and error summaries receive focus. Nested owner password fields are excluded from whitespace trimming so a password entered at creation also works at sign-in.
+
+Verification:
+
+- HTTP tests first failed on absent routes. Additional tests reproduced password trimming, anonymous intent loss and shared rate-limit collisions before their fixes.
+- The full PHP suite passes: **122 tests / 618 assertions**, including direct permission denial, session rotation, disabled/revoked session rejection, credential flash exclusion and forged mutation rejection.
+- Nine Vue unit tests pass. TypeScript, ESLint without warnings, Prettier and production build pass.
+- Ten real Chromium tests pass. The setup test now continues through invalid owner confirmation, successful creation, durable reload using UUID/database sessions, closed setup, logout, failed sign-in, canonical-email sign-in and another durable reload.
+- Axe checks pass at 320/768/1440px on sign-in and on the workspace; owner setup remains covered at mobile width. Error focus and password clearing pass; no browser page errors occurred. Rendered workspace inspected locally.
+- PHPStan level 8, Pint and whitespace checks pass. No dependencies or real merchant accounts were added; the browser owner exists only in the isolated fixture database.
+
+T008 is still open: invitation delivery/acceptance UI, staff-management policies/screens and concurrent final-owner evidence remain. Staff 2FA and sensitive-action reauthentication remain T013, and the complete store/launch scope remains unfinished. Rate-limited HTML currently uses the protected generic error response; a recoverable sign-in notice remains a UI follow-up.

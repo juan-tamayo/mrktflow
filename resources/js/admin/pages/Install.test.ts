@@ -123,3 +123,23 @@ it('restores saved fields after re-unlocking an interrupted setup', async () => 
   })
   expect(wrapper.find<HTMLInputElement>('input[name="name"]').element.value).toBe('Resumed store')
 })
+
+it('shows owner creation only after settings are saved', async () => {
+  const wrapper = mount(Install, {
+    props: {
+      unlocked: true,
+      settings: null,
+      version: 0,
+      status: 'unconfigured',
+      checks: [],
+      saved: false,
+      countries: [],
+      currencies: [],
+      timezones: [],
+    },
+  })
+  expect(wrapper.find('input[autocomplete="new-password"]').exists()).toBe(false)
+  await wrapper.setProps({ status: 'pending_owner' })
+  expect(wrapper.findAll('input[autocomplete="new-password"]')).toHaveLength(2)
+  expect(wrapper.text()).toContain('Create owner account')
+})

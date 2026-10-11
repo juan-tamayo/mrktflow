@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Application\Setup\CreateInitialOwner;
 use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use App\Domain\Platform\Support\SetupChoices;
+use App\Http\Support\StaffSession;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +22,31 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class InstallController
 {
+    public function owner(Request $request, CreateInitialOwner $creator, StaffSession $session): RedirectResponse
+    {
+        $grant = $request->session()->get('setup_access');
+        abort_unless(is_array($grant), 403, 'Setup access is unavailable.');
+        $input = $request->validate(['owner' => ['required', 'array']]);
+        try {
+            $owner = $creator->create($grant, $input['owner']);
+        } catch (HttpException $exception) {
+            if ($request->expectsJson()) {
+                throw $exception;
+            }
+            if ($exception->getStatusCode() === 403) {
+                $request->session()->forget('setup_access');
+                throw ValidationException::withMessages(['setup_secret' => 'Your setup access has expired or changed. Unlock setup again.'])->redirectTo('/setup');
+            }
+            if ($exception->getStatusCode() === 409) {
+                throw ValidationException::withMessages(['owner' => $exception->getMessage()])->redirectTo('/setup');
+            }
+            throw $exception;
+        }
+        $session->establish($request, $owner);
+
+        return redirect('/admin');
+    }
+
     public function show(Request $request, SetupAccess $access, InstallationPrerequisites $prerequisites): Response
     {
         $installation = DB::table('installations')->where('id', 1)->first();

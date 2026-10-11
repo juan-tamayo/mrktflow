@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Providers\AppServiceProvider;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->withoutVite();
