@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandLogo from '../components/BrandLogo.vue'
 import { Head } from '@inertiajs/vue3'
 import StaffAccess from '../components/StaffAccess.vue'
 import CreateStaffInvitation from '../components/CreateStaffInvitation.vue'
@@ -24,8 +25,7 @@ defineProps<{
   <a class="skip-link" href="#staff-main">Skip to staff</a>
   <div class="page-shell">
     <header class="masthead">
-      <a href="/admin" class="wordmark">mrktflow<span aria-hidden="true">•</span></a
-      ><a href="/admin" class="text-link">Store workspace</a>
+      <BrandLogo href="/admin" /><a href="/admin" class="text-link">Store workspace</a>
     </header>
     <main id="staff-main" class="setup-main">
       <p class="eyebrow">People and permissions</p>

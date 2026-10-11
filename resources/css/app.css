@@ -1,10 +1,12 @@
 :root {
   color-scheme: light;
-  --canvas: #f6f4ed;
-  --ink: #242a24;
-  --muted: #5b6259;
-  --line: #cfd2c7;
-  --accent: #37593e;
+  --canvas: #f2f5f3;
+  --surface: #ffffff;
+  --soft-accent: #d9f3df;
+  --ink: #182923;
+  --muted: #53635b;
+  --line: #d7dfda;
+  --accent: #153e35;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -54,17 +56,24 @@ summary {
   justify-content: space-between;
   gap: 1rem;
   border-bottom: 1px solid var(--line);
-  padding-block: 2rem;
+  padding-block: 1.5rem;
 }
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
   font-weight: 750;
   font-size: 1.625rem;
-  letter-spacing: -0.075em;
+  letter-spacing: -0.06em;
   text-decoration: none;
 }
+.wordmark img {
+  display: block;
+  flex: none;
+}
 .wordmark span {
-  color: var(--accent);
-  padding-left: 0.25rem;
+  color: var(--ink);
 }
 .status {
   display: flex;
@@ -95,7 +104,7 @@ h1 {
   margin: 0;
   font-size: clamp(3.25rem, 7vw, 7rem);
   line-height: 1.03;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.065em;
 }
 .accent {
@@ -208,9 +217,9 @@ h1 {
   width: 100%;
   min-width: 0;
   color: var(--ink);
-  background: #fffefa;
-  border: 1px solid #939b8e;
-  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid #88998e;
+  border-radius: 6px;
   padding: 0.875rem;
   font: inherit;
 }
@@ -219,7 +228,7 @@ h1 {
 }
 .primary-button {
   border: 1px solid var(--accent);
-  border-radius: 3px;
+  border-radius: 6px;
   background: var(--accent);
   color: #fff;
   padding: 0.9375rem 1.5rem;
@@ -284,8 +293,8 @@ h1 {
 .country-choices {
   max-height: 15rem;
   overflow-y: auto;
-  border: 1px solid #939b8e;
-  background: #fffefa;
+  border: 1px solid #88998e;
+  background: var(--surface);
   margin-top: 0.75rem;
   padding: 0.5rem;
 }
@@ -300,4 +309,282 @@ h1 {
   width: 1.125rem;
   height: 1.125rem;
   flex: none;
+}
+
+/* MRKTFlow identity: pine, mint, and a quiet neutral workspace. */
+button,
+a {
+  touch-action: manipulation;
+}
+.primary-button,
+.quiet-button,
+.light-button {
+  min-height: 44px;
+  font-weight: 600;
+}
+.primary-button:hover:not(:disabled) {
+  background: #24594c;
+}
+.primary-button:active:not(:disabled) {
+  background: #0c2c24;
+}
+.setup-main input:hover,
+.setup-main select:hover,
+.setup-main textarea:hover {
+  border-color: var(--accent);
+}
+.setup-main input:focus,
+.setup-main select:focus,
+.setup-main textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.quiet-button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.625rem 1rem;
+  cursor: pointer;
+}
+.quiet-button:hover:not(:disabled) {
+  background: var(--soft-accent);
+}
+.quiet-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.workspace-account {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.workspace-main {
+  flex: 1;
+  padding-block: 3rem 4rem;
+}
+.workspace-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+.workspace-heading .eyebrow {
+  margin-bottom: 1rem;
+}
+.workspace-heading h1 {
+  max-width: 16ch;
+  font-size: clamp(2.25rem, 4vw, 3.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+}
+.workspace-welcome {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+}
+.launch-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 2.5rem;
+  color: white;
+  background: var(--accent);
+  border-radius: 12px;
+}
+.launch-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.panel-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.closed-badge {
+  border: 1px solid #87a89a;
+  border-radius: 999px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--soft-accent);
+}
+.launch-panel h2 {
+  margin: 2.5rem 0 1rem;
+  font-size: clamp(1.75rem, 2.75vw, 2.75rem);
+  font-weight: 550;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+.launch-panel > p {
+  max-width: 37ch;
+  color: #d9e6de;
+  line-height: 1.75;
+  margin-bottom: 1.5rem;
+}
+.light-button {
+  display: inline-flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--soft-accent);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 0.875rem 1.125rem;
+  text-decoration: none;
+}
+.light-button:hover {
+  background: white;
+}
+.launch-panel :focus-visible {
+  outline-color: var(--soft-accent);
+}
+.launch-signature {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #476b5f;
+}
+.launch-signature img {
+  filter: brightness(0) invert(1);
+  opacity: 0.16;
+  width: 5rem;
+  height: 5rem;
+}
+.launch-signature span {
+  text-align: right;
+  color: #d9e6de;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.workspace-tools {
+  padding: 2.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.workspace-tools .panel-label {
+  color: var(--muted);
+}
+.workspace-tools h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.035em;
+  margin: 0.75rem 0 2rem;
+}
+.workspace-tool {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 1rem;
+  padding-block: 1.5rem;
+  border-block: 1px solid var(--line);
+}
+.tool-number {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  padding-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.tool-link {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.tool-link:hover {
+  text-decoration: underline;
+}
+.workspace-tool p {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.workspace-note {
+  margin-block: 2rem;
+}
+.workspace-note h3 {
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+.workspace-note p {
+  color: var(--muted);
+  line-height: 1.75;
+  font-size: 0.9375rem;
+}
+.foundation-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
+  line-height: 1.6;
+}
+@media (max-width: 1024px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+  .workspace-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .launch-panel h2 {
+    font-size: 2.5rem;
+  }
+}
+@media (max-width: 640px) {
+  .wordmark {
+    font-size: 1.375rem;
+    gap: 0.375rem;
+  }
+  .wordmark img {
+    width: 30px;
+    height: 30px;
+  }
+  .masthead .status {
+    font-size: 0.75rem;
+  }
+  .workspace-account {
+    gap: 0.75rem;
+  }
+  .workspace-account .status {
+    display: none;
+  }
+  .workspace-main {
+    padding-block: 2rem 3rem;
+  }
+  .workspace-heading {
+    margin-bottom: 2rem;
+  }
+  .workspace-grid {
+    gap: 1.25rem;
+  }
+  .launch-panel,
+  .workspace-tools {
+    padding: 1.5rem;
+  }
+  .launch-panel h2 {
+    font-size: 2rem;
+  }
+  .workspace-shell .footer {
+    gap: 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
 }

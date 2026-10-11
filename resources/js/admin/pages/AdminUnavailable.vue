@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandLogo from '../components/BrandLogo.vue'
 import { Head } from '@inertiajs/vue3'
 </script>
 
@@ -7,7 +8,7 @@ import { Head } from '@inertiajs/vue3'
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="page-shell">
     <header class="masthead">
-      <a href="/" class="wordmark">mrktflow<span aria-hidden="true">•</span></a>
+      <BrandLogo href="/" />
     </header>
     <main id="main" class="intro">
       <p class="eyebrow">Store administration</p>

@@ -81,7 +81,10 @@ it('restores saved details and escapes merchant text on a fresh visit', () => {
     },
   })
   expect(wrapper.find<HTMLInputElement>('input[name="name"]').element.value).toContain('<img')
-  expect(wrapper.find('img').exists()).toBe(false)
+  expect(wrapper.findAll('img').map((image) => image.attributes('src'))).toEqual([
+    '/brand/mark.svg',
+  ])
+  expect(wrapper.find('[onerror]').exists()).toBe(false)
 })
 
 it('restores saved fields after re-unlocking an interrupted setup', async () => {

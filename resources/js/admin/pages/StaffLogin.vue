@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandLogo from '../components/BrandLogo.vue'
 import { nextTick, ref } from 'vue'
 import { Head, useForm } from '@inertiajs/vue3'
 
@@ -20,8 +21,7 @@ function signIn() {
   <a class="skip-link" href="#login-main">Skip to sign-in</a>
   <div class="page-shell">
     <header class="masthead">
-      <a class="wordmark" href="/">mrktflow<span aria-hidden="true">•</span></a
-      ><span class="status">Store administration</span>
+      <BrandLogo href="/" /><span class="status">Store administration</span>
     </header>
     <main id="login-main" class="setup-main">
       <p class="eyebrow">Your store workspace</p>

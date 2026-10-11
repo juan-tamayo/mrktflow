@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
     <meta name="robots" content="noindex, nofollow">
     <meta property="csp-nonce" nonce="{{ Vite::cspNonce() }}">
     <title>This store is getting ready · MRKTFlow</title>
@@ -12,7 +13,7 @@
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="page-shell">
         <header class="masthead">
-            <a class="wordmark" href="/">mrktflow<span aria-hidden="true">•</span></a>
+            <a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a>
             <span class="status"><span class="status-dot" aria-hidden="true"></span>Opening soon</span>
         </header>
         <main id="main" class="intro">

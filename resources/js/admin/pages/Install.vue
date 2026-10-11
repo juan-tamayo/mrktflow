@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandLogo from '../components/BrandLogo.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import CountryPicker from '../components/CountryPicker.vue'
@@ -105,7 +106,7 @@ function save() {
   <a class="skip-link" href="#setup-main">Skip to setup</a>
   <div class="page-shell">
     <header class="masthead">
-      <a href="/" class="wordmark">mrktflow<span aria-hidden="true">•</span></a>
+      <BrandLogo href="/" />
       <span class="status">Store setup</span>
     </header>
     <main id="setup-main" class="setup-main">

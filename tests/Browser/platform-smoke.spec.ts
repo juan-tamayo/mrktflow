@@ -15,6 +15,12 @@ test('storefront renders on the server and Vue enhances the disclosure under CSP
   expect(response?.status()).toBe(503)
   expect(response?.headers()['content-security-policy']).not.toContain('unsafe-inline')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('This store is getting ready.')
+  const logo = page.getByRole('link', { name: 'MRKTFlow', exact: true }).locator('img')
+  await expect(logo).toBeVisible()
+  expect(
+    await logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
+  ).toBe(true)
+  expect((await page.request.get('/brand/favicon.svg')).status()).toBe(200)
   const button = page.getByRole('button', { name: 'Can I place an order?' })
   await button.focus()
   await page.keyboard.press('Enter')

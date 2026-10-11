@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandLogo from '../components/BrandLogo.vue'
 import { nextTick, ref } from 'vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { takeInvitationToken } from '../invitation-token'
@@ -27,8 +28,7 @@ function accept() {
   <a class="skip-link" href="#invitation-main">Skip to invitation</a>
   <div class="page-shell">
     <header class="masthead">
-      <a href="/" class="wordmark">mrktflow<span aria-hidden="true">•</span></a
-      ><span class="status">Staff invitation</span>
+      <BrandLogo href="/" /><span class="status">Staff invitation</span>
     </header>
     <main id="invitation-main" class="setup-main">
       <p class="eyebrow">Join the store team</p>

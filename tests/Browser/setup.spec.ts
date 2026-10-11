@@ -151,6 +151,27 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
         .analyze()
     ).violations,
   ).toEqual([])
+  for (const width of [320, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true)
+    await expect(
+      page.getByRole('region', { name: "A little preparation. A store that's yours." }),
+    ).toContainText('Storefront closed')
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([])
+    if (width === 320)
+      await page.screenshot({
+        path: '.runtime/screenshots/owner-workspace-mobile.png',
+        fullPage: true,
+      })
+  }
   await page.screenshot({ path: '.runtime/screenshots/owner-workspace.png', fullPage: true })
   await page.getByRole('link', { name: 'Manage staff' }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Staff access.')
