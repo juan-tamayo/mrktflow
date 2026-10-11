@@ -103,6 +103,10 @@ Evidence: [foundation verification](../docs/foundation-verification.md). Setup/i
 
 ### T005: Protected installer and settings
 
+Implementation slices: T005a — CLI secret lifecycle, database lock/settings aggregate and prerequisite checks; T005b — protected HTTP session and setup UI; T005c — browser/replay/resume verification. Initial-owner creation and final completion remain T008.
+
+- **Progress October 10:** T005a backend implemented; local verification recorded in [installer progress](../docs/installer-progress.md). HTTP setup and owner completion remain pending.
+
 - [ ] Complete T005.
 - **Module / requirements:** `platform` · PLAT-01, PLAT-02, PLAT-03.
 - **Depends on:** T003, T004, T004b.
