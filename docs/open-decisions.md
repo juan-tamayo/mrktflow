@@ -42,3 +42,16 @@ Expanded direction confirmed: native abandoned-cart recovery, urgency and social
 - **Before tax acceptance:** validate D03 market rules. US/USD remains demo data only; do not assume a single manual rate handles every intended location or digital sale.
 - **Before AI live-adapter completion:** choose/configure the provider/model and cost cap (D08). The store and manual templates continue without AI.
 - **Before public release or campaigns:** finalize license/governance, sales policies, sender setup/feedback support, referral economics and tracking/retention policy. These do not block foundation implementation.
+
+## D08: T012 provider/schema findings (October 10, 2026)
+
+Working adapter direction: tool-free **OpenAI Responses with strict Structured Outputs**, store-owned key, owner-approved model and budget. The local spike emits a Responses-shaped request and decodes fixture envelopes; it installs no SDK, makes no provider request and enables no account integration. Provider selection remains proposed until the merchant's availability, data terms, budget and exact model smoke test pass T074.
+
+| Evaluated option | Finding / next evidence |
+| --- | --- |
+| OpenAI Responses + `gpt-4o-mini-2024-07-18` | Documented Responses/Structured Outputs support and an explicit snapshot; used only as the fixture identifier. Candidate for focused schema drafting, pending live compatibility and merchant-reviewed quality/cost. [Model documentation](https://developers.openai.com/api/docs/models/gpt-4o-mini). |
+| OpenAI Responses + `gpt-6-sol` | Documented Structured Outputs support; candidate for more demanding authoring. No local evidence establishes its quality, latency, availability or cost advantage for this store. Evaluate separately within the configured cap; never silently upgrade a store's model. [Model documentation](https://developers.openai.com/api/docs/models/gpt-6-sol). |
+| OpenAI Chat Completions + strict schema | Supported alternative envelope, requiring a separate decoder for choices/finish reasons/refusals. No need to support both endpoints in the first adapter. |
+| JSON mode / arbitrary “OpenAI-compatible” endpoint | JSON validity alone does not enforce the candidate schema. Endpoint compatibility and model/usage/error semantics require their own contract fixtures and live proof; do not send a store key to a merchant-supplied arbitrary URL. |
+
+The [official Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses) documents a schema subset, required closed object fields and refusal/incomplete cases. The prototype uses a root object and nested section alternatives, and independently rejects unsafe/mismatched data. Do not equate schema conformity with truthful marketing claims or safe publication. No account access or measured pricing/performance is inferred from documentation. Other providers remain eligible behind `AiAuthoringProvider`, but are not implemented or claimed verified by this spike.

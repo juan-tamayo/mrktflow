@@ -198,7 +198,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T012: AI provider/schema risk spike
 
-- [ ] Complete T012.
+- [x] Complete T012 locally; exact-model live provider evidence remains T074.
+- **Implementation slices:** T012a adds a bounded page-draft schema shared at the themes/content boundary, a public-context request, provider/result contract and provider-shaped fixture tests (five authored files). T012b records provider/model options, failure/budget/privacy limits and future importer/live-adapter acceptance; no content tables or live generation are introduced by this spike. Other authoring operations remain T074–T078.
+- **Evidence October 10:** 27 AI contract fixtures / 78 assertions cover bounded public context, strict data sections/references, prompt injection without capabilities, refusals/incomplete/tool calls, malformed/unbound usage and JSON object/list fidelity. Full PHP suite: 272 tests / 1473 assertions; Pint, PHPStan level 8, frontend type/lint/format/build, 19 frontend tests and 10 Chromium journeys pass. Independent model review found one object/list mismatch, corrected with failing-then-passing fixtures and confirmed resolved. Composer/npm vulnerability audits and registry signatures pass (236 signatures / 94 attestations). No provider request, SDK, enabled key or publication action. [Schema and limits](../docs/template-contracts.md#implemented-t012-page-draft-spike), [options evaluated](../docs/open-decisions.md#d08-t012-providerschema-findings-october-10-2026).
 - **Module / requirements:** `ai-authoring` · AI-01, AI-04.
 - **Depends on:** T010.
 - **Acceptance:** Define a bounded AI authoring adapter/schema and validate provider-shaped fixtures without future content tables or private data. Evaluate compatible provider/model options; live provider selection/usage evidence requires test credentials.
@@ -208,9 +210,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 #### Checkpoint after T010, T011, T012
 
-- [ ] Acceptance and focused verification recorded; no zero-test pass.
-- [ ] Relevant build/browser flow passes, including failure, permission and replay cases.
-- [ ] Changes documented; pending external-provider evidence remains explicit.
+- [x] Local spike acceptance and focused verification recorded; no zero-test pass.
+- [x] Relevant built theme/browser flows and local failure/permission/replay guards pass; live payment/AI replay and integration acceptance remain T035/T074.
+- [x] Changes documented; pending external-provider evidence remains explicit.
 
 ## M1: Catalog and merchant/product foundation
 

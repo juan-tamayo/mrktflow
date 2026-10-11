@@ -57,7 +57,7 @@ bin/npm audit
 bin/npm audit signatures
 ```
 
-PHP and Vue runners reject zero selected tests. The browser suite has no retries and starts its own server; it never reuses a developer server. PHP migrations and browser tests must not share a test database. Local browser traces remain ignored and may contain session cookies; never publish them.
+Finish the frontend build before starting browser verification: both use `public/build`, and rebuilding removes/replaces the manifest and assets. Do not run those operations concurrently. PHP and Vue runners reject zero selected tests. The browser suite has no retries and starts its own server; it never reuses a developer server. PHP migrations and browser tests must not share a test database. Local browser traces remain ignored and may contain session cookies; never publish them.
 
 The local PHP runtime has no coverage driver. CI configures PCOV and checks `scripts/coverage-gate.php` after producing Clover. See [continuous integration](continuous-integration.md) for coverage and remote evidence status.
 
@@ -99,3 +99,7 @@ The ProductView factory accepts only explicit bounded public fields. Description
 ## Payment/reservation contract spike
 
 No payment credentials are needed for the local spike. Run `bin/php artisan test --filter=CheckoutOrdersGateway` for bound payment/refund observation rules, and `bin/php artisan test --filter=CheckoutOrdersConcurrency` for separate MySQL worker connections competing for one synthetic stock unit and transactional rollback. The concurrency fixture verifies the restricted PHP test database, creates only temporary test tables and cleans them up; it does not add merchant migrations or permit testing against a store database. Provider SDK/hosted checkout/webhook mapping and live sandbox checks remain T035. See [commerce contracts and limitations](commerce-rules.md#paymentreservation-spike-t011).
+
+## AI authoring contract spike
+
+Run `bin/php artisan test --filter=AiAuthoringContract` for the bounded public-context request, shared data-only page schema and Responses-shaped success/refusal/incomplete/malformed/tool-call fixtures. No key, SDK or provider request is needed. The schema is a prototype with no page persistence, renderer, importer, budget service or live adapter; it cannot publish content. [Schema and remaining acceptance](template-contracts.md#implemented-t012-page-draft-spike), [provider/model findings](open-decisions.md#d08-t012-providerschema-findings-october-10-2026). T074 requires a deliberate capped provider smoke before enablement.
