@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Platform\Actions\ProcessMedia;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -112,4 +113,69 @@ it('PlatformMedia refuses an accidentally public private-storage root', function
     expect(fn () => app(StoreMedia::class)->store(UploadedFile::fake()->createWithContent('guide.txt', 'fixture'), 'private_file', new MediaFixtureAuthorization))
         ->toThrow(LogicException::class, 'Private media storage must remain outside the web directory.');
     expect(DB::table('media_assets')->count())->toBe(0);
+});
+
+it('PlatformMedia rebuilds public image pixels and strips appended executable content', function (): void {
+    $file = UploadedFile::fake()->image('photo.png', 32, 24);
+    file_put_contents($file->getRealPath(), '<?php private_fixture_payload ?>', FILE_APPEND);
+    $id = app(StoreMedia::class)->store($file, 'public_image', new MediaFixtureAuthorization);
+    app(ProcessMedia::class)->process($id);
+    $asset = DB::table('media_assets')->where('id', $id)->first();
+    expect($asset)->status->toBe('ready')->public_type->toBe('image/png');
+    $bytes = Storage::disk('public')->get($asset->public_key);
+    expect($bytes)->not->toContain('private_fixture_payload');
+    expect(getimagesizefromstring($bytes))->not->toBeFalse();
+    expect($asset->public_checksum)->toBe(hash('sha256', $bytes));
+    expect(Storage::disk('local')->get($asset->original_key))->toContain('private_fixture_payload');
+    app(ProcessMedia::class)->process($id);
+    expect(Storage::disk('public')->allFiles())->toHaveCount(1);
+});
+
+it('PlatformMedia fails image processing closed when stored originals change', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    Storage::disk('local')->put('media/'.$id.'/original', '<script>fixture</script>');
+    app(ProcessMedia::class)->process($id);
+    expect(DB::table('media_assets')->where('id', $id)->first())->status->toBe('failed')->error_code->toBe('processing_failed')->public_key->toBeNull();
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('PlatformMedia leaves a failed draft when public image publication fails', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    config(['media.generated_max_bytes' => 1]);
+    app(ProcessMedia::class)->process($id);
+    expect(DB::table('media_assets')->where('id', $id)->first())->status->toBe('failed')->error_code->toBe('processing_failed')->public_key->toBeNull();
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('PlatformMedia rechecks storage separation before processing existing originals', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    config(['filesystems.disks.local.root' => public_path()]);
+    app(ProcessMedia::class)->process($id);
+    expect(DB::table('media_assets')->where('id', $id)->value('status'))->toBe('failed');
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('PlatformMedia refuses overlapping public and private disk roots', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    config(['filesystems.disks.public.root' => config('filesystems.disks.local.root')]);
+    app(ProcessMedia::class)->process($id);
+    expect(DB::table('media_assets')->where('id', $id)->value('status'))->toBe('failed');
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('PlatformMedia removes temporary derivatives after a failed atomic publication', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    $disk = Mockery::mock(Storage::disk('public'));
+    $disk->shouldReceive('move')->once()->andReturn(false);
+    Storage::set('public', $disk);
+    app(ProcessMedia::class)->process($id);
+    expect(DB::table('media_assets')->where('id', $id)->first())->status->toBe('failed')->public_key->toBeNull();
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('PlatformMedia never processes private downloads into public images', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->createWithContent('guide.txt', 'fictional fixture'), 'private_file', new MediaFixtureAuthorization);
+    app(ProcessMedia::class)->process($id);
+    expect(DB::table('media_assets')->where('id', $id)->first())->status->toBe('ready')->public_key->toBeNull();
+    expect(Storage::disk('public')->allFiles())->toBe([]);
 });

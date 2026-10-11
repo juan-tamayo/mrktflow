@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'generated_max_bytes' => 33554432,
     'image_max_bytes' => 10485760,
     'private_max_bytes' => 524288000,
     'image_max_dimension' => 6000,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Platform\Actions;
 
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
+use App\Domain\Platform\Support\MediaStoragePolicy;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
@@ -29,13 +30,7 @@ final class StoreMedia
         if (DB::transactionLevel() !== 0) {
             throw new LogicException('Media intake must run outside a business transaction.');
         }
-        $privateRoot = realpath(config()->string('filesystems.disks.local.root'));
-        $webRoot = realpath(public_path());
-        if ($privateRoot === false || $webRoot === false || $privateRoot === $webRoot
-            || str_starts_with($privateRoot, $webRoot.DIRECTORY_SEPARATOR)
-            || config('filesystems.disks.local.driver') !== 'local' || config('filesystems.disks.local.serve') !== false) {
-            throw new LogicException('Private media storage must remain outside the web directory.');
-        }
+        app(MediaStoragePolicy::class)->assertPrivate();
         $name = $file->getClientOriginalName();
         $path = $file->getRealPath();
         if (! in_array($kind, ['public_image', 'private_file'], true) || ! $file->isValid()

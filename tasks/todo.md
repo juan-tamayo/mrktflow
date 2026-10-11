@@ -135,7 +135,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T007: Media storage boundary
 
-- **Progress October 10:** Validated private intake, synthetic authorization, encrypted filenames, opaque paths and failed-draft state verified. Seven media tests pass; public derivatives/recovery/cleanup remain pending. [Evidence](../docs/media-progress.md).
+- **Progress October 10:** Validated private intake and safe pixel-derived public images, synthetic authorization, encrypted filenames, opaque paths and failed-draft state verified. Fourteen media tests pass; queued recovery and abandoned-file cleanup remain pending. [Evidence](../docs/media-progress.md).
 
 - [ ] Complete T007.
 - **Module / requirements:** `platform` · PLAT-04.
