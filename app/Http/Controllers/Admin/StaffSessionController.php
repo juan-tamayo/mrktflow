@@ -58,6 +58,6 @@ final class StaffSessionController
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
 
-        return Inertia::render('AdminHome', ['staff' => ['name' => $staff->name, 'role' => $staff->role], 'canManageStaff' => $staff->hasPermission('staff.manage')]);
+        return Inertia::render('AdminHome', ['staff' => ['name' => $staff->name, 'role' => $staff->role], 'canManageStaff' => $staff->hasPermission('staff.manage'), 'canPreviewTheme' => $staff->hasPermission('content.read')]);
     }
 }

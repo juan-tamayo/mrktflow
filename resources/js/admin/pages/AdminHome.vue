@@ -2,7 +2,11 @@
 import BrandLogo from '../components/BrandLogo.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 
-defineProps<{ staff: { name: string; role: string }; canManageStaff: boolean }>()
+defineProps<{
+  staff: { name: string; role: string }
+  canManageStaff: boolean
+  canPreviewTheme: boolean
+}>()
 const logout = useForm({})
 </script>
 
@@ -58,6 +62,9 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-note">
+            <p v-if="canPreviewTheme">
+              <a class="text-link" href="/admin/theme-preview">Preview the default theme</a>
+            </p>
             <h3>Built on your terms</h3>
             <p>
               Your store runs on your own infrastructure. This workspace will grow as the catalog,

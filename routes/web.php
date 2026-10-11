@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
+use App\Http\Controllers\Admin\ThemePreviewController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 
 Route::get('/', fn () => response()->view('storefront.closed', [], 503)->header('Retry-After', '3600'));
+Route::get('/admin/theme-preview', [ThemePreviewController::class, 'show'])->middleware(RequireStaffSession::class);
 
 Route::middleware(Middleware::class)->group(function (): void {
     Route::get('/admin/login', [StaffSessionController::class, 'show'])->name('staff.login');

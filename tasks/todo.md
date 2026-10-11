@@ -175,7 +175,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T010: Theme rendering spike
 
-- [ ] Complete T010.
+- [x] Complete T010 locally.
+- **Evidence:** Trusted default Blade product view and compiled Vue variant island share bounded public DTOs. Authenticated example preview, native no-JavaScript selection, permissions, escaping, safe-integer money display and static asset serving verified. Final local checks: 221 PHP tests (1,300 assertions), 19 frontend tests and 10 Chromium journeys; Pint/PHPStan/type/lint/format/build passed. No Node rendering service required. Registry/activation and complete storefront remain T061 onward. See [rendering findings](../docs/decisions/002-rendering-and-themes.md).
 - **Module / requirements:** `themes-content` · THEME-01, WEB-02.
 - **Depends on:** T003, T007.
 - **Acceptance:** One Blade product view and one compiled Vue interaction consume public DTOs; no server Node process required; findings recorded.

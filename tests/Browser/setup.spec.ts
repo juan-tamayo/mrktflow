@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import settings from '../Fixtures/store-settings.json' with { type: 'json' }
 import { exerciseCustomerAccount } from './customer-account-flow'
+import { exerciseThemePreview } from './theme-preview-flow'
 
 test('setup stays locked and rejects a mutation without origin or CSRF proof', async ({
   page,
@@ -265,6 +266,6 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
     ).violations,
   ).toEqual([])
   await replay.close()
-  await exerciseCustomerAccount(browser)
+  await Promise.all([exerciseCustomerAccount(browser), exerciseThemePreview(page, browser)])
   expect(errors).toEqual([])
 })

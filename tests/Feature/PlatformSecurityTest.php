@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Providers\AppServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 uses(RefreshDatabase::class);
 
@@ -51,18 +52,24 @@ it('PlatformSecurity rejects browser mutations without CSRF proof', function ():
 });
 
 it('PlatformSecurity forces safe production settings and rejects plain HTTP', function (): void {
-    $this->app->instance('env', 'production');
-    config(['app.url' => 'https://store.example.test', 'app.debug' => true, 'session.secure' => false, 'session.encrypt' => false, 'session.http_only' => false]);
-    // Production settings are forced first, but a test process may not boot
-    // under a production identity or bypass the database guard.
-    expect(fn () => (new AppServiceProvider($this->app))->boot())->toThrow(RuntimeException::class);
-    expect(config('app.debug'))->toBeFalse();
-    expect(config('session.secure'))->toBeTrue();
-    expect(config('session.encrypt'))->toBeTrue();
-    expect(config('session.http_only'))->toBeTrue();
-    $this->get('http://store.example.test/')->assertStatus(400);
-    $this->get('http://store.example.test/', ['X-Forwarded-Proto' => 'https'])->assertStatus(400);
-    $this->get('https://store.example.test/')->assertStatus(503)
-        ->assertHeader('Strict-Transport-Security', 'max-age=31536000');
-    $this->get('https://attacker.example.test/')->assertStatus(400);
+    // Symfony returns delimited patterns; restore the previous test-process state afterward.
+    $previousHosts = array_map(static fn (string $pattern): string => substr($pattern, 1, -2), SymfonyRequest::getTrustedHosts());
+    try {
+        $this->app->instance('env', 'production');
+        config(['app.url' => 'https://store.example.test', 'app.debug' => true, 'session.secure' => false, 'session.encrypt' => false, 'session.http_only' => false]);
+        // Production settings are forced first, but a test process may not boot
+        // under a production identity or bypass the database guard.
+        expect(fn () => (new AppServiceProvider($this->app))->boot())->toThrow(RuntimeException::class);
+        expect(config('app.debug'))->toBeFalse();
+        expect(config('session.secure'))->toBeTrue();
+        expect(config('session.encrypt'))->toBeTrue();
+        expect(config('session.http_only'))->toBeTrue();
+        $this->get('http://store.example.test/')->assertStatus(400);
+        $this->get('http://store.example.test/', ['X-Forwarded-Proto' => 'https'])->assertStatus(400);
+        $this->get('https://store.example.test/')->assertStatus(503)
+            ->assertHeader('Strict-Transport-Security', 'max-age=31536000');
+        $this->get('https://attacker.example.test/')->assertStatus(400);
+    } finally {
+        SymfonyRequest::setTrustedHosts($previousHosts);
+    }
 });

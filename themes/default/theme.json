@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "id": "mrktflow/default",
+  "version": "0.1.0",
+  "name": "Default",
+  "requires": { "themeApi": "1" },
+  "templates": { "product.default": "views/product.blade.php" },
+  "assets": { "entry": "themes/default/src/product.ts", "style": "themes/default/src/theme.css" }
+}

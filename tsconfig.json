@@ -19,6 +19,8 @@
   "include": [
     "resources/js/**/*.ts",
     "resources/js/**/*.vue",
+    "themes/**/src/**/*.ts",
+    "themes/**/src/**/*.vue",
     "tests/Browser/**/*.ts",
     "vite.config.ts",
     "playwright.config.ts"

@@ -11,8 +11,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "typecheck": "vue-tsc --noEmit",
-    "lint": "eslint resources/js tests/Browser vite.config.ts playwright.config.ts eslint.config.js --max-warnings=0",
-    "format:check": "prettier --check resources/js resources/css tests/Browser vite.config.ts playwright.config.ts eslint.config.js tsconfig.json package.json",
+    "lint": "eslint resources/js themes/default/src tests/Browser vite.config.ts playwright.config.ts eslint.config.js --max-warnings=0",
+    "format:check": "prettier --check resources/js resources/css themes/default/src themes/default/theme.json tests/Browser vite.config.ts playwright.config.ts eslint.config.js tsconfig.json package.json",
     "test:unit": "vitest",
     "test:e2e": "playwright test"
   },

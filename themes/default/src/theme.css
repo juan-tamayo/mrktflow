@@ -1,0 +1,120 @@
+.theme-shell {
+  max-width: 1240px;
+}
+.theme-preview-notice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 3rem;
+}
+.theme-preview-notice span {
+  color: var(--muted);
+}
+.theme-product {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+  padding-bottom: 4rem;
+}
+.theme-product-image {
+  background: #e5ebe4;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.theme-product-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.theme-product-detail {
+  padding-top: 2rem;
+  min-width: 0;
+}
+.theme-product-detail h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  margin-block: 1rem 1.5rem;
+  overflow-wrap: anywhere;
+}
+.theme-description {
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+.theme-variant-form {
+  max-width: 26rem;
+}
+.theme-variant-form select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.875rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid #88998e;
+  border-radius: 6px;
+  font: inherit;
+}
+.theme-variant-form select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.theme-price {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-block: 1.5rem;
+}
+.theme-price span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.theme-price strong {
+  font-size: 1.5rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.theme-purchase-note {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-block: 1.5rem 2.5rem;
+}
+.theme-specifications {
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
+}
+.theme-specifications h2 {
+  font-size: 1.25rem;
+}
+.theme-specifications dl {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.theme-specifications dt {
+  color: var(--muted);
+}
+.theme-specifications dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .theme-product {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .theme-product-detail {
+    padding-top: 0;
+  }
+  .theme-preview-notice {
+    margin-bottom: 1.5rem;
+  }
+}

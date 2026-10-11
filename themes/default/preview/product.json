@@ -1,0 +1,12 @@
+{
+  "id": "10000000-0000-4000-8000-000000000001",
+  "url": "/admin/theme-preview",
+  "title": "The studio lamp",
+  "description": "An example product for exploring your storefront layout. A considered shape, a warm light, and room to make it your own.",
+  "image": {"url": "/themes/default/preview-lamp.svg", "alt": "Illustration of a sculptural desk lamp"},
+  "variants": [
+    {"id": "10000000-0000-4000-8000-000000000002", "label": "Pine", "money": {"amountMinor": 8900, "currency": "USD", "exponent": 2}},
+    {"id": "10000000-0000-4000-8000-000000000003", "label": "Chalk", "money": {"amountMinor": 9500, "currency": "USD", "exponent": 2}}
+  ],
+  "attributes": [{"label": "Material", "value": "Illustrative powder-coated steel"}, {"label": "Dimensions", "value": "Illustrative 38 × 18 cm"}]
+}

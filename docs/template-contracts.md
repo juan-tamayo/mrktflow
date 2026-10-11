@@ -1,6 +1,6 @@
 # Theme, content, and product-template contracts
 
-Contract version: 1.0 proposal. These examples define target formats; no loader or validator exists yet.
+Contract version: 1.0 target. T010 now implements the bounded ProductView projection, a reviewed default Blade product template and a compiled Vue variant island. The installed theme registry, manifest compatibility/activation and data-package importer are still pending; the manifest examples below remain target contracts.
 
 ## Three separate concepts
 
@@ -39,11 +39,11 @@ Vue explicitly warns against treating untrusted strings as component templates; 
     "article.default": "views/article.blade.php"
   },
   "sections": ["hero", "rich-text", "product-grid", "specifications", "faq"],
-  "assets": { "manifest": "dist/manifest.json" }
+  "assets": { "entry": "themes/default/src/product.ts", "style": "themes/default/src/theme.css" }
 }
 ```
 
-The installed registry stores theme ID/version/checksum/path. All paths are normalized and constrained to the theme directory; reject traversal, symlinks escaping the root, missing files, incompatible API versions, duplicate IDs, remote executable asset entries and unknown critical manifest fields. A checksum proves integrity against a recorded value, not trustworthiness of the author.
+The planned installed registry stores theme ID/version/checksum/path. Theme source entries are compiled at release/deployment build time into the application Vite manifest under `public/build`; do not treat that output path as a merchant-controlled source path. All paths are normalized and constrained to the theme directory; reject traversal, symlinks escaping the root, missing files, incompatible API versions, duplicate IDs, remote executable asset entries and unknown critical manifest fields. A checksum proves integrity against a recorded value, not trustworthiness of the author.
 
 Core owns checkout/payment/download authorization routes and system forms. Themes may supply documented visual slots and tokens around these screens, but cannot replace the authoritative commerce actions. Default fallbacks remain available when a theme omits a required view.
 
