@@ -21,5 +21,6 @@
         </main>
         <footer class="footer"><span>Your customer account</span><span>MRKTFlow</span></footer>
     </div>
+    @stack('scripts')
 </body>
 </html>

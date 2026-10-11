@@ -25,6 +25,9 @@ final class ResetCustomerPassword
                     $fail('Use a password of at most 72 bytes.');
                 }
             }],
+        ], [], [
+            'password_reset.password' => 'new password',
+            'password_reset.password_confirmation' => 'password confirmation',
         ])->validate()['password_reset'];
         $password = Hash::make($data['password']);
 

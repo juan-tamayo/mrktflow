@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
+use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
+use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
 use App\Http\Middleware\RequireCustomerGuest;
 use App\Http\Middleware\RequireCustomerSession;
 use App\Http\Middleware\RequireInstalledStore;
@@ -33,6 +35,11 @@ Route::middleware(Middleware::class)->group(function (): void {
 });
 
 Route::prefix('account')->middleware(RequireInstalledStore::class)->group(function (): void {
+    Route::get('/verify', [CustomerEmailVerificationController::class, 'show']);
+    Route::get('/forgot-password', [CustomerPasswordRecoveryController::class, 'requestForm']);
+    Route::post('/forgot-password', [CustomerPasswordRecoveryController::class, 'request'])->middleware('throttle:customer-recovery');
+    Route::get('/reset-password', [CustomerPasswordRecoveryController::class, 'resetForm']);
+    Route::post('/reset-password', [CustomerPasswordRecoveryController::class, 'reset'])->middleware('throttle:5,1,customer-reset:');
     Route::middleware(RequireCustomerGuest::class)->group(function (): void {
         Route::get('/register', [CustomerAccountController::class, 'registerForm']);
         Route::post('/register', [CustomerAccountController::class, 'register'])->middleware('throttle:5,1,customer-register:');
@@ -42,5 +49,7 @@ Route::prefix('account')->middleware(RequireInstalledStore::class)->group(functi
     Route::middleware(RequireCustomerSession::class)->group(function (): void {
         Route::get('/', [CustomerAccountController::class, 'home']);
         Route::post('/logout', [CustomerAccountController::class, 'logout']);
+        Route::post('/verification', [CustomerEmailVerificationController::class, 'send'])->middleware('throttle:customer-verification');
+        Route::post('/verify', [CustomerEmailVerificationController::class, 'verify'])->middleware('throttle:5,1,customer-verify:');
     });
 });

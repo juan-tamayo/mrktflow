@@ -40,6 +40,16 @@ class AppServiceProvider extends ServiceProvider
 
             return [Limit::perMinute(5)->by('customer:'.$identity.':'.$request->ip()), Limit::perMinute(30)->by('customer-ip:'.$request->ip())];
         });
+        RateLimiter::for('customer-recovery', function (Request $request): array {
+            $email = $request->input('email');
+            $identity = hash('sha256', is_string($email) ? mb_strtolower(trim($email), 'UTF-8') : '');
+
+            return [Limit::perMinute(3)->by('customer-recovery:'.$identity), Limit::perMinute(10)->by('customer-recovery-ip:'.$request->ip())];
+        });
+        RateLimiter::for('customer-verification', fn (Request $request): array => [
+            Limit::perMinute(3)->by('customer-verification:'.$request->user('customer')?->getAuthIdentifier()),
+            Limit::perMinute(10)->by('customer-verification-ip:'.$request->ip()),
+        ]);
         foreach (StaffPermissions::all() as $permission) {
             Gate::define($permission, fn (?Authenticatable $principal): bool => $principal instanceof StaffAccount && $principal->hasPermission($permission));
         }

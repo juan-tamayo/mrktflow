@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend([RequestCorrelation::class, SecurityHeaders::class]);
         $middleware->preventRequestForgery();
-        $middleware->trimStrings(except: ['owner.password', 'owner.password_confirmation', 'customer.password', 'customer.password_confirmation']);
+        $middleware->trimStrings(except: ['owner.password', 'owner.password_confirmation', 'customer.password', 'customer.password_confirmation', 'password_reset.password', 'password_reset.password_confirmation']);
         $middleware->trustHosts(
             at: fn () => ['^'.preg_quote((string) parse_url(config()->string('app.url'), PHP_URL_HOST), '/').'$'],
             subdomains: false,
@@ -34,7 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'source_line' => $exception->getLine(),
             ]);
         })->stop();
-        $exceptions->dontFlash(['setup_secret', 'settings', 'owner', 'invitation_token', 'customer']);
+        $exceptions->dontFlash(['setup_secret', 'settings', 'owner', 'invitation_token', 'customer', 'challenge_token', 'password_reset']);
         $exceptions->respond(fn (Response $response) => SecurityHeaders::apply(request(), $response));
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),

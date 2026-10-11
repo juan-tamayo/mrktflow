@@ -1,0 +1,1 @@
+<div class="setup-field"><label for="challenge-token">Email code</label><input id="challenge-token" name="challenge_token" type="password" required minlength="64" maxlength="64" autocomplete="off" spellcheck="false"><p class="field-help">Your email link fills this field when JavaScript is enabled. You can also paste the code from the message.</p></div>

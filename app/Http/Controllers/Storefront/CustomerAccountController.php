@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Application\Identity\RequestCustomerChallengeMail;
 use App\Domain\Identity\Actions\RegisterCustomer;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Http\Support\CustomerSession;
@@ -12,6 +13,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class CustomerAccountController
@@ -29,7 +31,12 @@ final class CustomerAccountController
     public function register(Request $request, RegisterCustomer $register, CustomerSession $session): RedirectResponse
     {
         $input = $request->validate(['customer' => ['required', 'array:name,email,password,password_confirmation']]);
-        $customer = $register->register($input['customer']);
+        $customer = DB::transaction(function () use ($register, $input): CustomerAccount {
+            $customer = $register->register($input['customer']);
+            app(RequestCustomerChallengeMail::class)->verification($customer);
+
+            return $customer;
+        });
         $session->establish($request, $customer);
 
         return redirect('/account');

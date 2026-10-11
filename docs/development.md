@@ -1,6 +1,6 @@
 # Development
 
-The secure foundation is runnable. The unopened storefront returns HTTP 503; unconfigured administration stays closed until protected setup finishes. A private CLI installation secret unlocks store settings and first-owner creation. After permanent installation completion, the staff workspace/invitations and separate customer signup/sign-in/account screens are available. Commerce management and storefront launch remain in the ordered backlog; customer verification/recovery and editable profiles are still in progress. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
+The secure foundation is runnable. The unopened storefront returns HTTP 503; unconfigured administration stays closed until protected setup finishes. A private CLI installation secret unlocks store settings and first-owner creation. After permanent installation completion, the staff workspace/invitations and separate customer signup/sign-in/account screens are available. Commerce management and storefront launch remain in the ordered backlog; customer verification/recovery screens are available; editable profiles and saved addresses are still in progress. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
 
 ## Runtime and installation
 
@@ -69,9 +69,9 @@ After migrations and required prerequisite checks, `bin/php artisan setup:check`
 
 Durable intent, consumer receipts, scheduler health and queue wrappers are implemented. See [background work](background-work.md) for lane isolation, timeout/retry settings, private diagnostics and interrupted-worker recovery. Apply migrations before starting these services. Settings saves and identity actions create minimal audit intent. Worker/scheduler services do not grant public or administrative access.
 
-## Customer credential mail (internal foundation)
+## Customer verification, recovery and credential mail
 
-Customer verification/recovery delivery currently has no public request/confirmation integration. Do not enable customer-facing sending until those handlers are implemented. The default log mailer is deliberately refused for credentials. Configure reviewed SMTP with MAIL_MAILER=smtp, MAIL_HOST, MAIL_PORT and provider credentials in the private environment; TLS and certificate validation remain required by configuration. MAIL_URL overrides are refused. Sender name/email come from store settings, and links use APP_URL (HTTPS in production). Never include credentials in diagnostic output.
+Signup queues confirmation mail atomically. Customers can resend from their account, confirm through `/account/verify`, request recovery at `/account/forgot-password`, and submit a new password through `/account/reset-password`. GET screens never consume tokens. Links fill a credential field from a fragment and remove that fragment from history; manual email codes also work without JavaScript. Only POST forms consume codes. Recovery returns a generic result and is limited by canonical email and IP; confirmation resends are limited by customer and IP. The default log mailer is deliberately refused for credentials. Configure reviewed SMTP with MAIL_MAILER=smtp, MAIL_HOST, MAIL_PORT and provider credentials in the private environment; TLS and certificate validation remain required by configuration. MAIL_URL overrides are refused. Sender name/email come from store settings, and links use APP_URL (HTTPS in production). Never include credentials in diagnostic output.
 
 Run the identity lane independently of local outbox consumers:
 
@@ -82,6 +82,6 @@ bin/php artisan identity:mail-health
 bin/php artisan identity:mail-retry <delivery-uuid>
 ```
 
-The normal scheduler runs bounded recovery every minute. Configure a supervised worker before exposing these workflows. SMTP timeout is ten seconds, the delivery claim lease is 120 seconds, and queued publication is leased for 90 seconds. Worker retry is one because the durable delivery record owns bounded retry scheduling. Health reports private counts only; it is not a provider delivery guarantee. A retry requires a failed, unexpired encrypted intent and sending rechecks challenge eligibility. Tokens expire after 24 hours for verification and one hour for recovery. Expired payloads are erased by recovery, including terminal failures. Preserve the application key securely: encrypted pending deliveries depend on it.
+The normal scheduler runs bounded recovery every minute. Configure a supervised worker and reviewed SMTP before opening the store to customers; signup can succeed while mail awaits repaired configuration. SMTP timeout is ten seconds, the delivery claim lease is 120 seconds, and queued publication is leased for 90 seconds. Worker retry is one because the durable delivery record owns bounded retry scheduling. Health reports private counts only; it is not a provider delivery guarantee. A retry requires a failed, unexpired encrypted intent and sending rechecks challenge eligibility. Tokens expire after 24 hours for verification and one hour for recovery. Expired payloads are erased by recovery, including terminal failures. Preserve the application key securely: encrypted pending deliveries depend on it.
 
 A crash after transport acceptance can produce a duplicate email when the lease expires. Single-use challenge consumption remains authoritative; no exactly-once SMTP promise is made. A log/array transport must never be used as successful delivery in production; array is test-only.

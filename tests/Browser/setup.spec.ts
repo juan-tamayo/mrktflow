@@ -20,6 +20,10 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
     '/account/register',
     '/account/login',
     '/account/logout',
+    '/account/forgot-password',
+    '/account/verification',
+    '/account/verify',
+    '/account/reset-password',
   ]) {
     expect(
       (

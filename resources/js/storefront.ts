@@ -1,5 +1,8 @@
 import { createApp } from 'vue'
 import StoreNotice from './storefront/components/StoreNotice.vue'
+import { captureCustomerChallenge } from './storefront/support/customerChallenge'
+
+captureCustomerChallenge()
 
 const outlet = document.getElementById('store-notice')
 if (outlet) {
