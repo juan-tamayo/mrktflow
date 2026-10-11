@@ -588,3 +588,51 @@ a {
     scroll-behavior: auto !important;
   }
 }
+.account-main {
+  width: min(100%, 38rem);
+  margin-inline: auto;
+  flex: 1;
+}
+.account-main h1 {
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  line-height: 1.1;
+}
+.account-main .eyebrow {
+  margin-bottom: 1rem;
+}
+.account-main .lede {
+  margin-block: 1.25rem 2rem;
+}
+.account-card {
+  background: var(--surface);
+  padding: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.account-card h2 {
+  margin-top: 0;
+}
+.account-card .primary-button {
+  margin-top: 0.75rem;
+}
+.account-details {
+  margin-block: 1.5rem;
+}
+.account-details dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+.account-details dd {
+  margin: 0 0 1.5rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .account-main {
+    padding-block: 2.5rem;
+  }
+  .account-card {
+    padding: 1.5rem;
+  }
+}

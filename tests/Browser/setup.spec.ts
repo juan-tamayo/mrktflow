@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import settings from '../Fixtures/store-settings.json' with { type: 'json' }
+import { exerciseCustomerAccount } from './customer-account-flow'
 
 test('setup stays locked and rejects a mutation without origin or CSRF proof', async ({
   page,
@@ -13,7 +14,13 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
   await expect(page.getByLabel('Store name')).toHaveCount(0)
   const mutation = await request.post('/setup/settings', { data: { settings, version: 0 } })
   expect(mutation.status()).toBe(419)
-  for (const path of ['/admin/staff/invitations', '/staff/invitation']) {
+  for (const path of [
+    '/admin/staff/invitations',
+    '/staff/invitation',
+    '/account/register',
+    '/account/login',
+    '/account/logout',
+  ]) {
     expect(
       (
         await request.post(path, {
@@ -250,5 +257,6 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
     ).violations,
   ).toEqual([])
   await replay.close()
+  await exerciseCustomerAccount(browser)
   expect(errors).toEqual([])
 })

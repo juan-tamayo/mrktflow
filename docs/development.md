@@ -1,6 +1,6 @@
 # Development
 
-The secure foundation is runnable. It intentionally returns HTTP 503 for the unopened storefront and administration; there is no owner, public signup or commerce management yet. Protected store settings setup is available after issuing a private CLI installation secret; owner completion follows in the identity milestone. Follow the ordered backlog for those features. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
+The secure foundation is runnable. The unopened storefront returns HTTP 503; unconfigured administration stays closed until protected setup finishes. A private CLI installation secret unlocks store settings and first-owner creation. After permanent installation completion, the staff workspace/invitations and separate customer signup/sign-in/account screens are available. Commerce management and storefront launch remain in the ordered backlog; customer verification/recovery and editable profiles are still in progress. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
 
 ## Runtime and installation
 
@@ -63,8 +63,8 @@ The local PHP runtime has no coverage driver. CI configures PCOV and checks `scr
 
 ## Protected setup
 
-After migrations and required prerequisite checks, `bin/php artisan setup:check` reports configuration needs. `bin/php artisan setup:secret` issues or rotates the 24-hour secret; enter it at `/setup`. Do not put it in a URL, publish command output or commit it. Setup access lasts at most 15 minutes. Save the store details to reach pending-owner state; owner creation and final lock completion are the next identity milestone. Administrative commerce actions remain closed.
+After migrations and required prerequisite checks, `bin/php artisan setup:check` reports configuration needs. `bin/php artisan setup:secret` issues or rotates the 24-hour secret; enter it at `/setup`. Do not put it in a URL, publish command output or commit it. Setup access lasts at most 15 minutes. Save the store details to reach pending-owner state, then create the first owner through the protected form. That atomically completes installation and permanently closes the setup wizard. Staff can sign in at `/admin/login`; owners manage staff and directly shared invitation links at `/admin/staff`. Customer registration/sign-in are separate at `/account/register` and `/account/login`, with a private account at `/account`; these server-rendered forms work without JavaScript. Automatic invitation email, customer email verification/recovery and commerce actions remain pending in their respective milestones.
 
 ## Background work
 
-Durable intent, consumer receipts, scheduler health and queue wrappers are implemented. See [background work](background-work.md) for lane isolation, timeout/retry settings, private diagnostics and interrupted-worker recovery. Apply migrations before starting these services. Settings saves now create minimal audit intent; no owner/admin access is introduced.
+Durable intent, consumer receipts, scheduler health and queue wrappers are implemented. See [background work](background-work.md) for lane isolation, timeout/retry settings, private diagnostics and interrupted-worker recovery. Apply migrations before starting these services. Settings saves and identity actions create minimal audit intent. Worker/scheduler services do not grant public or administrative access.

@@ -4,6 +4,10 @@ use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
+use App\Http\Controllers\Storefront\CustomerAccountController;
+use App\Http\Middleware\RequireCustomerGuest;
+use App\Http\Middleware\RequireCustomerSession;
+use App\Http\Middleware\RequireInstalledStore;
 use App\Http\Middleware\RequireStaffSession;
 use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
@@ -26,4 +30,17 @@ Route::middleware(Middleware::class)->group(function (): void {
     Route::post('/setup/access', [InstallController::class, 'unlock'])->middleware('throttle:5,1,setup-access:');
     Route::post('/setup/settings', [InstallController::class, 'save'])->middleware('throttle:30,1,setup-settings:');
     Route::post('/setup/owner', [InstallController::class, 'owner'])->middleware('throttle:5,1,setup-owner:');
+});
+
+Route::prefix('account')->middleware(RequireInstalledStore::class)->group(function (): void {
+    Route::middleware(RequireCustomerGuest::class)->group(function (): void {
+        Route::get('/register', [CustomerAccountController::class, 'registerForm']);
+        Route::post('/register', [CustomerAccountController::class, 'register'])->middleware('throttle:5,1,customer-register:');
+        Route::get('/login', [CustomerAccountController::class, 'loginForm'])->name('customer.login');
+        Route::post('/login', [CustomerAccountController::class, 'login'])->middleware('throttle:customer-login');
+    });
+    Route::middleware(RequireCustomerSession::class)->group(function (): void {
+        Route::get('/', [CustomerAccountController::class, 'home']);
+        Route::post('/logout', [CustomerAccountController::class, 'logout']);
+    });
 });
