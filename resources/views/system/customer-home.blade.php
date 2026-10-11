@@ -7,6 +7,7 @@
     <section class="account-card" aria-labelledby="details-heading">
         @include('system.account-status')
         <h2 id="details-heading">Account details</h2>
+        <p><a class="text-link" href="/account/profile">Edit your profile</a> · <a class="text-link" href="/account/addresses">Saved addresses</a></p>
         <dl class="account-details"><dt>Name</dt><dd>{{ $customer['name'] }}</dd><dt>Email</dt><dd>{{ $customer['email'] }}</dd></dl>
         <p class="success-notice">{{ $customer['verified'] ? 'Email verified' : 'Email not verified' }}</p>
         @unless ($customer['verified'])

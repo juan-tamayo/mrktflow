@@ -1,6 +1,7 @@
 import { expect, type Browser } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { execFileSync } from 'node:child_process'
+import { exerciseCustomerDetails } from './customer-details-flow'
 
 function emailCode(purpose: 'verify_email' | 'reset_password'): string {
   return execFileSync('bin/php', ['tests/Fixtures/customer-browser-mail.php'], {
@@ -10,7 +11,31 @@ function emailCode(purpose: 'verify_email' | 'reset_password'): string {
   }).trim()
 }
 
-export async function exerciseCustomerAccount(browser: Browser) {
+export async function exerciseCustomerAccount(browser: Browser): Promise<void> {
+  await Promise.all([
+    exercisePrimaryCustomerAccount(browser),
+    exerciseSeparateCustomerDetails(browser),
+  ])
+}
+
+async function exerciseSeparateCustomerDetails(browser: Browser): Promise<void> {
+  const context = await browser.newContext({ javaScriptEnabled: false })
+  try {
+    const page = await context.newPage()
+    await page.goto('http://127.0.0.1:8011/account/register')
+    await page.getByLabel('Your name').fill('Details Shopper')
+    await page.getByLabel('Email', { exact: true }).fill('details@example.test')
+    await page.getByLabel('Password', { exact: true }).fill('Fictional details passphrase 471!')
+    await page.getByLabel('Confirm password').fill('Fictional details passphrase 471!')
+    await page.getByRole('button', { name: 'Create account', exact: true }).click()
+    await expect(page).toHaveURL(/\/account$/)
+    await exerciseCustomerDetails(page, 'details@example.test', browser)
+  } finally {
+    await context.close()
+  }
+}
+
+async function exercisePrimaryCustomerAccount(browser: Browser) {
   const context = await browser.newContext()
   const page = await context.newPage()
   const errors: string[] = []

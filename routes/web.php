@@ -5,8 +5,10 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
+use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
 use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
+use App\Http\Controllers\Storefront\CustomerProfileController;
 use App\Http\Middleware\RequireCustomerGuest;
 use App\Http\Middleware\RequireCustomerSession;
 use App\Http\Middleware\RequireInstalledStore;
@@ -48,6 +50,13 @@ Route::prefix('account')->middleware(RequireInstalledStore::class)->group(functi
     });
     Route::middleware(RequireCustomerSession::class)->group(function (): void {
         Route::get('/', [CustomerAccountController::class, 'home']);
+        Route::get('/profile', [CustomerProfileController::class, 'show']);
+        Route::post('/profile', [CustomerProfileController::class, 'update'])->middleware('throttle:5,1,customer-profile:');
+        Route::get('/addresses', [CustomerAddressController::class, 'index']);
+        Route::post('/addresses', [CustomerAddressController::class, 'save'])->middleware('throttle:20,1,customer-address:');
+        Route::get('/addresses/{addressId}', [CustomerAddressController::class, 'edit'])->whereUuid('addressId');
+        Route::post('/addresses/{addressId}', [CustomerAddressController::class, 'save'])->whereUuid('addressId')->middleware('throttle:20,1,customer-address:');
+        Route::post('/addresses/{addressId}/delete', [CustomerAddressController::class, 'remove'])->whereUuid('addressId')->middleware('throttle:20,1,customer-address:');
         Route::post('/logout', [CustomerAccountController::class, 'logout']);
         Route::post('/verification', [CustomerEmailVerificationController::class, 'send'])->middleware('throttle:customer-verification');
         Route::post('/verify', [CustomerEmailVerificationController::class, 'verify'])->middleware('throttle:5,1,customer-verify:');
