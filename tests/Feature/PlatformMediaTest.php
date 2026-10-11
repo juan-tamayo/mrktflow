@@ -106,3 +106,10 @@ it('PlatformMedia rejects oversized image dimensions and non-standalone intake',
     expect(DB::table('media_assets')->count())->toBe(0);
     expect(Storage::disk('local')->allFiles())->toBe([]);
 });
+
+it('PlatformMedia refuses an accidentally public private-storage root', function (): void {
+    config(['filesystems.disks.local.root' => public_path()]);
+    expect(fn () => app(StoreMedia::class)->store(UploadedFile::fake()->createWithContent('guide.txt', 'fixture'), 'private_file', new MediaFixtureAuthorization))
+        ->toThrow(LogicException::class, 'Private media storage must remain outside the web directory.');
+    expect(DB::table('media_assets')->count())->toBe(0);
+});
