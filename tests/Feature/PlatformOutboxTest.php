@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domain\Platform\Actions\ConsumeEvent;
 use App\Domain\Platform\Actions\RecordEvent;
+use App\Domain\Platform\Contracts\OutboxConsumer;
+use App\Domain\Platform\Data\OutboxEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
@@ -55,4 +59,78 @@ it('PlatformOutbox treats producer keys as exact case-sensitive identifiers', fu
     $first = $recorder->record('platform.audit.recorded', 'fixture:Case', $payload);
     expect($recorder->record('platform.audit.recorded', 'fixture:case', $payload))->not->toBe($first);
     expect(DB::table('outbox_events')->count())->toBe(2);
+});
+
+it('PlatformOutbox commits one audit effect and ignores completed redelivery', function (): void {
+    $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:consume:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);
+    $consumer = app(ConsumeEvent::class);
+    $consumer->consume($id, 'platform.audit');
+    $consumer->consume($id, 'platform.audit');
+    expect(DB::table('audit_events')->where('id', $id)->count())->toBe(1);
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->first())
+        ->status->toBe('complete')->attempts->toBe(1)->completed_at->not->toBeNull();
+    expect(DB::table('outbox_events')->where('id', $id)->value('published_at'))->not->toBeNull();
+});
+
+it('PlatformOutbox rolls back failed consumer effects and retries only when due', function (): void {
+    config(['outbox.consumers' => array_replace(config('outbox.consumers'), ['fixture.failure' => ['fixture.consumer' => OutboxRollbackFixture::class]])]);
+    $id = app(RecordEvent::class)->record('fixture.failure', 'fixture:failure:1', []);
+    $consumer = app(ConsumeEvent::class);
+    $consumer->consume($id, 'fixture.consumer');
+    expect(DB::table('store_settings')->count())->toBe(0);
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->first())
+        ->status->toBe('pending')->attempts->toBe(1)->last_error_code->toBe('consumer_failed');
+    $consumer->consume($id, 'fixture.consumer');
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->value('attempts'))->toBe(1);
+    $this->travel(11)->seconds();
+    $consumer->consume($id, 'fixture.consumer');
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->value('attempts'))->toBe(2);
+    expect(DB::table('store_settings')->count())->toBe(0);
+});
+
+it('PlatformOutbox quarantines exhausted work without changing committed business data', function (): void {
+    config(['outbox.consumers' => array_replace(config('outbox.consumers'), ['fixture.failure' => ['fixture.consumer' => OutboxRollbackFixture::class]])]);
+    $id = app(RecordEvent::class)->record('fixture.failure', 'fixture:deadletter:1', []);
+    for ($attempt = 0; $attempt < 6; $attempt++) {
+        app(ConsumeEvent::class)->consume($id, 'fixture.consumer');
+        $this->travel(1801)->seconds();
+    }
+    $receipt = DB::table('consumer_receipts')->where('event_id', $id)->first();
+    expect($receipt)->status->toBe('failed')->attempts->toBe(6)->completed_at->toBeNull();
+    app(ConsumeEvent::class)->consume($id, 'fixture.consumer');
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->value('attempts'))->toBe(6);
+    expect(DB::table('outbox_events')->where('id', $id)->value('published_at'))->toBeNull();
+});
+
+it('PlatformOutbox refuses tampered ciphertext before applying local effects', function (): void {
+    $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:tampered:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);
+    DB::table('outbox_events')->where('id', $id)->update(['payload' => 'corrupt']);
+    app(ConsumeEvent::class)->consume($id, 'platform.audit');
+    expect(DB::table('audit_events')->count())->toBe(0);
+    expect(DB::table('consumer_receipts')->where('event_id', $id)->first())
+        ->status->toBe('pending')->last_error_code->toBe('consumer_failed');
+});
+
+final class OutboxRollbackFixture implements OutboxConsumer
+{
+    public function handle(OutboxEvent $event): void
+    {
+        DB::table('store_settings')->insert(['id' => 1, 'version' => 1, 'values' => '{}', 'created_at' => now(), 'updated_at' => now()]);
+        throw new RuntimeException('Private fixture payload must not appear in diagnostics.');
+    }
+}
+
+it('PlatformOutbox reports only safe identifiers for consumer failures', function (): void {
+    config(['outbox.consumers' => array_replace(config('outbox.consumers'), ['fixture.failure' => ['fixture.consumer' => OutboxRollbackFixture::class]])]);
+    $id = app(RecordEvent::class)->record('fixture.failure', 'fixture:diagnostics:1', []);
+    $entries = [];
+    Log::listen(function ($message) use (&$entries): void {
+        $entries[] = [$message->message, $message->context];
+    });
+    app(ConsumeEvent::class)->consume($id, 'fixture.consumer');
+    expect($entries)->toHaveCount(1);
+    expect($entries[0][0])->toBe('outbox.consumer_failed');
+    expect($entries[0][1]['event_id'])->toBe($id);
+    expect(json_encode($entries))->not->toContain('Private fixture payload');
+    expect(array_keys($entries[0][1]))->toBe(['event_id', 'consumer', 'attempt', 'correlation_id', 'error_code', 'exception_class', 'quarantined']);
 });

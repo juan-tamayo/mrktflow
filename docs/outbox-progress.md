@@ -7,3 +7,9 @@ Consumer classes come only from application configuration. The contract permits 
 Evidence: five focused MySQL tests passed (16 assertions), including surrounding business rollback, encrypted storage and immutable replay. The PHP suite passed 66 tests / 267 assertions; Pint and PHPStan level 8 passed. Frontend type, lint, format, eight unit tests and production build passed. Ten real browser checks also passed. Exact-case intent keys use a binary collation; the regression first failed under the default collation. Producer publication, actual consumption/retries, interrupted-worker recovery, health and correlation propagation are subsequent slices; T006 remains incomplete.
 
 Framework references: [Laravel encryption](https://laravel.com/framework/docs/13.x/encryption) and [Laravel queue transaction behavior](https://laravel.com/framework/docs/13.x/queues#jobs-and-database-transactions). These framework facilities do not by themselves guarantee exactly-once external delivery.
+
+## Local consumer slice
+
+The local consumer runner now locks the event and receipt in a consistent order, verifies encrypted payload integrity/schema, then commits the consumer's database effects and completion receipt atomically. Completed redelivery does nothing. Failure rolls back partial effects, schedules a bounded retry, and quarantines the receipt after six failures. Failure diagnostics contain only event/consumer/correlation identifiers, attempt, exception class and a fixed error code; tests check that the private fixture exception message is absent.
+
+Evidence: ten focused outbox tests (41 assertions); full PHP suite 71 tests / 292 assertions. Pint and PHPStan passed. This slice has no HTTP/UI change. Publication and actual interrupted-worker recovery are still pending; this runner currently serves application-internal callers only.
