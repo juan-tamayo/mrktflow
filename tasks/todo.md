@@ -159,6 +159,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 ### T009: Customer account and guest ownership
 
 - [ ] Complete T009.
+- **Progress:** Separate customer model/provider, validated atomic registration, versioned session support, and transaction-scoped verified-email ownership proof implemented. Production account routes/UI, verification/reset and actual guest transfer remain pending. See [identity progress](../docs/identity-progress.md).
 - **Module / requirements:** `identity` · ID-01, ID-05.
 - **Depends on:** T008.
 - **Acceptance:** Registration/login/reset/verification and guest session ownership work with separate staff/customer guards. Define verified identity proof now; complete and test historical guest-order claiming later in T043/T050 when order tables exist.
