@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+# Select the project runtime without changing the user's global PHP installation.
+if [ -n "${MRKTFLOW_PHP:-}" ]; then
+    php_bin="$MRKTFLOW_PHP"
+elif [ -x /opt/homebrew/opt/php@8.4/bin/php ]; then
+    php_bin=/opt/homebrew/opt/php@8.4/bin/php
+else
+    php_bin=$(command -v php)
+fi
+
+"$php_bin" -r 'exit(PHP_MAJOR_VERSION === 8 && PHP_MINOR_VERSION === 4 ? 0 : 1);' || {
+    echo 'MRKTFlow requires PHP 8.4. Set MRKTFLOW_PHP to that executable.' >&2
+    exit 1
+}
+
+exec "$php_bin" "$@"

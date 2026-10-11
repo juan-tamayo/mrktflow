@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+if [ -x "$project_dir/.runtime/node/bin/node" ]; then
+    PATH="$project_dir/.runtime/node/bin:$PATH"
+    export PATH
+fi
+exec npm "$@"

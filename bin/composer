@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+composer_bin=${MRKTFLOW_COMPOSER:-$(command -v composer)}
+exec "$root/bin/php" "$composer_bin" "$@"
