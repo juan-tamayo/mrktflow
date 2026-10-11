@@ -67,7 +67,7 @@ for (const width of [320, 768, 1024, 1440]) {
 }
 
 test('private paths remain inaccessible over real HTTP', async ({ request }) => {
-  for (const path of ['/.env', '/storage/private/purchase.pdf', '/admin/orders', '/setup']) {
+  for (const path of ['/.env', '/storage/private/purchase.pdf', '/admin/orders', '/setup/secret']) {
     const response = await request.get(path)
     expect(response.status()).toBe(404)
     expect(response.headers()['x-frame-options']).toBe('DENY')

@@ -1,6 +1,6 @@
 # Protected installer progress — October 10, 2026
 
-T005a implements the backend foundation for protected setup. T005 remains incomplete until the protected HTTP/session UI and replay/resume browser checks land; T008 owns initial-owner creation and the final installation lock. This work does not open administration or selling.
+T005a–T005c now implement and locally verify protected setup through the pending-owner state. T008 owns initial-owner creation and the final installation lock. Hosted CI evidence remains pending T004b; this local completion does not satisfy that remote gate. This work does not open administration or selling.
 
 ## Contract and controls
 
@@ -16,3 +16,15 @@ T005a implements the backend foundation for protected setup. T005 remains incomp
 The new 18-case installer suite covers digest-only persistence, missing/invalid/expired secrets, revoked grants, short expiry, locked installations, atomic settings and retry/version behavior, invalid values/unknown fields, blocked prerequisites, CLI-only issuance and forged/locked writes. The complete PHP suite passes 52 tests with 153 assertions. PHPStan level 8 and formatting checks are required alongside frontend/browser regressions. The local development database migration and `setup:check` ran successfully without issuing or publishing a development installation secret.
 
 The full goal remains the entire specified platform. Protected UI, identities, outbox/media primitives, all commerce/theme/marketing features, provider evidence and release rehearsals remain in the backlog. Hosted CI remains unverified until a repository remote exists.
+
+## Protected HTTP and Vue setup
+
+`GET /setup` returns 404 until a valid CLI secret exists, then displays only the unlock form. `POST /setup/access` validates the secret, rotates the session, stores the short-lived grant server-side and redirects to setup. It permits five attempts per minute per client. No HTTP route issues secrets. Setup-secret and settings input are excluded from validation flash data, and the Vue secret form explicitly excludes its value from remembered form state and clears it after each attempt.
+
+`POST /setup/settings` uses only the server session grant, rechecks it under the installation row lock, validates the version/settings aggregate, and redirects to a saved notice. Settings, region choices and prerequisite reports are returned only after authorization. Country selections use a shared ICU-backed choice/validation boundary and canonical ordering so changing selection order is not a different intent. The UI uses searchable checkboxes on phones and retains selected countries during filtering.
+
+Expired/revoked grants remove session access and return the browser to unlock. Stale browser edits show a recoverable error and a link to reload current values; they do not silently advance the form's version. JSON clients retain HTTP 403/409 semantics. A same-payload retry returns the current version. Completion hides setup and denies mutations even if an old grant is replayed.
+
+The complete suite now passes 61 PHP tests, 8 Vue tests and 10 Chromium checks. Type/lint/format checks, PHPStan level 8 and production build pass. Browser tests exercise locked setup, real CSRF rejection, incorrect-secret recovery, unlocking, settings save and reload, competing browser-tab edits (including repeated stale saves and explicit reload), error-summary focus, phone overflow and WCAG A/AA scans. Vue regressions cover restored reactive data, re-unlock restoration, blocked prerequisites and country selection. The mobile screenshot was inspected locally; no real owner or production secret was created.
+
+The browser harness issues a synthetic secret only in the guarded `mrktflow_browser` environment and stores it in an ignored private fixture file. The file and traces must never be published. CI disables traces and uploads only public-page screenshots. The general private-path smoke test now checks the absent `/setup/secret` route; `/setup` has become the intentionally secret-gated setup screen.

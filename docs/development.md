@@ -1,6 +1,6 @@
 # Development
 
-The secure foundation is runnable. It intentionally returns HTTP 503 for the unopened storefront and administration; there is no owner, public signup, installer or commerce management yet. Follow the ordered backlog for those features. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
+The secure foundation is runnable. It intentionally returns HTTP 503 for the unopened storefront and administration; there is no owner, public signup or commerce management yet. Protected store settings setup is available after issuing a private CLI installation secret; owner completion follows in the identity milestone. Follow the ordered backlog for those features. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
 
 ## Runtime and installation
 
@@ -60,3 +60,7 @@ bin/npm audit signatures
 PHP and Vue runners reject zero selected tests. The browser suite has no retries and starts its own server; it never reuses a developer server. PHP migrations and browser tests must not share a test database. Local browser traces remain ignored and may contain session cookies; never publish them.
 
 The local PHP runtime has no coverage driver. CI configures PCOV and checks `scripts/coverage-gate.php` after producing Clover. See [continuous integration](continuous-integration.md) for coverage and remote evidence status.
+
+## Protected setup
+
+After migrations and required prerequisite checks, `bin/php artisan setup:check` reports configuration needs. `bin/php artisan setup:secret` issues or rotates the 24-hour secret; enter it at `/setup`. Do not put it in a URL, publish command output or commit it. Setup access lasts at most 15 minutes. Save the store details to reach pending-owner state; owner creation and final lock completion are the next identity milestone. Administrative commerce actions remain closed.

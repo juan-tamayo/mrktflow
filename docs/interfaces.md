@@ -101,3 +101,11 @@ Add `CartActivityChanged`, `CartRestored`, `PurposeGrantChanged`, `RecipientSupp
 | POST `/admin/referrals/review-cases/{id}/decisions` | Reward-review permission, reason/revision + key | Audited decision; stable reward issuance |
 
 Admin batch-generation, hub-publication and feed-export actions follow existing revision/idempotency/private-export rules. Delivery-feedback webhooks require provider signatures and a durable inbox. Public catalog feed URLs are opt-in and expose only public product fields. Verification inputs accept typed meta tokens, not arbitrary scripts. Recovery/referral destinations are internal and allowlisted; no open redirects.
+
+## Installation HTTP contract
+
+- `GET /setup`: 404 when no active CLI secret or installation is complete; otherwise an Inertia `Install` page. Locked responses contain no settings, region choices or prerequisite report.
+- `POST /setup/access`: `{setup_secret: string}`. Browser validation errors redirect to setup without flashing the secret; JSON validation errors use 422. Valid access rotates the session, stores a server-only generation/expiry grant and redirects. Five attempts per minute; 429 at the limit.
+- `POST /setup/settings`: `{settings: StoreDetails, version: integer}` with a valid setup session. Atomic save, identical-payload retry and optimistic version checks. Browser conflicts/expired access return actionable form errors; JSON conflicts return 409 and denied access 403. Setup CSRF/origin checks apply to both endpoints. No route issues a secret or creates an owner yet.
+
+`StoreDetails` and choice/check response types are declared in the setup Vue page; field validation and canonical country ordering are enforced by `InstallStore` and `SetupChoices`. Secrets/provider credentials are not accepted settings fields. Initial-owner completion is an application orchestration operation added with identity, not a platform-to-identity dependency.

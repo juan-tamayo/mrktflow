@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['setup_secret', 'settings']);
         $exceptions->respond(fn (Response $response) => SecurityHeaders::apply(request(), $response));
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),

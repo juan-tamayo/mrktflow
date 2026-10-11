@@ -2,7 +2,7 @@
 
 A free, open-source, self-hosted commerce platform built with Laravel and Vue. One installation runs one independent store selling physical and digital products, with native shipping, secure downloads, watchlists, comparisons, extensible themes and marketing/SEO tools.
 
-**Project state: secure foundation implemented and locally verified.** Laravel/Vue entrypoints, isolated MySQL test environments, security headers and automated checks are runnable. The unopened storefront and administration return HTTP 503. Installer, identities, commerce, themes and marketing remain in the ordered backlog; this is not a production-ready store.
+**Project state: secure foundation implemented and locally verified.** Laravel/Vue entrypoints, isolated MySQL test environments, security headers and automated checks are runnable. The unopened storefront and administration return HTTP 503. Protected store settings setup is implemented through pending-owner state. Owner creation, identities, commerce, themes and marketing remain in the ordered backlog; this is not a production-ready store.
 
 ## Start here
 

@@ -1,6 +1,6 @@
 # Implementation backlog
 
-Status: secure foundation implementation started October 10, 2026. T001–T004a have local verification evidence; T004b is configured with remote execution evidence pending. Remaining tasks are planned. Prepared October 5, 2026; readiness audit October 10, 2026.
+Status: secure foundation implementation started October 10, 2026. T001–T004a and T005 have local verification evidence; T004b is configured with remote execution evidence pending. Remaining tasks are planned. Prepared October 5, 2026; readiness audit October 10, 2026.
 
 Every task includes its requirement IDs, dependencies, acceptance, verification and likely authored files. Readiness revision 0.3 adds T003a/T004a/T004b, moves foundational T091 before watchlist consumers, and retains T092–T120 before M8; follow document order and dependencies, not numeric ID alone. Paths below are **planned** and do not imply those files exist. Module test prefixes and command scripts must be established in M0. File lists are sizing estimates: split work into lettered subtasks before coding if it exceeds one focused session or approximately five authored files; record generated framework scaffolding separately. See [plan](plan.md) and [coding handoff](../docs/coding-handoff.md).
 
@@ -105,9 +105,9 @@ Evidence: [foundation verification](../docs/foundation-verification.md). Setup/i
 
 Implementation slices: T005a — CLI secret lifecycle, database lock/settings aggregate and prerequisite checks; T005b — protected HTTP session and setup UI; T005c — browser/replay/resume verification. Initial-owner creation and final completion remain T008.
 
-- **Progress October 10:** T005a backend implemented; local verification recorded in [installer progress](../docs/installer-progress.md). HTTP setup and owner completion remain pending.
+- **Evidence October 10:** T005a–T005c implemented and locally verified: CLI secret lifecycle, protected session/Vue setup, settings retries, and real browser resume/CSRF/accessibility checks. [Installer progress](../docs/installer-progress.md). Initial owner and final completion remain T008; hosted CI evidence remains pending T004b.
 
-- [ ] Complete T005.
+- [x] Complete T005.
 - **Module / requirements:** `platform` · PLAT-01, PLAT-02, PLAT-03.
 - **Depends on:** T003, T004, T004b.
 - **Acceptance:** Secret-protected setup creates validated store settings and a pending-owner state; replay/resume behavior defined. Identity supplies owner creation and final lock completion in T008.

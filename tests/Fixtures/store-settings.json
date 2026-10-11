@@ -1,0 +1,19 @@
+{
+  "name": "Example Supply",
+  "currency": "USD",
+  "locale": "en",
+  "timezone": "America/Los_Angeles",
+  "contact_email": "help@example.test",
+  "sender_email": "store@example.test",
+  "sender_name": "Example Supply",
+  "sales_countries": ["US", "CA"],
+  "weight_unit": "kg",
+  "length_unit": "cm",
+  "policies": {
+    "privacy": "Privacy policy",
+    "terms": "Terms",
+    "returns": "Return policy",
+    "shipping": "Shipping policy",
+    "digital": "Download policy"
+  }
+}

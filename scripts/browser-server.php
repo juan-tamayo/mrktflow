@@ -34,6 +34,20 @@ if (($environment['APP_ENV'] ?? '') !== 'testing'
 $migrations = new Process([PHP_BINARY, 'artisan', 'migrate:fresh', '--force'], $root, $environment);
 $migrations->setTimeout(60)->mustRun();
 
+$secretCommand = new Process([PHP_BINARY, 'artisan', 'setup:secret', '--no-interaction'], $root, $environment);
+$secretCommand->setTimeout(30)->mustRun();
+if (! preg_match('/^([a-f0-9]{64})$/m', $secretCommand->getOutput(), $matches)) {
+    throw new RuntimeException('Could not prepare the isolated setup fixture.');
+}
+if (! is_dir($root.'/.runtime') && ! mkdir($root.'/.runtime', 0700, true)) {
+    throw new RuntimeException('Could not create the private fixture directory.');
+}
+umask(0077);
+$secretPath = $root.'/.runtime/browser-setup-secret';
+if (file_put_contents($secretPath, $matches[1], LOCK_EX) === false || ! chmod($secretPath, 0600)) {
+    throw new RuntimeException('Could not create the private setup fixture.');
+}
+
 $server = new Process([
     PHP_BINARY, '-d', 'display_errors=0', '-S', '127.0.0.1:8011', '-t', $root.'/public',
     $root.'/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php',

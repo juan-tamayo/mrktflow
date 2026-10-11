@@ -181,3 +181,123 @@ h1 {
     font-size: 0.75rem;
   }
 }
+.setup-main {
+  width: min(100%, 66rem);
+  padding-block: 4rem;
+}
+.setup-main h1 {
+  font-size: clamp(2.75rem, 6vw, 5rem);
+}
+.setup-main h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.setup-unlock {
+  max-width: 34rem;
+}
+.setup-unlock label,
+.setup-field label {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.625rem;
+}
+.setup-main input,
+.setup-main select,
+.setup-main textarea {
+  width: 100%;
+  min-width: 0;
+  color: var(--ink);
+  background: #fffefa;
+  border: 1px solid #939b8e;
+  border-radius: 3px;
+  padding: 0.875rem;
+  font: inherit;
+}
+.setup-main textarea {
+  resize: vertical;
+}
+.primary-button {
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.9375rem 1.5rem;
+  margin-top: 1.5rem;
+  cursor: pointer;
+}
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.setup-form fieldset {
+  min-width: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2.5rem 0 0;
+  padding: 2rem 0 0;
+}
+.setup-form legend {
+  padding-right: 1.5rem;
+  font-size: 1.375rem;
+  font-weight: 550;
+}
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+.setup-field {
+  margin-bottom: 1.25rem;
+}
+.field-help {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.setup-checks,
+.error-summary,
+.success-notice {
+  border-left: 3px solid var(--accent);
+  padding: 0.75rem 1.25rem;
+  margin-block: 1.5rem;
+  line-height: 1.6;
+}
+.setup-checks li + li {
+  margin-top: 0.625rem;
+}
+.field-error,
+.error-summary {
+  color: #872e25;
+}
+.error-summary {
+  border-color: #872e25;
+}
+@media (max-width: 640px) {
+  .setup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.country-picker {
+  margin-bottom: 2rem;
+}
+.country-choices {
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid #939b8e;
+  background: #fffefa;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+}
+.country-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem;
+  cursor: pointer;
+}
+.setup-main .country-choice input {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+}
