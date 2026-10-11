@@ -13,7 +13,16 @@ if (! is_file($path)) {
     throw new RuntimeException('Create a private .env.browser using the isolated browser database.');
 }
 
-$environment = Dotenv::parse(file_get_contents($path));
+$contents = file_get_contents($path);
+if ($contents === false) {
+    throw new RuntimeException('The private browser environment cannot be read.');
+}
+$environment = Dotenv::parse($contents);
+foreach ($environment as $value) {
+    if (! is_string($value)) {
+        throw new RuntimeException('Browser environment entries must have explicit string values.');
+    }
+}
 if (($environment['APP_ENV'] ?? '') !== 'testing'
     || ($environment['DB_DATABASE'] ?? '') !== 'mrktflow_browser'
     || ($environment['DB_USERNAME'] ?? '') !== 'mrktflow_browser'

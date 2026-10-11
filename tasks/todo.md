@@ -1,6 +1,6 @@
 # Implementation backlog
 
-Status: all tasks planned; application implementation has not started. Prepared October 5, 2026; readiness audit October 10, 2026.
+Status: secure foundation implementation started October 10, 2026. T001–T004a have local verification evidence; T004b is configured with remote execution evidence pending. Remaining tasks are planned. Prepared October 5, 2026; readiness audit October 10, 2026.
 
 Every task includes its requirement IDs, dependencies, acceptance, verification and likely authored files. Readiness revision 0.3 adds T003a/T004a/T004b, moves foundational T091 before watchlist consumers, and retains T092–T120 before M8; follow document order and dependencies, not numeric ID alone. Paths below are **planned** and do not imply those files exist. Module test prefixes and command scripts must be established in M0. File lists are sizing estimates: split work into lettered subtasks before coding if it exceeds one focused session or approximately five authored files; record generated framework scaffolding separately. See [plan](plan.md) and [coding handoff](../docs/coding-handoff.md).
 
@@ -8,7 +8,8 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 ### T001: Project repository boundary
 
-- [ ] Complete T001.
+- [x] Complete T001.
+- **Evidence:** Dedicated mrktflow Git root and codex/foundation branch; planning baseline commit faf423c; parent repository untouched.
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** —.
 - **Acceptance:** Dedicated repository root is mrktflow; planning files preserved; parent changes untouched.
@@ -18,7 +19,8 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 ### T002: Laravel scaffold and runtime locks
 
-- [ ] Complete T002.
+- [x] Complete T002.
+- **Evidence:** [Foundation verification](../docs/foundation-verification.md), October 10, 2026.
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** T001.
 - **Acceptance:** Select a project-scoped PHP 8.4 runtime, compatible locked Composer packages and reachable isolated MySQL 8.4 dev/test databases; record SELECT VERSION() without logging secrets. Laravel skeleton starts with planning documents preserved. Existing PHP 8.3 or a MySQL client alone does not satisfy this task.
@@ -28,7 +30,10 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 ### T003: Vue build and quality commands
 
-- [ ] Complete T003.
+Implementation slices: (1) package/build/type configuration, (2) frontend lint/test tooling, (3) storefront mount and tested component, (4) Inertia admin mount. Verify each slice before integration; retain this parent task’s acceptance.
+
+- [x] Complete T003.
+- **Evidence:** [Foundation verification](../docs/foundation-verification.md), October 10, 2026.
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** T002.
 - **Acceptance:** Vue/TypeScript admin and storefront entrypoints build; frontend type/lint/format/unit scripts and a real smoke component test execute; selected compatible Node/tool versions are pinned. PHP, browser and CI setup are T003a/T004a/T004b.
@@ -38,13 +43,16 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 #### Checkpoint after T001, T002, T003
 
-- [ ] Acceptance and focused verification recorded; no zero-test pass.
-- [ ] Relevant build/browser flow passes, including failure, permission and replay cases.
-- [ ] Changes documented; pending external-provider evidence remains explicit.
+- [x] Acceptance and focused verification recorded; no zero-test pass.
+- [x] Relevant build/browser flow passes, including failure, permission and replay cases.
+- [x] Changes documented; pending external-provider evidence remains explicit.
+
+Evidence: [foundation verification](../docs/foundation-verification.md). Setup/identity replay scenarios remain assigned to their later tasks; closed management paths currently deny anonymous requests.
 
 ### T003a: PHP quality and test toolchain
 
-- [ ] Complete T003a.
+- [x] Complete T003a.
+- **Evidence:** [Foundation verification](../docs/foundation-verification.md), October 10, 2026.
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** T002, T003.
 - **Acceptance:** Pin compatible Pest, Pint and PHPStan/Laravel tooling; configure real PHP smoke/unit tests, static analysis and non-mutating format checks. A zero-test result is never a pass.
@@ -54,7 +62,8 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 ### T004: Test database and demo fixtures
 
-- [ ] Complete T004.
+- [x] Complete T004.
+- **Evidence:** [Foundation verification](../docs/foundation-verification.md), October 10, 2026.
 - **Module / requirements:** `platform` · PLAT-06.
 - **Depends on:** T002, T003a.
 - **Acceptance:** Distinct MySQL test database and least-privilege credentials are enforced by a fail-closed test guard. Seed only existing foundation tables and synthetic fixture values here; real physical/digital/catalog/cart seeders land with T020/T025 rather than referencing future tables.
@@ -64,7 +73,8 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 ### T004a: Browser harness and isolated application
 
-- [ ] Complete T004a.
+- [x] Complete T004a.
+- **Evidence:** [Foundation verification](../docs/foundation-verification.md), October 10, 2026.
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** T003, T004.
 - **Acceptance:** Configure Playwright with a separate test application/database, web-server lifecycle and Chromium project. A real page smoke test runs; no production provider credentials or shared development data.
@@ -74,13 +84,16 @@ Every task includes its requirement IDs, dependencies, acceptance, verification 
 
 #### Checkpoint after T003a, T004, T004a
 
-- [ ] Acceptance and focused verification recorded; no zero-test pass.
-- [ ] Relevant build/browser flow passes, including failure, permission and replay cases.
-- [ ] Changes documented; pending external-provider evidence remains explicit.
+- [x] Acceptance and focused verification recorded; no zero-test pass.
+- [x] Relevant build/browser flow passes, including failure, permission and replay cases.
+- [x] Changes documented; pending external-provider evidence remains explicit.
+
+Evidence: [foundation verification](../docs/foundation-verification.md). Setup/identity replay scenarios remain assigned to their later tasks; closed management paths currently deny anonymous requests.
 
 ### T004b: Continuous integration and quality gates
 
 - [ ] Complete T004b.
+- **Progress:** Workflow and coverage gate implemented; local equivalents pass. Hosted run and branch protection remain pending until a repository remote is configured. See [CI evidence](../docs/continuous-integration.md).
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** T003a, T004a.
 - **Acceptance:** Add CI on PHP 8.4/MySQL 8.4 and pinned Node, using lockfile installs and fixture-only provider tests. Check formatting/static types/PHP/MySQL/Vue/build/browser smoke; configure a coverage driver and the documented domain coverage gate as domain code lands; upload diagnostics without secrets.

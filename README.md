@@ -2,7 +2,7 @@
 
 A free, open-source, self-hosted commerce platform built with Laravel and Vue. One installation runs one independent store selling physical and digital products, with native shipping, secure downloads, watchlists, comparisons, extensible themes and marketing/SEO tools.
 
-**Project state: specification audited; ready to begin foundation implementation.** There is no Laravel scaffold, dependency installation, database, or running application yet. All implementation tasks remain unchecked.
+**Project state: secure foundation implemented and locally verified.** Laravel/Vue entrypoints, isolated MySQL test environments, security headers and automated checks are runnable. The unopened storefront and administration return HTTP 503. Installer, identities, commerce, themes and marketing remain in the ordered backlog; this is not a production-ready store.
 
 ## Start here
 
@@ -45,8 +45,8 @@ A free, open-source, self-hosted commerce platform built with Laravel and Vue. O
 
 ## Commands
 
-There are **no runnable project commands yet**. [The coding handoff](docs/coding-handoff.md) defines bootstrap steps and the commands the first implementation milestone must provide. Do not run migrations or installation commands against an unrelated project.
+See [development](docs/development.md) for installation, isolated database provisioning, running the application and all quality checks. See [continuous integration](docs/continuous-integration.md) for the workflow and pending hosted-run evidence. Use `bin/php`, `bin/composer` and `bin/npm` to keep runtime selection consistent.
 
 ## Workspace boundary
 
-This folder was empty at specification time. Git currently resolves to the parent `/Users/juantamayo/Sites` repository, which contains unrelated existing changes. Keep work inside `mrktflow`; the first coding task must establish a dedicated project repository without staging, resetting, or committing parent-directory changes.
+This folder now has an independent Git repository. Implementation is on `codex/foundation`; unrelated parent-directory changes were not staged or modified. Environment files, local database data, dependencies, build artifacts and browser traces are ignored. No remote repository is configured.

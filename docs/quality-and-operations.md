@@ -17,7 +17,7 @@ Target at least 90% line coverage in money, inventory, payment orchestration and
 
 CI target: format checks, static analysis (PHPStan level 8 with no new baseline suppressions), TypeScript strict checks, lint, domain/integration/component suites, production build and critical browser smoke. Full cross-browser and deployment rehearsal run before a release. Dependencies are locked; security findings are triaged, and unresolved exploitable critical/high findings block release.
 
-T003a establishes PHP test/static/format commands; T004a establishes isolated browser tests; T004b establishes CI and its coverage runtime. These tools are planned, not installed. Add each capability’s required tests as it lands, reject zero-selected-test passes, and keep merchant/provider production secrets out of CI.
+T003a establishes PHP test/static/format commands; T004a establishes isolated browser tests; T004b establishes CI and its coverage runtime. These tools are now installed and locally verified; CI is configured with hosted execution evidence pending. See [development](development.md) and [continuous integration](continuous-integration.md). Add each capability’s required tests as it lands, reject zero-selected-test passes, and keep merchant/provider production secrets out of CI.
 
 ## Performance targets
 

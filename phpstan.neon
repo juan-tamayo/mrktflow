@@ -5,6 +5,7 @@ parameters:
     level: 8
     paths:
         - app
+        - scripts
         - bootstrap/app.php
         - database
         - routes

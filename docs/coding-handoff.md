@@ -1,6 +1,8 @@
 # Coding handoff
 
-This package is documentation only. Do not interpret it as an instruction to start implementation until the user asks to code.
+**October 10 implementation update:** the bootstrap instructions below are historical handoff context. T001–T004a now have local implementation evidence; T004b is configured with hosted evidence pending. Use [development.md](development.md) for current commands and runtime/database setup. Do not repeat repository initialization or replace existing private environment files.
+
+The user authorized implementation on October 10. The original readiness/bootstrap notes below are preserved as historical evidence; current executable instructions are in development.md.
 
 ## Readiness audit — October 10, 2026
 
