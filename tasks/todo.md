@@ -117,6 +117,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T006: Durable jobs and health primitives
 
+- **Progress October 10:** Immutable encrypted event recording and durable consumer receipt schema verified; publication, consumption, worker recovery and health remain in progress. [Evidence](../docs/outbox-progress.md).
+
 - [ ] Complete T006.
 - **Module / requirements:** `platform` · PLAT-05.
 - **Depends on:** T004.
