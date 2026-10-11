@@ -7,6 +7,9 @@ case "${1:-}" in
     outbox)
         exec "$project_root/bin/php" artisan queue:work database-outbox --queue=outbox --timeout=60 --tries=1 --sleep=1 --max-time=3600
         ;;
+    media)
+        exec "$project_root/bin/php" artisan queue:work database-outbox --queue=media --timeout=60 --tries=1 --sleep=1 --max-time=3600
+        ;;
     critical)
         exec "$project_root/bin/php" artisan queue:work database --queue=payments,transactional-mail,default --timeout=60 --tries=3 --sleep=1 --max-time=3600
         ;;
@@ -17,7 +20,7 @@ case "${1:-}" in
         exec "$project_root/bin/php" artisan queue:work database-long --queue=long-work --timeout=300 --tries=3 --sleep=1 --max-time=3600
         ;;
     *)
-        echo 'Usage: bin/worker outbox|critical|marketing|long-work' >&2
+        echo 'Usage: bin/worker outbox|media|critical|marketing|long-work' >&2
         exit 2
         ;;
 esac

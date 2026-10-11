@@ -21,3 +21,11 @@ References: [Laravel file streaming/storage](https://laravel.com/framework/docs/
 A failed processing attempt records a fixed error code and preserves a failed draft. Normal failure removes the temporary derivative. A process crash or database failure after the file rename can leave a safe generated orphan; the recovery/cleanup slice must reconcile it. This service is intentionally separate from the outbox database-only consumer contract because it performs local filesystem effects. No network call or client-provided path is used. Queued execution and recovery remain pending, so T007 is still incomplete.
 
 Evidence: 14 media tests / 65 assertions, full PHP suite 97 tests / 415 assertions, Pint and PHPStan level 8 passed. Added cases include appended script stripping with readable output, checksum tampering, output-size failure, private-root recheck, overlapping disks, failed atomic publication cleanup and private-download isolation. No frontend or public route changed.
+
+## Queued processing and interrupted publication
+
+Images are queued automatically after intake commits, using an encrypted ID-only job on the separate `media` lane. The queue insert and its 90-second asset lease share a MySQL transaction. A failed enqueue keeps the validated original pending; `media:recover` scans bounded batches every minute and republishes expired leases. The `bin/worker media` wrapper uses timeout/reservation 60/90 seconds. A completed or failed draft is never automatically reopened. Processing clears its lease on success/failure.
+
+The real worker fixture pauses after the generated file is atomically renamed but before metadata commits, receives SIGKILL, then proves that metadata remains pending with one safe generated orphan. Recovery expires only the isolated fixture's reservation/lease, starts another encrypted delivery and restarts the worker. The result is one ready asset, one derivative and no pending media jobs. The fixture uses guarded MySQL, private ignored directories and no external service.
+
+Evidence: three queue tests / 18 assertions; full PHP suite 100 tests / 433 assertions. Pint and PHPStan passed. No HTTP upload route or staff bypass was added. Abandoned-file cleanup is the remaining T007 implementation slice.

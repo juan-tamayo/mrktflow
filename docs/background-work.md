@@ -9,6 +9,7 @@ Supervise these processes independently from the project directory:
 | Command | Queues | Timeout / reservation |
 | --- | --- | --- |
 | `bin/worker outbox` | `outbox` | 60 / 90 seconds |
+| `bin/worker media` | `media` | 60 / 90 seconds |
 | `bin/worker critical` | `payments`, `transactional-mail`, `default` | 60 / 90 seconds |
 | `bin/worker marketing` | `marketing`, `hubs` | 60 / 90 seconds |
 | `bin/worker long-work` | `long-work` | 300 / 360 seconds |
@@ -31,7 +32,7 @@ redirect_stderr=true
 stdout_logfile=/var/log/mrktflow/outbox-worker.log
 ```
 
-Create separate programs for critical, marketing and long-work queues; use a stop grace above 300 seconds for long work. Configure restricted log permissions/rotation and persistent private storage. Do not let bulk marketing occupy payment/mail workers. Later adapters must select their documented lane and persist delivery intent before external I/O.
+Create separate programs for media, critical, marketing and long-work queues; use a stop grace above 300 seconds for long work. Configure restricted log permissions/rotation and persistent private storage. Do not let bulk marketing occupy payment/mail workers. Later adapters must select their documented lane and persist delivery intent before external I/O.
 
 ## Scheduler and health
 
@@ -41,7 +42,7 @@ Install one cron entry under the same application user (example path):
 * * * * * cd /srv/mrktflow && /srv/mrktflow/bin/php artisan schedule:run >> /var/log/mrktflow/scheduler.log 2>&1
 ```
 
-The scheduler records its heartbeat and recovers up to 100 due receipts per minute. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
+The scheduler records its heartbeat and recovers up to 100 due outbox receipts and 100 pending images per minute. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
 
 `bin/php artisan platform:health` prints heartbeat freshness, pending/failed receipt counts, queue/failed-job counts and the oldest due receipt age. It exits 1 for a missing/older-than-180-second heartbeat, any quarantined/failed job, or due work older than 300 seconds. Freshness and queue age are observations, not proof of a running worker or a verified email sender. Monitor the command and alert operators on a failing exit status. `/up` alone cannot confirm readiness.
 

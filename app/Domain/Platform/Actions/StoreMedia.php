@@ -82,6 +82,9 @@ final class StoreMedia
                 DB::table('media_assets')->where('id', $id)->update([
                     'status' => $kind === 'public_image' ? 'pending' : 'ready', 'updated_at' => now(),
                 ]);
+                if ($kind === 'public_image') {
+                    DB::afterCommit(fn () => app(QueueMedia::class)->safelyPublish($id));
+                }
                 app(RecordEvent::class)->record('platform.audit.recorded', 'media:uploaded:'.$id, [
                     'action' => 'media.uploaded', 'subject_type' => 'media', 'subject_id' => $id,
                     'actor_type' => 'staff', 'actor_id' => $owner,

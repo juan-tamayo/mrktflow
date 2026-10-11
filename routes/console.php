@@ -3,6 +3,7 @@
 use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\PlatformHealth;
 use App\Domain\Platform\Actions\PublishOutbox;
+use App\Domain\Platform\Actions\QueueMedia;
 use App\Domain\Platform\Actions\RetryOutbox;
 use App\Domain\Platform\Actions\SetupAccess;
 use Illuminate\Foundation\Inspiring;
@@ -86,3 +87,11 @@ Artisan::command('outbox:failed', function (): int {
 
     return 0;
 })->purpose('List bounded quarantined receipt identifiers for operator recovery');
+
+Artisan::command('media:recover', function (QueueMedia $queue): int {
+    $this->info('Published '.$queue->recover().' media job(s).');
+
+    return 0;
+})->purpose('Recover bounded batches of pending image processing');
+
+Schedule::command('media:recover')->everyMinute()->withoutOverlapping(2);

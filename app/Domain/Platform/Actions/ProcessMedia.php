@@ -82,7 +82,7 @@ final class ProcessMedia
                 $temporaryKey = null;
                 DB::table('media_assets')->where('id', $id)->update([
                     'status' => 'ready', 'public_key' => $key, 'public_type' => 'image/png',
-                    'public_bytes' => $size, 'public_checksum' => $checksum, 'error_code' => null, 'updated_at' => now(),
+                    'public_bytes' => $size, 'public_checksum' => $checksum, 'queued_until' => null, 'error_code' => null, 'updated_at' => now(),
                 ]);
                 app(RecordEvent::class)->record('platform.audit.recorded', 'media:processed:'.$id, [
                     'action' => 'media.processed', 'subject_type' => 'media', 'subject_id' => $id,
@@ -90,7 +90,7 @@ final class ProcessMedia
             });
         } catch (Throwable $exception) {
             DB::table('media_assets')->where('id', $id)->where('status', 'pending')->update([
-                'status' => 'failed', 'error_code' => 'processing_failed', 'updated_at' => now(),
+                'status' => 'failed', 'queued_until' => null, 'error_code' => 'processing_failed', 'updated_at' => now(),
             ]);
             Log::warning('media.processing_failed', ['media_id' => $id, 'error_code' => 'processing_failed', 'exception_class' => $exception::class]);
         } finally {
