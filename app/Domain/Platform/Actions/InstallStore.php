@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\Platform\Actions;
 
-use Closure;
+use App\Domain\Platform\Support\SetupChoices;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use ResourceBundle;
 
 final class InstallStore
 {
@@ -43,27 +42,18 @@ final class InstallStore
      */
     private function validate(array $input): array
     {
-        $countries = ResourceBundle::create('en', 'ICUDATA-region')?->get('Countries');
-        $currencies = ResourceBundle::create('en', 'ICUDATA-curr')?->get('Currencies');
+        $choices = app(SetupChoices::class);
         $validated = Validator::make(['settings' => $input], [
             'settings' => ['required', 'array:name,currency,locale,timezone,contact_email,sender_email,sender_name,sales_countries,weight_unit,length_unit,policies'],
             'settings.name' => ['required', 'string', 'max:120'],
-            'settings.currency' => ['required', 'string', 'regex:/^[A-Z]{3}$/', function (string $attribute, mixed $value, Closure $fail) use ($currencies): void {
-                if (! is_string($value) || ! $currencies instanceof ResourceBundle || ! $currencies->get($value) instanceof ResourceBundle || in_array($value, ['XXX', 'XTS'], true)) {
-                    $fail('Choose a recognized currency.');
-                }
-            }],
+            'settings.currency' => ['required', Rule::in(array_column($choices->currencies(), 'code'))],
             'settings.locale' => ['required', Rule::in(['en'])],
             'settings.timezone' => ['required', 'timezone'],
             'settings.contact_email' => ['required', 'email:rfc', 'max:254'],
             'settings.sender_email' => ['required', 'email:rfc', 'max:254'],
             'settings.sender_name' => ['required', 'string', 'max:120'],
-            'settings.sales_countries' => ['required', 'array', 'min:1', 'max:249'],
-            'settings.sales_countries.*' => ['required', 'string', 'distinct', 'regex:/^[A-Z]{2}$/', function (string $attribute, mixed $value, Closure $fail) use ($countries): void {
-                if (! is_string($value) || ! $countries instanceof ResourceBundle || ! is_string($countries->get($value)) || in_array($value, ['AC', 'CP', 'DG', 'EA', 'EU', 'EZ', 'IC', 'QO', 'TA', 'UN', 'XA', 'XB', 'XK', 'ZZ'], true)) {
-                    $fail('Choose an ISO country code.');
-                }
-            }],
+            'settings.sales_countries' => ['required', 'array', 'list', 'min:1', 'max:249'],
+            'settings.sales_countries.*' => ['required', 'distinct', Rule::in(array_column($choices->countries(), 'code'))],
             'settings.weight_unit' => ['required', Rule::in(['kg', 'lb'])],
             'settings.length_unit' => ['required', Rule::in(['cm', 'in'])],
             'settings.policies' => ['required', 'array:privacy,terms,returns,shipping,digital'],
@@ -73,6 +63,8 @@ final class InstallStore
             'settings.policies.shipping' => ['required', 'string', 'max:10000'],
             'settings.policies.digital' => ['required', 'string', 'max:10000'],
         ])->validate();
+
+        sort($validated['settings']['sales_countries']);
 
         return $validated['settings'];
     }

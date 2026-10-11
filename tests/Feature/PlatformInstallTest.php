@@ -138,3 +138,11 @@ it('PlatformInstall cannot mutate settings after the persistent completion lock'
     expect(fn () => $installer->save($grant, array_replace(installSettings(), ['name' => 'Hijacked']), 1))->toThrow(HttpException::class);
     expect(json_decode(DB::table('store_settings')->value('values'), true)['name'])->toBe('Example Supply');
 });
+
+it('PlatformInstall treats country selection order as the same setup intent', function (): void {
+    $access = app(SetupAccess::class);
+    $grant = $access->unlock($access->issueSecret());
+    $installer = app(InstallStore::class);
+    $installer->save($grant, installSettings(), 0);
+    expect($installer->save($grant, array_replace(installSettings(), ['sales_countries' => ['CA', 'US']]), 0))->toBe(1);
+});
