@@ -25,7 +25,7 @@ Provision three distinct databases and users named `mrktflow_dev`, `mrktflow_tes
 
 On this machine the already provisioned server lives in ignored `.runtime/mysql`, communicates through its private socket, and has networking disabled. Start it in a separate terminal with `bin/local-db start`; stop it with `bin/local-db stop`. The latter reads the private admin configuration without passing its password on the command line. `MRKTFLOW_MYSQL_BIN` selects an equivalent MySQL 8.4 executable directory on another machine. This helper never initializes or resets data; a new machine must provision its own isolated instance and random credentials. Do not copy local database data or secrets into the repository.
 
-The PHP test guard checks environment, connection overrides, actual server version/database and account grants before any test schema operation. Cached configuration is forbidden. Tests use array mail and synchronous jobs; no external provider credentials are needed.
+The PHP test guard checks environment, connection overrides, actual server version/database and account grants before any test schema operation. Cached configuration is forbidden. Tests use array mail and a synchronous default queue. The outbox interruption fixture alone runs an explicit database queue on the guarded test database; no external provider credentials are needed.
 
 For browsers create `.env.browser` from the testing template, with database and username `mrktflow_browser`, its own password/key, `APP_ENV=testing`, `APP_URL=http://127.0.0.1:8011`, `SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CONNECTION=sync`, `MAIL_MAILER=array`. Playwright supplies these values to a separate server and resets only that database. Do not use `--env=browser`: Laravel interprets it as an environment identity, which the guard rejects.
 
@@ -64,3 +64,7 @@ The local PHP runtime has no coverage driver. CI configures PCOV and checks `scr
 ## Protected setup
 
 After migrations and required prerequisite checks, `bin/php artisan setup:check` reports configuration needs. `bin/php artisan setup:secret` issues or rotates the 24-hour secret; enter it at `/setup`. Do not put it in a URL, publish command output or commit it. Setup access lasts at most 15 minutes. Save the store details to reach pending-owner state; owner creation and final lock completion are the next identity milestone. Administrative commerce actions remain closed.
+
+## Background work
+
+Durable intent, consumer receipts, scheduler health and queue wrappers are implemented. See [background work](background-work.md) for lane isolation, timeout/retry settings, private diagnostics and interrupted-worker recovery. Apply migrations before starting these services. Settings saves now create minimal audit intent; no owner/admin access is introduced.

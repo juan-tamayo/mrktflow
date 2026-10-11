@@ -117,9 +117,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T006: Durable jobs and health primitives
 
-- **Progress October 10:** Immutable encrypted event recording and durable consumer receipt schema verified; publication, consumption, worker recovery and health remain in progress. [Evidence](../docs/outbox-progress.md).
+- **Evidence October 10:** Encrypted transactional outbox, replay-safe local consumption, bounded retry/quarantine/recovery, real killed-worker restart, scheduler heartbeat/private health, request correlation and setup audit verified. Full PHP suite: 83 tests / 350 assertions; static/frontend/browser checks pass. [Evidence](../docs/outbox-progress.md), [runbook](../docs/background-work.md). Hosted CI remains pending T004b.
 
-- [ ] Complete T006.
+- [x] Complete T006.
 - **Module / requirements:** `platform` · PLAT-05.
 - **Depends on:** T004.
 - **Acceptance:** Durable outbox and consumer receipts recover after interruption; explicitly configure database workers with timeout/retry-after 60/90 seconds and long-work workers 300/360, bounded HTTP timeouts and queue routing. Scheduler heartbeat and failed-job state are readable.

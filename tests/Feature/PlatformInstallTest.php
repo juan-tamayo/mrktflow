@@ -6,6 +6,7 @@ use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -145,4 +146,19 @@ it('PlatformInstall treats country selection order as the same setup intent', fu
     $installer = app(InstallStore::class);
     $installer->save($grant, installSettings(), 0);
     expect($installer->save($grant, array_replace(installSettings(), ['sales_countries' => ['CA', 'US']]), 0))->toBe(1);
+});
+
+it('PlatformInstall records one minimal audit intent per saved settings version', function (): void {
+    $access = app(SetupAccess::class);
+    $grant = $access->unlock($access->issueSecret());
+    $settings = json_decode(file_get_contents(base_path('tests/Fixtures/store-settings.json')), true, flags: JSON_THROW_ON_ERROR);
+    $install = app(InstallStore::class);
+    $install->save($grant, $settings, 0);
+    $install->save($grant, $settings, 0);
+    expect(DB::table('outbox_events')->count())->toBe(1);
+    $payload = Crypt::decryptString(DB::table('outbox_events')->value('payload'));
+    expect(json_decode($payload, true))->toBe([
+        'action' => 'setup.settings_saved', 'metadata' => ['version' => 1], 'subject_id' => '1', 'subject_type' => 'store_settings',
+    ]);
+    expect($payload)->not->toContain($settings['contact_email']);
 });

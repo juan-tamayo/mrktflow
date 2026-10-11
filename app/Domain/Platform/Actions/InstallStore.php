@@ -33,6 +33,11 @@ final class InstallStore
             ]);
             DB::table('installations')->where('id', 1)->update(['status' => 'pending_owner', 'updated_at' => now()]);
 
+            app(RecordEvent::class)->record('platform.audit.recorded', 'setup:settings:'.($version + 1), [
+                'action' => 'setup.settings_saved', 'subject_type' => 'store_settings', 'subject_id' => '1',
+                'metadata' => ['version' => $version + 1],
+            ]);
+
             return $version + 1;
         });
     }

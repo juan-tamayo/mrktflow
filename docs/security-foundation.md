@@ -9,6 +9,8 @@ Implementation begins October 10, 2026. This document records controls and their
 | Anonymous visitor → setup | Someone claims the first owner or replays setup | CLI-generated secret, digest-only storage, short session grant, install row locks and persistent completion lock; no public staff registration. |
 | Shopper → administration | A customer becomes staff by registering a matching email | Separate principal tables, session guards and permission policies; deny unauthorized routes server-side. |
 | Request → private files | A guessed key or generic storage route leaks downloads | Private disk outside webroot, no generic serving route; authorized delivery comes in the fulfillment milestone. |
+| Business change → background work | A retry duplicates a local effect or a crash loses committed intent | Encrypted transactional outbox, exact intent keys, locked durable receipts, bounded retries and real killed-worker recovery tests. |
+| Diagnostic output → private data | Exception text or queued payload leaks credentials/customer details | Server request IDs, allowlisted audit metadata, encrypted ID-only jobs, generic application reporting and private count-only health commands. |
 | Dependencies → development machine | Install hooks execute unreviewed code | npm ignore-scripts policy; only reviewed Pest plugin allowed in Composer; lockfiles and native audits. |
 | App/test processes → external services | Tests email real people or charge a provider | Array mail and provider fixtures; no production credentials in tests or CI. |
 

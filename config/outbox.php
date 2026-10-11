@@ -7,5 +7,5 @@ return [
         'platform.audit.recorded' => ['platform.audit' => StoreAuditEvent::class],
     ],
     'max_attempts' => 6,
-    'backoff' => [10, 30, 120, 300, 900, 1800],
+    'backoff' => [10, 30, 120, 300, 900],
 ];

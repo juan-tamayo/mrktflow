@@ -21,3 +21,13 @@ Recording intent now tries publication after commit. If publication fails, commi
 Evidence: 15 focused outbox/worker tests (63 assertions), full PHP suite 76 tests / 314 assertions, Pint and PHPStan passed. The worker rehearsal starts a real isolated-test worker, pauses a fixture consumer after its database insert but before commit, kills it with SIGKILL, verifies no committed effect, expires only that fixture's reservation/lease, republishes and restarts the worker. Exactly one audit effect and completed receipt remain; the abandoned reservation becomes one framework failed job. Fixture consumers are never registered in production configuration. This proves process-interruption recovery locally, not hosted/provider delivery or exactly-once SMTP.
 
 Health, scheduler wiring, request correlation and worker runbook are still pending T006 work.
+
+## T006 completion evidence
+
+Local T006 acceptance now passes: scheduler heartbeat/recovery commands, private health and bounded failed-receipt listing, explicit failed-only retry, separate worker lane wrappers, bounded TLS-verifying HTTP client, request correlation on success/errors, and minimal setup-settings audit intent are implemented. Completed receipts cannot be reopened. Application exception diagnostics omit raw messages/trace arguments. The outbox retry delays are 10/30/120/300/900 seconds for six total application attempts.
+
+Final local evidence: 83 PHP tests / 350 assertions passed, including killed-worker recovery, stale heartbeat, due recovery, exhausted/reopened receipt safety, correlation and private diagnostics. Pint and PHPStan level 8 passed. Frontend type/lint/format, eight unit tests and production build passed earlier in this task; no frontend source changed. Ten browser tests passed with the new middleware and setup audit integration. The real minute scheduler was run after migrations on the guarded isolated test database; the follow-up health command reported a current heartbeat and zero pending/failed work. Worker wrapper shell syntax passed.
+
+The migration reversal test now uses Laravel's DatabaseMigrations lifecycle so it cannot leave a prior RefreshDatabase test's cached migration state pointing to dropped tables. This was reproduced as a full-suite failure and fixed without weakening the database guard.
+
+[Background work runbook](background-work.md) contains supervisor/cron examples and recovery controls. Hosted CI/coverage remain pending T004b; deployment supervision and actual external delivery are not claimed. Owner/management access remains closed pending T008. T007 media storage is next.

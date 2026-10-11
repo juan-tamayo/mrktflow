@@ -7,6 +7,7 @@ namespace App\Domain\Platform\Actions;
 use App\Domain\Platform\Support\OutboxConsumers;
 use DomainException;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +23,7 @@ final class RecordEvent
     /** @param array<string, mixed> $payload */
     public function record(string $type, string $intentKey, array $payload, ?string $correlationId = null): string
     {
+        $correlationId ??= Context::get('correlation_id');
         $bindings = $this->consumers->forEvent($type);
         if (! preg_match('/^[a-z][a-z0-9_.-]{0,127}$/D', $type)
             || ! preg_match('/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,190}$/D', $intentKey)

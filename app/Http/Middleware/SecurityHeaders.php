@@ -36,6 +36,10 @@ final class SecurityHeaders
         $scripts = "'self' 'nonce-{$nonce}'".($development ? ' http://127.0.0.1:5173' : '');
         $connect = "'self'".($development ? ' http://127.0.0.1:5173 ws://127.0.0.1:5173' : '');
         $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src {$scripts}; style-src 'self' 'nonce-{$nonce}'; connect-src {$connect}; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+        $correlation = $request->attributes->get('correlation_id');
+        if (is_string($correlation)) {
+            $response->headers->set('X-Request-ID', $correlation);
+        }
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

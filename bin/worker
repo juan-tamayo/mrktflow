@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+project_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$project_root"
+case "${1:-}" in
+    outbox)
+        exec "$project_root/bin/php" artisan queue:work database-outbox --queue=outbox --timeout=60 --tries=1 --sleep=1 --max-time=3600
+        ;;
+    critical)
+        exec "$project_root/bin/php" artisan queue:work database --queue=payments,transactional-mail,default --timeout=60 --tries=3 --sleep=1 --max-time=3600
+        ;;
+    marketing)
+        exec "$project_root/bin/php" artisan queue:work database --queue=marketing,hubs --timeout=60 --tries=3 --sleep=1 --max-time=3600
+        ;;
+    long-work)
+        exec "$project_root/bin/php" artisan queue:work database-long --queue=long-work --timeout=300 --tries=3 --sleep=1 --max-time=3600
+        ;;
+    *)
+        echo 'Usage: bin/worker outbox|critical|marketing|long-work' >&2
+        exit 2
+        ;;
+esac
