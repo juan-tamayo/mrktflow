@@ -1,6 +1,6 @@
 # Media boundary implementation
 
-T007 is in progress. October 10, 2026: private intake is implemented and locally verified; safe public derivatives are implemented; queued processing recovery and abandoned-file cleanup remain subsequent slices.
+T007 is locally complete as of October 10, 2026. This document preserves implementation evidence by slice; later sections supersede the earlier in-progress notes.
 
 `StoreMedia::store(UploadedFile, kind, MediaUploadAuthorization)` accepts only `public_image` or `private_file`. The authorization object is server-owned: identity must authorize the current staff session and return its UUID; it must never be populated from submitted owner/permission fields. There is no production implementation or HTTP upload route until T008 policies exist. Tests use synthetic authorization as specified by T007.
 
@@ -29,3 +29,11 @@ Images are queued automatically after intake commits, using an encrypted ID-only
 The real worker fixture pauses after the generated file is atomically renamed but before metadata commits, receives SIGKILL, then proves that metadata remains pending with one safe generated orphan. Recovery expires only the isolated fixture's reservation/lease, starts another encrypted delivery and restarts the worker. The result is one ready asset, one derivative and no pending media jobs. The fixture uses guarded MySQL, private ignored directories and no external service.
 
 Evidence: three queue tests / 18 assertions; full PHP suite 100 tests / 433 assertions. Pint and PHPStan passed. No HTTP upload route or staff bypass was added. Abandoned-file cleanup is the remaining T007 implementation slice.
+
+## Cleanup and T007 completion
+
+`media:clean` runs each minute with a shared overlap lock. It inspects at most 100 old asset records and 500 file entries/deletions per call using a streaming directory listing. Records are eligible after 24 hours; a separate cleanup checkpoint prevents unchanged ready records from occupying every batch. Partial batches remain eligible for another pass. Generated names and exact asset prefixes are checked before deletion; unknown files are preserved. Ready originals and the active public derivative are always retained. Old staging/failed originals are purged only after their generated-file pass completes; metadata, fixed error state and audit history remain. Recent failed uploads and pending originals are retained. A filesystem failure leaves purge metadata uncommitted and makes cleanup fail visibly.
+
+`platform:health` now includes pending/failed media counts and oldest processing age. An unpurged failed draft or processing older than five minutes makes health fail, independently of outbox age. Counts contain no filenames or storage keys. Cleanup marks abandoned staging uploads failed with `upload_abandoned`; purged tombstones no longer count as unresolved failed uploads. A purged draft requires a new upload rather than a guessed-path repair.
+
+T007 local acceptance is complete. Evidence: 104 PHP tests / 451 assertions, including 18 media boundary/cleanup/health tests and three media queue/real-worker tests; Pint and PHPStan level 8 pass. Frontend type/lint/format, eight unit tests and production build pass; ten real browser tests pass. The image worker rehearsal covers the rename-before-commit interruption and one-derivative recovery; anonymous/private paths and denied upload authority are covered by focused tests. Admin upload routes remain unmounted until identity policies in T008. Scanner enablement, reference-host 500 MiB capacity and hosted CI are still separately identified release evidence, not claimed here.

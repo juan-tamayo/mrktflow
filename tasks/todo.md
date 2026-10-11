@@ -135,9 +135,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T007: Media storage boundary
 
-- **Progress October 10:** Validated private intake and safe pixel-derived public images, synthetic authorization, encrypted filenames, opaque paths and failed-draft state verified. Fourteen media boundary tests and three queue/real-worker tests pass; abandoned-file cleanup remains pending. [Evidence](../docs/media-progress.md).
+- **Evidence October 10:** Private intake, safe image derivatives, queued/real-worker crash recovery, bounded cleanup and media health verified. Full PHP suite: 104 tests / 451 assertions; static/frontend/build/browser checks pass. Staff upload routes remain unmounted until T008; scanner/large-file host/remote CI evidence remain separate release work. [Evidence](../docs/media-progress.md).
 
-- [ ] Complete T007.
+- [x] Complete T007.
 - **Module / requirements:** `platform` · PLAT-04.
 - **Depends on:** T005.
 - **Acceptance:** Public images and private files use separate storage policies and MIME/size/path validation. Test storage services with synthetic authorization context; admin upload routes remain denied/unmounted until staff policies exist in T008.

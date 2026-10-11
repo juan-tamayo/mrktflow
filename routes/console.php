@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Platform\Actions\CleanMedia;
 use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\PlatformHealth;
 use App\Domain\Platform\Actions\PublishOutbox;
@@ -51,7 +52,7 @@ Artisan::command('platform:heartbeat', function (PlatformHealth $health): int {
 Artisan::command('platform:health', function (PlatformHealth $health): int {
     $report = $health->report();
     $this->line('scheduler: '.($report['scheduler_current'] ? 'current' : 'stale'));
-    foreach (['outbox_pending', 'outbox_failed', 'queue_pending', 'queue_failed', 'oldest_due_seconds'] as $key) {
+    foreach (['outbox_pending', 'outbox_failed', 'queue_pending', 'queue_failed', 'oldest_due_seconds', 'media_pending', 'media_failed', 'media_oldest_pending_seconds'] as $key) {
         $this->line($key.': '.($report[$key] ?? 'none'));
     }
 
@@ -95,3 +96,11 @@ Artisan::command('media:recover', function (QueueMedia $queue): int {
 })->purpose('Recover bounded batches of pending image processing');
 
 Schedule::command('media:recover')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('media:clean', function (CleanMedia $cleanup): int {
+    $this->info('Cleaned '.$cleanup->clean().' media asset(s).');
+
+    return 0;
+})->purpose('Clean abandoned media drafts and old generated orphans with bounded work');
+
+Schedule::command('media:clean')->everyMinute()->withoutOverlapping(2);

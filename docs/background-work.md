@@ -44,7 +44,7 @@ Install one cron entry under the same application user (example path):
 
 The scheduler records its heartbeat and recovers up to 100 due outbox receipts and 100 pending images per minute. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
 
-`bin/php artisan platform:health` prints heartbeat freshness, pending/failed receipt counts, queue/failed-job counts and the oldest due receipt age. It exits 1 for a missing/older-than-180-second heartbeat, any quarantined/failed job, or due work older than 300 seconds. Freshness and queue age are observations, not proof of a running worker or a verified email sender. Monitor the command and alert operators on a failing exit status. `/up` alone cannot confirm readiness.
+`bin/php artisan platform:health` prints heartbeat freshness, pending/failed receipt counts, queue/failed-job counts and the oldest due receipt age. It exits 1 for a missing/older-than-180-second heartbeat, any quarantined/failed job, an unpurged failed media draft, or due outbox/media work older than 300 seconds. Freshness and queue age are observations, not proof of a running worker or a verified email sender. Monitor the command and alert operators on a failing exit status. `/up` alone cannot confirm readiness.
 
 ## Recovery
 
@@ -66,3 +66,7 @@ Use `OutboundHttp::client()` for provider calls: 5-second connection, 20-second 
 `bin/php artisan test --filter=PlatformOutbox` includes real MySQL recording/replay/failure tests plus a subprocess interruption rehearsal. The test consumer pauses after an insert in an open transaction; the test sends SIGKILL, verifies rollback, advances only its isolated reservation/lease past expiry, and restarts processing. No fixture consumer is registered in production, no external provider is invoked, and no merchant database is used. The default test queue remains synchronous; only the explicit guarded outbox connection uses a worker.
 
 For a manual scheduler rehearsal, apply migrations to the isolated test database, then run `APP_ENV=testing bin/php artisan schedule:run --env=testing` followed by `bin/php artisan platform:health --env=testing`. Do not use a merchant database for a rehearsal. Hosted CI, deployment supervision, provider delivery and production capacity remain separate release evidence.
+
+## Media maintenance
+
+Use the separate media worker and minute `media:recover` task. `media:clean` inspects old records and files in bounded batches after a 24-hour grace period. It retains ready originals/current derivatives and pending originals, removes known generated orphans/temporary files, and purges abandoned staging/failed drafts while retaining metadata/audit history. Cleanup failure is reported with a fixed error code and a failing command. A purged draft needs a new upload. See [media evidence](media-progress.md). Keep the minute scheduler and shared database cache enabled; monitor media failure counts and oldest pending age alongside outbox health.

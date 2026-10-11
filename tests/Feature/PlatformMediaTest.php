@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Platform\Actions\CleanMedia;
 use App\Domain\Platform\Actions\ProcessMedia;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
@@ -178,4 +179,56 @@ it('PlatformMedia never processes private downloads into public images', functio
     app(ProcessMedia::class)->process($id);
     expect(DB::table('media_assets')->where('id', $id)->first())->status->toBe('ready')->public_key->toBeNull();
     expect(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('PlatformMedia cleans abandoned drafts and keeps ready originals and derivatives', function (): void {
+    $failed = app(StoreMedia::class)->store(UploadedFile::fake()->createWithContent('failed.txt', 'fixture'), 'private_file', new MediaFixtureAuthorization);
+    DB::table('media_assets')->where('id', $failed)->update(['status' => 'staging', 'created_at' => now()->subHours(25), 'updated_at' => now()->subHours(25)]);
+    $ready = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    app(ProcessMedia::class)->process($ready);
+    DB::table('media_assets')->where('id', $ready)->update(['created_at' => now()->subHours(25)]);
+    $temporary = 'media/'.$ready.'/e2b2d2da-5a2b-4058-bc92-f0a0860708b9.tmp';
+    Storage::disk('public')->put($temporary, 'generated fixture');
+    touch(Storage::disk('public')->path($temporary), now()->subHours(25)->timestamp);
+    app(CleanMedia::class)->clean();
+    expect(Storage::disk('local')->exists('media/'.$failed.'/original'))->toBeFalse();
+    expect(DB::table('media_assets')->where('id', $failed)->first())->status->toBe('failed')->error_code->toBe('upload_abandoned')->purged_at->not->toBeNull();
+    expect(Storage::disk('local')->exists('media/'.$ready.'/original'))->toBeTrue();
+    expect(Storage::disk('public')->exists(DB::table('media_assets')->where('id', $ready)->value('public_key')))->toBeTrue();
+    expect(Storage::disk('public')->exists($temporary))->toBeFalse();
+});
+
+it('PlatformMedia cleanup preserves recent failed drafts and applies a bounded file budget', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->createWithContent('guide.txt', 'fixture'), 'private_file', new MediaFixtureAuthorization);
+    DB::table('media_assets')->where('id', $id)->update(['status' => 'failed']);
+    app(CleanMedia::class)->clean();
+    expect(Storage::disk('local')->exists('media/'.$id.'/original'))->toBeTrue();
+    DB::table('media_assets')->where('id', $id)->update(['created_at' => now()->subHours(25), 'updated_at' => now()->subHours(25)]);
+    foreach (['9e7c5a6b-3fe7-45b3-9760-10b6ee4cfbf6', 'f3a37c04-e5d4-49c7-ae51-c5bd296f9e0c'] as $suffix) {
+        $key = 'media/'.$id.'/'.$suffix.'.tmp';
+        Storage::disk('public')->put($key, 'generated fixture');
+        touch(Storage::disk('public')->path($key), now()->subHours(25)->timestamp);
+    }
+    app(CleanMedia::class)->clean(fileLimit: 1);
+    expect(Storage::disk('public')->allFiles())->toHaveCount(1);
+    expect(Storage::disk('local')->exists('media/'.$id.'/original'))->toBeTrue();
+    app(CleanMedia::class)->clean();
+    expect(Storage::disk('local')->exists('media/'.$id.'/original'))->toBeFalse();
+});
+
+it('PlatformMedia reports cleanup failures without marking private drafts purged', function (): void {
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->createWithContent('guide.txt', 'fixture'), 'private_file', new MediaFixtureAuthorization);
+    DB::table('media_assets')->where('id', $id)->update(['status' => 'failed', 'created_at' => now()->subHours(25), 'updated_at' => now()->subHours(25)]);
+    $disk = Mockery::mock(Storage::disk('local'));
+    $disk->shouldReceive('delete')->once()->andThrow(new RuntimeException('private failure fixture'));
+    Storage::set('local', $disk);
+    expect(fn () => app(CleanMedia::class)->clean())->toThrow(RuntimeException::class, 'Media cleanup was incomplete.');
+    expect(DB::table('media_assets')->where('id', $id)->value('purged_at'))->toBeNull();
+});
+
+it('PlatformMedia health detects stale processing independently of outbox age', function (): void {
+    $this->artisan('platform:heartbeat')->assertSuccessful();
+    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new MediaFixtureAuthorization);
+    DB::table('media_assets')->where('id', $id)->update(['created_at' => now()->subSeconds(301)]);
+    $this->artisan('platform:health')->expectsOutputToContain('media_pending: 1')->assertExitCode(1);
 });
