@@ -7,6 +7,7 @@ namespace App\Http\Support;
 use App\Domain\Identity\Models\StaffAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 final class StaffSession
 {
@@ -21,6 +22,7 @@ final class StaffSession
         $request->session()->regenerate(true);
         $request->session()->forget(['setup_access', 'setup_saved', '_old_input']);
         $request->session()->put('staff_session_version', $staff->session_version);
+        Inertia::clearHistory();
     }
 
     public function destroy(Request $request): void
@@ -28,5 +30,6 @@ final class StaffSession
         Auth::guard('staff')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        Inertia::clearHistory();
     }
 }

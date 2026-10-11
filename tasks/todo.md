@@ -147,8 +147,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T008: Staff session and permission foundation
 
-- [ ] Complete T008.
-- **Progress:** Owner/installation transaction, staff permissions, final-owner access rules, digest-only invitations, protected owner UI and login/session enforcement verified locally; staff management UI and simultaneous last-owner demotion protection also verified; invitation delivery/acceptance UI remains. See [identity evidence](../docs/identity-progress.md).
+- [x] Complete T008.
+- **Evidence October 10:** Atomic owner/install locking, separate staff principals, role gates, versioned sessions, protected staff management, real concurrent last-owner protection and directly shared single-use invitation UI verified. Full PHP suite: 128 tests; frontend/static/build and 10 browser tests pass, including logout history-key retirement. Automatic email delivery remains T079, and privileged 2FA/re-authentication remains T013 before launch. See [identity evidence](../docs/identity-progress.md).
 - **Module / requirements:** `identity` · ID-02, ID-04.
 - **Depends on:** T005.
 - **Acceptance:** Staff login/invitation and permission policy prevent customer privilege escalation; final-owner protection is enforced. Application setup coordination creates the initial owner and finalizes T005's persistent installation lock without a reverse platform import.

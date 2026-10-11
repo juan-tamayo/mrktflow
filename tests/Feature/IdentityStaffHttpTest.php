@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use App\Application\Setup\CreateInitialOwner;
+use App\Domain\Identity\Actions\InviteStaff;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
@@ -169,4 +171,45 @@ it('IdentityStaff HTTP preserves the final owner and rejects outdated management
     expect($staff->fresh()->session_version)->toBe(2);
     $this->patchJson('/admin/staff/'.$staff->id, ['access' => ['role' => 'owner', 'is_active' => true, 'version' => 1]])->assertConflict();
     expect($staff->fresh()->role)->toBe('fulfillment');
+});
+
+it('IdentityStaff HTTP returns invitation secrets only to an authorized creator without page history props', function (): void {
+    $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
+    $this->postJson('/admin/staff/invitations', ['invitation' => ['email' => 'editor@example.test', 'role' => 'content_editor']])->assertUnauthorized();
+    $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1]);
+    $response = $this->postJson('/admin/staff/invitations', ['invitation' => ['email' => 'editor@example.test', 'role' => 'content_editor']])->assertCreated();
+    $path = $response->json('path');
+    expect($path)->toMatch('/^\/staff\/invitation#[a-f0-9]{64}$/D');
+    $token = substr($path, strpos($path, '#') + 1);
+    expect(DB::table('staff_invitations')->value('token_digest'))->toBe(hash('sha256', $token));
+    $response->assertHeader('Cache-Control', 'no-store, private');
+    $this->get('/admin/staff')->assertDontSee($token);
+    expect(json_encode(session()->all()))->not->toContain($token);
+    DB::table('staff_accounts')->where('id', $owner->id)->update(['permissions' => json_encode(StaffPermissions::forRole('manager')), 'role' => 'manager']);
+    $this->postJson('/admin/staff/invitations', ['invitation' => ['email' => 'other@example.test', 'role' => 'owner']])->assertForbidden();
+});
+
+it('IdentityStaff HTTP accepts a bound invitation once and hides secrets on validation failure', function (): void {
+    $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
+    $invitation = app(InviteStaff::class)->invite($owner, ['email' => 'editor@example.test', 'role' => 'content_editor']);
+    $this->get('/staff/invitation')->assertOk()->assertDontSee($invitation->token);
+    $input = staffHttpInput();
+    unset($input['email']);
+    $this->from('/staff/invitation')->post('/staff/invitation', ['invitation_token' => $invitation->token, 'owner' => $input + ['role' => 'owner']])
+        ->assertRedirect('/staff/invitation')->assertSessionHasErrors('owner')->assertSessionMissing('_old_input.invitation_token')->assertSessionMissing('_old_input.owner');
+    $this->post('/staff/invitation', ['invitation_token' => $invitation->token, 'owner' => $input])->assertRedirect('/admin');
+    $this->assertAuthenticated('staff');
+    $staff = Auth::guard('staff')->user();
+    expect($staff->email)->toBe('editor@example.test');
+    expect($staff->hasPermission('staff.manage'))->toBeFalse();
+    $this->getJson('/admin/staff')->assertForbidden();
+    $this->postJson('/staff/invitation', ['invitation_token' => $invitation->token, 'owner' => $input])->assertNotFound();
+});
+
+it('IdentityStaff HTTP retires encrypted browser-history keys after sign-out', function (): void {
+    app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
+    $this->post('/admin/login', ['email' => 'owner@example.test', 'password' => staffHttpInput()['password']])->assertRedirect('/admin');
+    $this->get('/admin');
+    $this->post('/admin/logout')->assertRedirect('/admin/login');
+    $this->get('/admin/login')->assertViewHas('page', fn (array $page): bool => ($page['clearHistory'] ?? false) === true);
 });

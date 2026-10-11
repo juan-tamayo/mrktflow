@@ -1,6 +1,9 @@
 import { createInertiaApp } from '@inertiajs/vue3'
 import { createApp, h, type DefineComponent } from 'vue'
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
+import { captureInvitationToken } from './admin/invitation-token'
+
+captureInvitationToken()
 
 void createInertiaApp({
   resolve: (name) =>

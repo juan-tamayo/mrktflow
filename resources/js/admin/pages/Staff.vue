@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3'
 import StaffAccess from '../components/StaffAccess.vue'
+import CreateStaffInvitation from '../components/CreateStaffInvitation.vue'
 
 defineOptions({ name: 'StaffManagement' })
 
@@ -34,6 +35,7 @@ defineProps<{
         Keep at least one active owner.
       </p>
       <p v-if="saved" role="status" class="success-notice">Staff access saved.</p>
+      <CreateStaffInvitation />
       <StaffAccess v-for="account in accounts.data" :key="account.id" :account="account" />
       <nav aria-label="Staff list pages">
         <a v-if="accounts.prev_page_url" :href="accounts.prev_page_url" class="text-link"

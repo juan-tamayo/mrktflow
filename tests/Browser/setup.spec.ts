@@ -13,13 +13,22 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
   await expect(page.getByLabel('Store name')).toHaveCount(0)
   const mutation = await request.post('/setup/settings', { data: { settings, version: 0 } })
   expect(mutation.status()).toBe(419)
+  for (const path of ['/admin/staff/invitations', '/staff/invitation']) {
+    expect(
+      (
+        await request.post(path, {
+          data: { invitation_token: '0'.repeat(64), owner: {}, invitation: {} },
+        })
+      ).status(),
+    ).toBe(419)
+  }
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze()
   expect(result.violations).toEqual([])
 })
 
-test('owner can unlock, save and reload interrupted store setup', async ({ page }) => {
+test('owner can unlock, save and reload interrupted store setup', async ({ page, browser }) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.setViewportSize({ width: 390, height: 844 })
@@ -107,6 +116,9 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page 
   expect((await page.request.get('/setup')).status()).toBe(404)
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/admin\/login$/)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/admin\/login$/)
+  await expect(page.getByText('Welcome, Example Owner.', { exact: false })).toHaveCount(0)
   await page.getByLabel('Email', { exact: true }).fill('owner@example.test')
   await page.getByLabel('Password', { exact: true }).fill('Wrong fictional passphrase')
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
@@ -163,5 +175,59 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page 
     ).violations,
   ).toEqual([])
   await page.screenshot({ path: '.runtime/screenshots/staff-mobile.png', fullPage: true })
+  await page.getByLabel('Invited staff email').fill('editor@example.test')
+  await page.getByRole('button', { name: 'Create invitation link' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Invitation created' })).toBeVisible()
+  const invitationUrl = await page.getByLabel('Private invitation link').inputValue()
+  const token = new URL(invitationUrl).hash.slice(1)
+  expect(await page.evaluate(() => JSON.stringify(window.history.state))).not.toContain(token)
+  const recipient = await browser.newContext()
+  const invitedPage = await recipient.newPage()
+  const requestedUrls: string[] = []
+  invitedPage.on('request', (request) => requestedUrls.push(request.url()))
+  invitedPage.on('pageerror', (error) => errors.push(error.message))
+  await invitedPage.goto(invitationUrl)
+  await expect(invitedPage).toHaveURL(/\/staff\/invitation$/)
+  expect(await invitedPage.evaluate(() => JSON.stringify(window.history.state))).not.toContain(
+    token,
+  )
+  await invitedPage.getByLabel('Your name').fill('Example Editor')
+  await invitedPage.getByLabel('Password', { exact: true }).fill('Fictional editor passphrase 471!')
+  await invitedPage.getByLabel('Confirm password').fill('Incorrect fictional confirmation')
+  await invitedPage.getByRole('button', { name: 'Accept invitation' }).click()
+  await expect(invitedPage.getByRole('alert')).toContainText('confirmation')
+  await expect(invitedPage.getByRole('alert')).toBeFocused()
+  await expect(invitedPage.getByLabel('Password', { exact: true })).toHaveValue('')
+  await invitedPage.getByLabel('Password', { exact: true }).fill('Fictional editor passphrase 471!')
+  await invitedPage.getByLabel('Confirm password').fill('Fictional editor passphrase 471!')
+  await invitedPage.getByRole('button', { name: 'Accept invitation' }).click()
+  await expect(invitedPage).toHaveURL(/\/admin$/)
+  await expect(invitedPage.getByRole('link', { name: 'Manage staff' })).toHaveCount(0)
+  expect((await invitedPage.request.get('/admin/staff')).status()).toBe(403)
+  expect(requestedUrls.some((url) => url.includes(token))).toBe(false)
+  await page.reload()
+  await expect(page.getByLabel('Private invitation link')).toHaveCount(0)
+  await page.getByLabel('Role for Example Editor').selectOption('fulfillment')
+  await page.getByRole('button', { name: 'Save access for Example Editor' }).click()
+  await expect(page.getByRole('status')).toContainText('Staff access saved')
+  await invitedPage.reload()
+  await expect(invitedPage).toHaveURL(/\/admin\/login$/)
+  await recipient.close()
+  const replay = await browser.newContext()
+  const replayPage = await replay.newPage()
+  await replayPage.goto(invitationUrl)
+  await replayPage.getByLabel('Your name').fill('Example Replay')
+  await replayPage.getByLabel('Password', { exact: true }).fill('Fictional editor passphrase 471!')
+  await replayPage.getByLabel('Confirm password').fill('Fictional editor passphrase 471!')
+  await replayPage.getByRole('button', { name: 'Accept invitation' }).click()
+  await expect(replayPage.getByRole('alert')).toContainText('already used')
+  expect(
+    (
+      await new AxeBuilder({ page: replayPage })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([])
+  await replay.close()
   expect(errors).toEqual([])
 })

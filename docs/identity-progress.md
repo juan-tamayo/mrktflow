@@ -61,3 +61,22 @@ Verification:
 - Ten real Chromium tests pass; the owner flow now opens staff management, receives a focused last-owner error, recovers with a valid save and reloads the persisted role. Staff management passes Axe and overflow checks at 320px; rendered mobile output inspected locally.
 
 T008 remains open for invitation delivery/acceptance screens. Reauthentication and mandatory privileged-staff 2FA remain T013 before launch. These screens operate only the implemented staff-account foundation; commerce, marketing and public-launch scope remain in the backlog.
+
+## T008 one-time invitation link and acceptance slice — October 10, 2026
+
+Owners can create an invitation from staff management, select its bound email and permission preset, and copy a one-time private link to share directly. The UI clearly says that the link expires in 48 hours, disappears on reload and is revoked by a replacement invitation for the same email. No email is sent by this workflow; automatic email delivery remains separate transactional-email work (T079).
+
+Creation returns a private, no-store JSON response only after staff-session and `staff.manage` checks. The secret never enters Inertia page props, session flash data or remembered forms. The owner UI holds it only in component memory. The link uses a URL fragment, which is absent from HTTP requests. Before Inertia initializes, a dedicated bootstrap helper captures and removes the fragment and clears the existing history entry; the recipient page consumes the in-memory token once. Invalid/expired/replayed invitations produce a recoverable form error. Passwords clear after responses; their exact bytes, including whitespace, remain protected through the shared credential contract. Account creation and token consumption remain atomic.
+
+Acceptance delegates identity and role selection entirely to the stored invitation; caller-supplied email/role/permission fields are rejected. The selected email is not marked verified merely from possession of a directly shared link. A successful acceptance establishes the versioned staff session and rotates session/CSRF identifiers.
+
+Verification:
+
+- Invitation HTTP tests failed on absent endpoints before implementation. The two new tests cover creator authorization, digest storage, private response headers, absence from page props/session data, nested-field injection rejection, bound email/permissions and single-use acceptance.
+- Full PHP suite: **128 passed** (702 assertions in the recorded run; concurrency polling makes totals vary). PHPStan level 8 and Pint pass.
+- Eleven Vue unit tests, TypeScript, ESLint without warnings, Prettier and production build pass.
+- Ten real Chromium tests pass. The existing owner journey now creates a link and a separate context accepts it after a confirmation failure. Browser evidence proves fragment removal before saved page history, absence from network request URLs, clearing of passwords, a limited account's denied staff-management request, removal of the creator's link on reload, session revocation after a subsequent role change, and rejection of replay. Acceptance errors pass Axe checks.
+
+T008's owner/staff session, invitation, server-permission and final-owner foundation acceptance is verified locally. Customer identity is T009; privileged staff 2FA/re-authentication is T013; automatic email delivery and provider/outage evidence remain T079. Rate-limited sign-in HTML still uses the generic protected error response and needs UX refinement before launch. The full commerce, marketing and launch scope remains unfinished.
+
+History privacy review also reproduced a missing history-key retirement flag before its fix. Sign-in/account switching and sign-out now request Inertia history clearing after session rotation/invalidation. The HTTP test verifies the next page flag; the real browser test presses Back after logout and confirms that only sign-in returns, with no previous owner details restored. The installed API was checked against [Inertia history encryption](https://inertiajs.com/docs/v3/security/history-encryption). Invitation creation/acceptance also reject forged real-HTTP requests without CSRF/origin proof.
