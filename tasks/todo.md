@@ -219,6 +219,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 ### T013: Privileged staff two-factor authentication
 
 - [ ] Complete T013.
+- **Implementation slices:** T013a verifies a maintained OTP library, bounded authenticator profile and standard vectors; T013b adds encrypted, account-bound enrollment and transactionally single-use TOTP/recovery state; T013c connects enrollment/challenge/login enforcement and scoped fresh reauthentication to native/admin flows. T013 remains incomplete until all slices and real browser/lost-device/expiry checks pass.
 - **Module / requirements:** `identity` · ID-03.
 - **Depends on:** T008.
 - **Acceptance:** Privileged staff require 2FA; recovery codes are single-use; sensitive actions require reauthentication.

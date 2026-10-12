@@ -10,8 +10,9 @@
     ],
     "require": {
         "php": "~8.4.0",
+        "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.17",
-        "inertiajs/inertia-laravel": "^3.0"
+        "spomky-labs/otphp": "11.5.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

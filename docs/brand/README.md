@@ -2,6 +2,8 @@
 
 Independent commerce in motion. A folded path forms an abstract M; the two rising ribbons express building and growing a store on your own terms. The lowercase wordmark keeps the platform approachable. This is the implemented initial identity, October 10, 2026.
 
+Open the [responsive preview](preview.html), or review the [vector identity board](identity-board.svg) and [interface direction](interface-direction.md) for logo applications and the planned catalog, order, marketing and storefront styling.
+
 ## Assets
 
 - `public/brand/mark.svg`: pine symbol, intended for light backgrounds.
