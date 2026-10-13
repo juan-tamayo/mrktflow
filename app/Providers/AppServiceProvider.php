@@ -9,6 +9,8 @@ use App\Domain\Catalog\Contracts\InventoryAllocator;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Support\TestDatabaseGuard;
+use App\Domain\Pricing\Actions\CalculatePrice;
+use App\Domain\Pricing\Contracts\PriceCalculator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Application;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(CatalogReader::class, ReadCatalog::class);
         $this->app->singleton(InventoryAllocator::class, AllocateInventory::class);
+        $this->app->singleton(PriceCalculator::class, CalculatePrice::class);
     }
 
     /**

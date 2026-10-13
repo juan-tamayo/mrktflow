@@ -8,7 +8,7 @@ The job creates a fresh random, masked root password for a disposable container 
 
 ## Coverage gate
 
-The specification requires at least 90% line coverage for money, inventory, payment orchestration and entitlement authorization. `scripts/coverage-gate.php` checks Pricing, Catalog, CheckoutOrders and Fulfillment independently, including their whole domain directories to avoid filename exemptions. Missing reports or PHP files omitted from the report fail the gate. Those domain implementations do not exist in this foundation; the gate explicitly reports them as not applicable rather than claiming coverage. Threshold regression tests verify 89% fails and 90% passes. Coverage does not replace required race, replay and authorization tests.
+The specification requires at least 90% line coverage for money, inventory, payment orchestration and entitlement authorization. `scripts/coverage-gate.php` checks Pricing, Catalog, CheckoutOrders and Fulfillment independently, including their whole domain directories to avoid filename exemptions. Missing reports or PHP files omitted from the report fail the gate. Pricing now has domain code; Catalog, CheckoutOrders and Fulfillment also have domain code. The gate still reports a domain as not applicable only when it has no executable statements. Threshold regression tests verify 89% fails and 90% passes. Coverage does not replace required race, replay and authorization tests. The local PHP runtime has no coverage driver, so Pricing 90% is enforced in hosted Quality with PCOV.
 
 Only public-page failure screenshots are uploaded, retained seven days. CI disables browser traces; reports/cookies/environment/log files are not uploaded. Revisit screenshot publication before browser tests contain personal information.
 

@@ -399,7 +399,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T027: Money and deterministic price engine
 
-- [ ] Complete T027.
+- [x] Complete T027 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `PricingMoney` tests were written first, then `Money`, `CalculatePrice`, `AllocateDiscount`, and the `PriceCalculator` binding. Server quotes use currency exponents 0/2/3, UTC sale windows, integer `bcmath` rationals, largest-remainder odd-cent allocations, per-unit residuals, and immutable SHA-256 fingerprints. Mixed currencies, sale-above-regular, missing windows, overflow, and discounts larger than the eligible subtotal are rejected. Tax remains zero until T031; coupon tables and checkout quote persistence remain later. Privileged staff still must pass 2FA before catalog admin. Cart still displays catalog regular prices. `GET /` remains 503. `PricingMoney` 6 tests / 60 assertions. Full PHP suite: 377 tests / 2871 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 49 Vue tests; 10 Chromium journeys including cart add and `GET /` 503. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Pricing coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `pricing` · PRICE-01, PRICE-04.
 - **Depends on:** T016.
 - **Acceptance:** Server calculation supports currency exponents, sale windows, integer allocations and immutable breakdowns with no floating point arithmetic.
@@ -409,9 +410,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 #### Checkpoint after T025, T026, T027
 
-- [ ] Acceptance and focused verification recorded; no zero-test pass.
-- [ ] Relevant build/browser flow passes, including failure, permission and replay cases.
-- [ ] Changes documented; pending external-provider evidence remains explicit.
+- [x] Acceptance and focused verification recorded; no zero-test pass. T025/T026/T027 each have failing-first tests and local evidence; hosted Quality for this branch is pending.
+- [x] Relevant build/browser flow passes, including failure, permission and replay cases. Chromium journeys cover add-to-cart, cart indicator, privileged 2FA setup, and `GET /` 503. PricingMoney covers overflow, sale-window, odd-cent, and coupon-over-subtotal failures.
+- [x] Changes documented in `docs/development.md` and `docs/commerce-rules.md`; pending external-provider evidence remains explicit. Live payment/AI replay remain T035/T074. Coupon holds remain T028.
 
 ### T028: Coupon configuration and redemption holds
 

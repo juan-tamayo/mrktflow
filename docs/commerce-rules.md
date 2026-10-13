@@ -92,6 +92,10 @@ Completed means all required physical shipment work and digital entitlement issu
 
 Persist UTC timestamps and display in store timezone; evaluate rule windows from UTC instants. Preserve store timezone on historical reports. Monetary/provider intent IDs and webhook deduplication records live with the order retention lifecycle, not a short cache TTL. Provider idempotency retention is not the application's deduplication guarantee. [Stripe idempotency](https://docs.stripe.com/api/idempotent_requests).
 
+## Money and price engine (T027)
+
+`Money` stores nonnegative minor units with an ISO currency and ICU fraction-digit exponent, bounded by JavaScript's safe integer limit. Arithmetic uses integer addition/multiplication and `bcmath` rationals; currency mismatches and overflow fail closed. `CalculatePrice` selects an active sale when `saleStartsAt <= quotedAt < saleEndsAt` in UTC, otherwise the regular price. Fixed and percentage merchandise discounts allocate with largest remainder and stable line-ID tie-breaking; percentage totals use round-half-up on the eligible integer subtotal, then the same allocator. Per-unit residuals put leftover minor units on the last units of a line so later refunds can consume original pennies. Quotes are immutable and carry a SHA-256 fingerprint of the breakdown. Shipping may be supplied as an already-quoted integer amount; tax is not calculated here. Coupon tables, tax rules, and checkout quote persistence remain T028/T031/T032.
+
 ## Payment/reservation spike (T011)
 
 The implemented `PaymentGateway` boundary and immutable intent/evidence objects establish local contracts; no gateway adapter, payable route, order tables or catalog reservation service exists yet. Amounts are positive integer minor units bounded by JavaScript's safe integer limit, with a known ISO currency. This application limit is not a provider amount limit or a promise of provider currency support. Zero-total orders bypass this gateway. Future gateway mapping must validate currency exponent, provider limits and exact frozen component allocations before network I/O.
