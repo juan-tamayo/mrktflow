@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
 import AttributeFields, { type SchemaField } from '../components/AttributeFields.vue'
+import DigitalAssets from '../components/DigitalAssets.vue'
 import StockEditor from '../components/StockEditor.vue'
 import VariantEditor from '../components/VariantEditor.vue'
 import { Head, useForm } from '@inertiajs/vue3'
@@ -16,6 +17,7 @@ const props = withDefaults(
       slug: string
       description: string
       status: string
+      type?: string
       version: number
       image: { url: string; alt: string }
       variant: { sku: string; money: { amount: number } }
@@ -32,9 +34,21 @@ const props = withDefaults(
         available_quantity?: number | null
         low_stock_threshold?: number | null
         low_stock?: boolean
+        digital_files?: { id?: string; label: string }[]
       }[]
       option_axes: { name: string; values: string[] }[]
       category_ids: string[]
+      digital_assets?: {
+        id: string
+        label: string
+        versions: {
+          id: string
+          version: number
+          status: string
+          bytes: number
+          content_type: string
+        }[]
+      }[]
       schema_id?: string | null
       attributes?: Record<string, string | boolean>
     } | null
@@ -55,6 +69,7 @@ const form = useForm({
   slug: props.product?.slug ?? '',
   description: props.product?.description ?? '',
   status: props.product?.status ?? 'draft',
+  type: props.product?.type ?? 'physical',
   sku: props.product?.variant.sku ?? '',
   price_amount: props.product?.variant.money.amount ?? 0,
   image_alt: props.product?.image.alt ?? '',
@@ -93,11 +108,14 @@ function submit(status: 'draft' | 'published') {
       <BrandLogo href="/admin" /><a href="/admin/products" class="text-link">Products</a>
     </header>
     <main id="product-main" class="setup-main">
-      <p class="eyebrow">Simple physical product</p>
+      <p class="eyebrow">
+        {{ product?.type === 'digital' ? 'Digital product' : 'Catalog product' }}
+      </p>
       <h1>{{ product ? 'Edit product' : 'Create a product' }}<span class="accent">.</span></h1>
       <p class="lede">
-        Save the product, then add option combinations with unique SKUs. Drafts stay private. The
-        store homepage stays closed; published products and categories can be browsed.
+        Save the product, then add option combinations with unique SKUs. Digital products attach
+        private file versions after save. Drafts stay private. The store homepage stays closed;
+        published products and categories can be browsed.
       </p>
       <p v-if="saved" role="status" class="success-notice">Product saved.</p>
       <form class="setup-form" @submit.prevent="submit('draft')">
@@ -123,6 +141,20 @@ function submit(status: 'draft' | 'published') {
             <label for="product-sku">SKU</label>
             <input id="product-sku" v-model="form.sku" name="sku" maxlength="64" required />
           </div>
+        </div>
+        <div class="setup-field">
+          <label for="product-type">Product type</label>
+          <select
+            id="product-type"
+            v-model="form.type"
+            name="type"
+            :disabled="product !== null"
+            required
+          >
+            <option value="physical">Physical</option>
+            <option value="digital">Digital</option>
+          </select>
+          <p class="field-help">Type is set when the product is created and cannot be changed.</p>
         </div>
         <div class="setup-field">
           <label for="product-description">Description</label>
@@ -217,10 +249,17 @@ function submit(status: 'draft' | 'published') {
         </button>
       </form>
       <StockEditor
-        v-if="product"
+        v-if="product && product.type !== 'digital'"
         :key="product.version"
         :product-id="product.id"
         :variants="product.variants"
+      />
+      <DigitalAssets
+        v-if="product && product.type === 'digital'"
+        :key="'digital-' + product.version"
+        :product-id="product.id"
+        :variants="product.variants"
+        :assets="product.digital_assets ?? []"
       />
       <VariantEditor
         v-if="product"

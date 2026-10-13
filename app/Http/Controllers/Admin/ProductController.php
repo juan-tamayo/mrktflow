@@ -120,7 +120,7 @@ final class ProductController
             $product = is_array($decoded) ? $decoded : null;
         }
         if (! is_array($product)) {
-            $product = $request->only(['title', 'slug', 'description', 'status', 'sku', 'price_amount', 'image_alt', 'version', 'category_ids', 'schema_id', 'attributes']);
+            $product = $request->only(['title', 'slug', 'description', 'status', 'type', 'sku', 'price_amount', 'image_alt', 'version', 'category_ids', 'schema_id', 'attributes']);
         }
         if (($product['version'] ?? '') === '' || $product['version'] === null) {
             unset($product['version']);
@@ -136,13 +136,14 @@ final class ProductController
     /** @return array<string, mixed> */
     private function validated(Request $request, bool $update): array
     {
-        $keys = 'title,slug,description,status,sku,price_amount,image_alt,category_ids,version,schema_id,attributes';
+        $keys = 'title,slug,description,status,type,sku,price_amount,image_alt,category_ids,version,schema_id,attributes';
         $rules = [
             'product' => ['required', 'array:'.$keys],
             'product.title' => ['required', 'string', 'max:200'],
             'product.slug' => ['required', 'string', 'max:80'],
             'product.description' => ['required', 'string', 'max:5000'],
             'product.status' => ['required', 'string'],
+            'product.type' => ['sometimes', 'string', 'in:physical,digital'],
             'product.sku' => ['required', 'string', 'max:64'],
             'product.price_amount' => ['required', 'integer'],
             'product.image_alt' => ['required', 'string', 'max:200'],

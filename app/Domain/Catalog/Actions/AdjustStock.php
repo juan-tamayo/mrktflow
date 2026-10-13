@@ -43,6 +43,10 @@ final class AdjustStock
             if (isset($data['product_id']) && $variant->product_id !== $data['product_id']) {
                 abort(404);
             }
+            $productType = DB::table('products')->where('id', $variant->product_id)->lockForUpdate()->value('type');
+            if ($productType === 'digital' && $data['tracks_inventory']) {
+                throw ValidationException::withMessages(['tracks_inventory' => 'Digital variants are untracked.']);
+            }
             $balance = DB::table('inventory_balances')->where('variant_id', $data['variant_id'])->lockForUpdate()->first();
             if ($data['tracks_inventory']) {
                 $onHand = $data['on_hand'] ?? 0;

@@ -308,7 +308,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T020: Digital product and private asset versions
 
-- [ ] Complete T020.
+- [x] Complete T020 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogDigitalAsset` tests were written first, then digital asset tables, `VersionDigitalAsset`, staff `DigitalAssets`, public download labels without storage keys, and `DemoStoreSeeder` (refused in production; not called from `DatabaseSeeder`). Digital variants are untracked and quantity one; processing/quarantined versions cannot be attached. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 339 tests / 2255 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 41 Vue tests; 10 Chromium journeys including digital upload/attach and a public page that omits original keys. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-06, CAT-02, PLAT-06.
 - **Depends on:** T007, T016.
 - **Acceptance:** Digital variants attach versioned private files; quantity one/processing states enforced and public views omit keys. Now that catalog tables exist, seed fictional physical/digital products without production data or automatic production seeding.

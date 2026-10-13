@@ -31,7 +31,8 @@ final class SaveProduct
         }
         $money = app(StoreCurrency::class)->current();
         $data = Validator::make(['product' => $input], [
-            'product' => ['required', 'array:id,version,title,slug,description,status,sku,price_amount,image_asset_id,image_alt,category_ids,schema_id,attributes'],
+            'product' => ['required', 'array:id,version,title,slug,description,status,type,sku,price_amount,image_asset_id,image_alt,category_ids,schema_id,attributes'],
+            'product.type' => ['sometimes', 'string', 'in:physical,digital'],
             'product.id' => ['nullable', 'uuid'],
             'product.version' => ['required_with:product.id', 'integer', 'min:1', 'max:4294967295'],
             'product.title' => ['required', 'string', 'max:200'],
@@ -64,12 +65,20 @@ final class SaveProduct
                 }
                 $id = isset($data['id']) ? (string) $data['id'] : (string) Str::uuid();
                 $version = $existing === null ? 1 : ((int) $existing->version) + 1;
+                $type = is_string($data['type'] ?? null) ? $data['type'] : 'physical';
+                if ($existing !== null) {
+                    $existingType = is_string($existing->type) ? $existing->type : 'physical';
+                    if (isset($data['type']) && $type !== $existingType) {
+                        throw ValidationException::withMessages(['product.type' => 'Product type cannot be changed.']);
+                    }
+                    $type = $existingType;
+                }
                 $publishedAt = $data['status'] === 'published'
                     ? ($existing !== null && $existing->status === 'published' ? $existing->published_at : $now)
                     : null;
                 $product = [
                     'title' => $data['title'], 'slug' => $data['slug'], 'description' => $data['description'],
-                    'type' => 'physical', 'status' => $data['status'], 'version' => $version,
+                    'type' => $type, 'status' => $data['status'], 'version' => $version,
                     'published_at' => $publishedAt, 'updated_at' => $now,
                 ];
                 if ($existing === null) {
@@ -80,6 +89,8 @@ final class SaveProduct
                         'option_fingerprint' => '', 'price_amount' => $data['price_amount'],
                         'currency' => $money['currency'], 'exponent' => $money['exponent'],
                         'tax_class_key' => 'standard', 'shipping_class_key' => 'general',
+                        'max_quantity' => $type === 'digital' ? 1 : 99,
+                        'tracks_inventory' => false,
                         'created_at' => $now, 'updated_at' => $now,
                     ]);
                     DB::table('product_media')->insert([
@@ -112,7 +123,7 @@ final class SaveProduct
                     'actor_type' => 'staff', 'actor_id' => $actor->id, 'metadata' => ['version' => $version],
                 ]);
 
-                return ['id' => $id, 'slug' => $data['slug'], 'version' => $version, 'status' => $data['status'], 'type' => 'physical'];
+                return ['id' => $id, 'slug' => $data['slug'], 'version' => $version, 'status' => $data['status'], 'type' => $type];
             });
         } catch (UniqueConstraintViolationException $exception) {
             if (DB::table('products')->where('slug', $data['slug'])->when(isset($data['id']), fn ($query) => $query->where('id', '!=', $data['id']))->exists()) {
