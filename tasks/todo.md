@@ -297,7 +297,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T019: Stock balance and reservation contract
 
-- [ ] Complete T019.
+- [x] Complete T019 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogInventory` tests were written first, then inventory tables, `InventoryAllocator`/`AllocateInventory`, `AdjustStock`, and staff `StockEditor`. Tracked allocations store original/shipped/released/remaining quantities; partial ship/cancel conserves `original = shipped + released + remaining`. Hold/commit/release/ship and ledger writes are atomic and idempotent; adjustments cannot undercut reserved units. Parallel last-unit holds on isolated MySQL 8.4 produced exactly one winner. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 332 tests / 2128 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 40 Vue tests; 10 Chromium journeys including tracked stock and a low-stock indicator. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-05.
 - **Depends on:** T011, T016.
 - **Acceptance:** Tracked allocations store original/shipped/released/remaining quantities; partial shipment/cancel conserves their sum. Hold/commit/release/ship and ledger writes are atomic/idempotent; adjustments cannot undercut allocations.

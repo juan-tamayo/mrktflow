@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductInventoryController;
 use App\Http\Controllers\Admin\ProductSchemaController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\StaffController;
@@ -47,6 +48,7 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/products/{productId}', [ProductController::class, 'edit'])->whereUuid('productId');
         Route::patch('/admin/products/{productId}', [ProductController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product:');
         Route::put('/admin/products/{productId}/variants', [ProductVariantController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-variants:');
+        Route::patch('/admin/products/{productId}/inventory', [ProductInventoryController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-inventory:');
         Route::get('/admin/schemas', [ProductSchemaController::class, 'index']);
         Route::get('/admin/schemas/create', [ProductSchemaController::class, 'create']);
         Route::post('/admin/schemas', [ProductSchemaController::class, 'store'])->middleware('throttle:30,1,catalog-schema:');

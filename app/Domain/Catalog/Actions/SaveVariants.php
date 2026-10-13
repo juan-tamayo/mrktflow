@@ -97,6 +97,19 @@ final class SaveVariants
                         $keepIds[] = $variant['id'];
                     }
                 }
+                $existingIds = [];
+                foreach (DB::table('product_variants')->where('product_id', $data['id'])->lockForUpdate()->pluck('id') as $existingId) {
+                    if (is_string($existingId)) {
+                        $existingIds[] = $existingId;
+                    }
+                }
+                $removeIds = array_values(array_diff($existingIds, $keepIds));
+                if ($removeIds !== []) {
+                    if (DB::table('inventory_balances')->whereIn('variant_id', $removeIds)->where('reserved', '>', 0)->exists()) {
+                        throw ValidationException::withMessages(['variants' => 'Release reserved stock before replacing this variant.']);
+                    }
+                    DB::table('inventory_balances')->whereIn('variant_id', $removeIds)->delete();
+                }
                 $delete = DB::table('product_variants')->where('product_id', $data['id']);
                 if ($keepIds !== []) {
                     $delete->whereNotIn('id', $keepIds);
@@ -141,7 +154,7 @@ final class SaveVariants
                         'length_mm' => $variant['length_mm'] ?? null,
                         'width_mm' => $variant['width_mm'] ?? null,
                         'height_mm' => $variant['height_mm'] ?? null,
-                        'tracks_inventory' => false,
+                        'tracks_inventory' => isset($variant['id']) && (bool) DB::table('product_variants')->where('id', $id)->value('tracks_inventory'),
                         'updated_at' => $now,
                     ];
                     if (isset($variant['id'])) {

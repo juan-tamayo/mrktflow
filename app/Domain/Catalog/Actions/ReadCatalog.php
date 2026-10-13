@@ -330,12 +330,19 @@ final class ReadCatalog implements CatalogReader
 
     /**
      * @param  array{url: string, alt: string, assetId?: string}  $fallbackImage
-     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null}>
+     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, tracks_inventory?: bool, on_hand?: int|null, reserved?: int, available_quantity?: int|null, low_stock_threshold?: int|null, low_stock?: bool}>
      */
     private function variants(string $productId, array $fallbackImage, bool $staff): array
     {
         $variants = [];
-        $rows = DB::table('product_variants')->where('product_id', $productId)->orderByDesc('is_default')->orderBy('sku')->orderBy('id')->get();
+        $rows = DB::table('product_variants')
+            ->leftJoin('inventory_balances', 'product_variants.id', '=', 'inventory_balances.variant_id')
+            ->where('product_variants.product_id', $productId)
+            ->orderByDesc('product_variants.is_default')
+            ->orderBy('product_variants.sku')
+            ->orderBy('product_variants.id')
+            ->select('product_variants.*', 'inventory_balances.on_hand as balance_on_hand', 'inventory_balances.reserved as balance_reserved', 'inventory_balances.low_stock_threshold as balance_threshold')
+            ->get();
         foreach ($rows as $row) {
             $decoded = is_array($row->options) ? $row->options : json_decode(is_string($row->options) ? $row->options : '[]', true);
             $options = [];
@@ -379,6 +386,19 @@ final class ReadCatalog implements CatalogReader
                 'width_mm' => $staff && $row->width_mm !== null ? (int) $row->width_mm : null,
                 'height_mm' => $staff && $row->height_mm !== null ? (int) $row->height_mm : null,
             ];
+            if ($staff) {
+                $tracks = (bool) $row->tracks_inventory;
+                $onHand = $row->balance_on_hand !== null ? (int) $row->balance_on_hand : null;
+                $reserved = $row->balance_reserved !== null ? (int) $row->balance_reserved : 0;
+                $available = $tracks && $onHand !== null ? $onHand - $reserved : null;
+                $threshold = $row->balance_threshold !== null ? (int) $row->balance_threshold : null;
+                $variant['tracks_inventory'] = $tracks;
+                $variant['on_hand'] = $onHand;
+                $variant['reserved'] = $reserved;
+                $variant['available_quantity'] = $available;
+                $variant['low_stock_threshold'] = $threshold;
+                $variant['low_stock'] = $tracks && $threshold !== null && $available !== null && $available <= $threshold;
+            }
             $variants[] = $variant;
         }
 

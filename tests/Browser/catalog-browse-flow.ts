@@ -93,7 +93,14 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Create combinations' }).click()
   await page.getByLabel('Price in the smallest currency unit').nth(2).fill('2699')
   await page.getByRole('button', { name: 'Save variants' }).click()
-  await expect(page.getByRole('status')).toContainText('Product saved')
+  await expect(page.getByRole('status').filter({ hasText: 'Product saved' })).toBeVisible()
+  await page.getByLabel('Track inventory').check()
+  await expect(page.getByLabel('On-hand quantity')).toBeVisible()
+  await page.getByLabel('On-hand quantity').fill('2')
+  await page.getByLabel('Low-stock threshold').fill('3')
+  await page.getByRole('button', { name: 'Save stock' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Product saved' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Low stock' })).toBeVisible()
   await page.goto('http://127.0.0.1:8011/products/studio-lamp')
   await expect(page.getByRole('status')).toContainText(
     'Choose a finish and size to see the current price',
