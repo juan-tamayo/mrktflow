@@ -85,7 +85,8 @@ const logout = useForm({})
             <div>
               <a class="tool-link" href="/admin/coupons">Coupons</a>
               <a class="tool-link" href="/admin/taxes">Taxes</a>
-              <p>Configure coupons, tax classes, destination rates, and price mode.</p>
+              <a class="tool-link" href="/admin/pricing-preview">Pricing preview</a>
+              <p>Configure coupons, tax classes, destination rates, and preview cart totals.</p>
             </div>
             <span aria-hidden="true">↗</span>
           </div>

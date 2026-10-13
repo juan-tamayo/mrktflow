@@ -477,7 +477,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T033: Pricing preview and cart browser gate
 
-- [ ] Complete T033.
+- [x] Complete T033 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `PricingPreview` tests were written first, then `PreviewPricing` plus `/admin/pricing-preview`. Admin mixed-cart preview matches the storefront quote itemization for the documented exclusive fixture (2500 merchandise − 250 coupon + 300 shipping + 255 tax = 2805) and the same currency formatting. Physical-only, digital-only (zero shipping), missing tax coverage, unsupported shipping, and rejected coupons return understandable failures without inventing a payable total. Empty carts offer continue-shopping; unavailable lines stay removable and withhold checkout. Privileged staff still must pass 2FA. `GET /` remains 503. `PricingPreview` 6 tests / 126 assertions. Full PHP suite: 418 tests / 3527 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 61 Vue tests; 11 Chromium journeys including mixed-cart checkout vs admin preview totals, empty-cart continue-shopping, closed-store cart 503, and `GET /` 503. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `pricing` · PRICE-05, WEB-07.
 - **Depends on:** T032.
 - **Acceptance:** Admin preview and storefront quote show identical itemized totals; currency, rule and failure states are understandable.
