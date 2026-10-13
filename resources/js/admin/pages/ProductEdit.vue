@@ -1,35 +1,47 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import AttributeFields, { type SchemaField } from '../components/AttributeFields.vue'
 import VariantEditor from '../components/VariantEditor.vue'
 import { Head, useForm } from '@inertiajs/vue3'
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 
 defineOptions({ name: 'ProductEdit' })
 
-const props = defineProps<{
-  product: {
-    id: string
-    title: string
-    slug: string
-    description: string
-    status: string
-    version: number
-    image: { url: string; alt: string }
-    variant: { sku: string; money: { amount: number } }
-    variants: {
+const props = withDefaults(
+  defineProps<{
+    product: {
       id: string
-      sku: string
-      isDefault: boolean
-      available: boolean
-      options: { name: string; value: string }[]
-      money: { amount: number }
+      title: string
+      slug: string
+      description: string
+      status: string
+      version: number
+      image: { url: string; alt: string }
+      variant: { sku: string; money: { amount: number } }
+      variants: {
+        id: string
+        sku: string
+        isDefault: boolean
+        available: boolean
+        options: { name: string; value: string }[]
+        money: { amount: number }
+      }[]
+      option_axes: { name: string; values: string[] }[]
+      category_ids: string[]
+      schema_id?: string | null
+      attributes?: Record<string, string | boolean>
+    } | null
+    categories: { id: string; title: string; path: string }[]
+    schemas?: {
+      id: string
+      key: string
+      label: string
+      attributes: SchemaField[]
     }[]
-    option_axes: { name: string; values: string[] }[]
-    category_ids: string[]
-  } | null
-  categories: { id: string; title: string; path: string }[]
-  saved: boolean
-}>()
+    saved: boolean
+  }>(),
+  { schemas: () => [] },
+)
 const errors = ref<HTMLElement | null>(null)
 const form = useForm({
   title: props.product?.title ?? '',
@@ -41,8 +53,13 @@ const form = useForm({
   image_alt: props.product?.image.alt ?? '',
   version: props.product?.version,
   category_ids: props.product?.category_ids ?? [],
+  schema_id: props.product?.schema_id ?? '',
+  attributes: props.product?.attributes ?? {},
   image: null as File | null,
 })
+const selectedFields = computed(
+  () => props.schemas.find((schema) => schema.id === form.schema_id)?.attributes ?? [],
+)
 function submit(status: 'draft' | 'published') {
   form.status = status
   const options = {
@@ -153,6 +170,21 @@ function submit(status: 'draft' | 'published') {
             required
           />
         </div>
+        <div v-if="schemas.length" class="setup-field">
+          <label for="product-schema">Product schema</label>
+          <select id="product-schema" v-model="form.schema_id" name="schema_id">
+            <option value="">None (core fields only)</option>
+            <option v-for="schema in schemas" :key="schema.id" :value="schema.id">
+              {{ schema.label }}
+            </option>
+          </select>
+        </div>
+        <AttributeFields
+          v-if="selectedFields.length"
+          v-model:values="form.attributes"
+          mode="values"
+          :fields="selectedFields"
+        />
         <fieldset v-if="categories.length" class="setup-field">
           <legend>Categories</legend>
           <label v-for="category in categories" :key="category.id" class="category-option">

@@ -102,7 +102,11 @@ Authorized staff with `catalog.write` create a simple physical product at `/admi
 
 ## Categories and public browse
 
-Authorized staff manage nested categories at `/admin/categories`. Saves reject cycles, duplicate paths, and reserved route slugs. Changing a slug records a validated redirect for the old path and descendant paths. Published category pages render at `/categories/{path}` and published products at `/products/{slug}` using the default theme, including breadcrumbs and an empty-category state. Shoppers select a published variant with `?variant={id}`; missing selection prompts them to choose, and unavailable combinations show that they cannot be bought. Unpublished categories, draft products, and unknown slugs return 404 without leaking titles. The store homepage `GET /` remains HTTP 503. Typed schemas, search facets, and checkout remain later tasks.
+Authorized staff manage nested categories at `/admin/categories`. Saves reject cycles, duplicate paths, and reserved route slugs. Changing a slug records a validated redirect for the old path and descendant paths. Published category pages render at `/categories/{path}` and published products at `/products/{slug}` using the default theme, including breadcrumbs and an empty-category state. Shoppers select a published variant with `?variant={id}`; missing selection prompts them to choose, and unavailable combinations show that they cannot be bought. Unpublished categories, draft products, and unknown slugs return 404 without leaking titles. The store homepage `GET /` remains HTTP 503. Search facets and checkout remain later tasks.
+
+## Typed product schemas
+
+Authorized staff with `catalog.write` create versioned schemas at `/admin/schemas`. A schema has a stable key, comparison group, and typed fields (text, integer, decimal, boolean, date, or enum) with required/comparable/filterable flags. Attribute keys are globally unique in meaning: a later schema cannot reuse `sensor.megapixels` as a different type. Products may assign the current schema version and must supply valid values; invalid numeric, enum, and missing required values are rejected. Public product pages show those fields as escaped text. Schema field migrations stay T018. No cart or checkout.
 
 ## Payment/reservation contract spike
 

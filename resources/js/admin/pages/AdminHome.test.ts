@@ -21,11 +21,13 @@ it('shows the closed launch status and only authorized workspace actions', async
   )
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/schemas"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
   await wrapper.setProps({ canManageStaff: false, canManageCatalog: false, canPreviewTheme: false })
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/schemas"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
   expect(
@@ -37,6 +39,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin',
           '/admin/products',
           '/admin/categories',
+          '/admin/schemas',
           '/admin/staff',
           '/admin/two-factor',
           '/admin/theme-preview',
