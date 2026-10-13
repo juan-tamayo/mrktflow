@@ -15,25 +15,26 @@ const props = defineProps<{
     version: number
     image: { url: string; alt: string }
     variant: { sku: string; money: { amount: number } }
+    category_ids: string[]
   } | null
+  categories: { id: string; title: string; path: string }[]
   saved: boolean
 }>()
 const errors = ref<HTMLElement | null>(null)
 const form = useForm({
-  product: {
-    title: props.product?.title ?? '',
-    slug: props.product?.slug ?? '',
-    description: props.product?.description ?? '',
-    status: props.product?.status ?? 'draft',
-    sku: props.product?.variant.sku ?? '',
-    price_amount: props.product?.variant.money.amount ?? 0,
-    image_alt: props.product?.image.alt ?? '',
-    version: props.product?.version,
-  },
+  title: props.product?.title ?? '',
+  slug: props.product?.slug ?? '',
+  description: props.product?.description ?? '',
+  status: props.product?.status ?? 'draft',
+  sku: props.product?.variant.sku ?? '',
+  price_amount: props.product?.variant.money.amount ?? 0,
+  image_alt: props.product?.image.alt ?? '',
+  version: props.product?.version,
+  category_ids: props.product?.category_ids ?? [],
   image: null as File | null,
 })
 function submit(status: 'draft' | 'published') {
-  form.product.status = status
+  form.status = status
   const options = {
     forceFormData: true,
     preserveScroll: true,
@@ -62,7 +63,8 @@ function submit(status: 'draft' | 'published') {
       <h1>{{ product ? 'Edit product' : 'Create a product' }}<span class="accent">.</span></h1>
       <p class="lede">
         One variant, one SKU, one price, and one image. Save a draft for staff only, or publish when
-        you are ready. The public storefront stays closed.
+        you are ready. The store homepage stays closed; published products and categories can be
+        browsed.
       </p>
       <p v-if="saved" role="status" class="success-notice">Product saved.</p>
       <form class="setup-form" @submit.prevent="submit('draft')">
@@ -77,35 +79,23 @@ function submit(status: 'draft' | 'published') {
         </div>
         <div class="setup-field">
           <label for="product-title">Title</label>
-          <input
-            id="product-title"
-            v-model="form.product.title"
-            name="title"
-            maxlength="200"
-            required
-          />
+          <input id="product-title" v-model="form.title" name="title" maxlength="200" required />
         </div>
         <div class="setup-grid">
           <div class="setup-field">
             <label for="product-slug">Slug</label>
-            <input
-              id="product-slug"
-              v-model="form.product.slug"
-              name="slug"
-              maxlength="80"
-              required
-            />
+            <input id="product-slug" v-model="form.slug" name="slug" maxlength="80" required />
           </div>
           <div class="setup-field">
             <label for="product-sku">SKU</label>
-            <input id="product-sku" v-model="form.product.sku" name="sku" maxlength="64" required />
+            <input id="product-sku" v-model="form.sku" name="sku" maxlength="64" required />
           </div>
         </div>
         <div class="setup-field">
           <label for="product-description">Description</label>
           <textarea
             id="product-description"
-            v-model="form.product.description"
+            v-model="form.description"
             name="description"
             rows="5"
             maxlength="5000"
@@ -116,7 +106,7 @@ function submit(status: 'draft' | 'published') {
           <label for="product-price">Price in the smallest currency unit</label>
           <input
             id="product-price"
-            v-model.number="form.product.price_amount"
+            v-model.number="form.price_amount"
             name="price_amount"
             type="number"
             min="0"
@@ -148,14 +138,26 @@ function submit(status: 'draft' | 'published') {
           <label for="product-alt">Image description</label>
           <input
             id="product-alt"
-            v-model="form.product.image_alt"
+            v-model="form.image_alt"
             name="image_alt"
             maxlength="200"
             required
           />
         </div>
+        <fieldset v-if="categories.length" class="setup-field">
+          <legend>Categories</legend>
+          <label v-for="category in categories" :key="category.id" class="category-option">
+            <input
+              v-model="form.category_ids"
+              type="checkbox"
+              :value="category.id"
+              :name="`category_ids[]`"
+            />
+            {{ category.path }}
+          </label>
+        </fieldset>
         <button type="submit" class="quiet-button" :disabled="form.processing">
-          {{ form.processing && form.product.status === 'draft' ? 'Saving…' : 'Save draft' }}
+          {{ form.processing && form.status === 'draft' ? 'Saving…' : 'Save draft' }}
         </button>
         <button
           type="button"
@@ -163,7 +165,7 @@ function submit(status: 'draft' | 'published') {
           :disabled="form.processing"
           @click="submit('published')"
         >
-          {{ form.processing && form.product.status === 'published' ? 'Publishing…' : 'Publish' }}
+          {{ form.processing && form.status === 'published' ? 'Publishing…' : 'Publish' }}
         </button>
       </form>
     </main>

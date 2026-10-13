@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import settings from '../Fixtures/store-settings.json' with { type: 'json' }
 import { exerciseCustomerAccount } from './customer-account-flow'
+import { exerciseCatalogBrowse } from './catalog-browse-flow'
 import { exerciseThemePreview } from './theme-preview-flow'
 import { totpCode } from './totp'
 
@@ -49,7 +50,7 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
 })
 
 test('owner can unlock, save and reload interrupted store setup', async ({ page, browser }) => {
-  test.setTimeout(180_000)
+  test.setTimeout(240_000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.setViewportSize({ width: 390, height: 844 })
@@ -284,6 +285,7 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
   ).toEqual([])
   await replay.close()
   await Promise.all([exerciseCustomerAccount(browser), exerciseThemePreview(page, browser)])
+  await exerciseCatalogBrowse(page)
   const lostDevice = await browser.newContext()
   const lostPage = await lostDevice.newPage()
   await lostPage.goto('/admin/login')

@@ -62,8 +62,16 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canManageStaff" class="workspace-tool">
+          <div v-if="canManageCatalog" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">02</span>
+            <div>
+              <a class="tool-link" href="/admin/categories">Categories</a>
+              <p>Build a category tree and publish browse pages.</p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageStaff" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">03</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -71,7 +79,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">03</span>
+            <span class="tool-number" aria-hidden="true">04</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>

@@ -29,7 +29,7 @@ defineProps<{
       <h1>Products<span class="accent">.</span></h1>
       <p class="lede">
         Save a simple physical product as a draft, then publish it when the title, SKU, price, and
-        image are ready. Drafts stay out of the public catalog, and the storefront remains closed.
+        image are ready. Drafts stay out of the public catalog. The store homepage remains closed.
       </p>
       <p v-if="canWrite">
         <a class="primary-button" href="/admin/products/create">Create a product</a>

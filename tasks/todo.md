@@ -241,7 +241,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T015: Categories and public product browse
 
-- [ ] Complete T015.
+- [x] Complete T015 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogCategory` tests were written first, then category tables, `SaveCategory`, public `CatalogReader` browse, staff category admin, theme category/product pages, and slug redirects. Category trees reject cycles, path collisions, and reserved slugs. Published category and product pages render server-side with breadcrumbs; drafts, missing products, and unpublished categories stay 404. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 299 tests / 1777 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 29 Vue tests; 10 Chromium journeys including empty category, breadcrumbs, missing product, and closed homepage. Composer/npm audits and 237 registry signatures passed. Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-03, WEB-01, WEB-03.
 - **Depends on:** T010, T014.
 - **Acceptance:** Category tree rejects cycles/path collisions; published product/category pages render server-side with basic navigation.

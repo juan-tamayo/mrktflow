@@ -674,6 +674,12 @@ a {
   max-width: 10rem;
   height: auto;
 }
+.category-option {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
 .setup-main a.primary-button {
   display: inline-flex;
   text-decoration: none;

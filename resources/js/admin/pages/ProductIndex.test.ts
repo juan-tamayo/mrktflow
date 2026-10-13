@@ -28,7 +28,7 @@ it('lists products and only offers create when catalog write is allowed', async 
   expect(wrapper.find('a[href="/admin/products/create"]').exists()).toBe(true)
   expect(wrapper.text()).toContain('Studio Lamp')
   expect(wrapper.text()).toContain('draft')
-  expect(wrapper.text()).toContain('storefront remains closed')
+  expect(wrapper.text()).toContain('homepage remains closed')
   await wrapper.setProps({
     canWrite: false,
     products: { data: [], next_page_url: null, prev_page_url: null },

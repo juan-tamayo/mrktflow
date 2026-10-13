@@ -106,6 +106,48 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+.theme-breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  font-size: 0.875rem;
+}
+.theme-breadcrumbs li:not(:last-child)::after {
+  content: '/';
+  margin-left: 0.75rem;
+  color: var(--muted);
+}
+.theme-empty {
+  color: var(--muted);
+  margin: 2rem 0;
+}
+.theme-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+}
+.theme-product-card {
+  display: grid;
+  gap: 0.75rem;
+  text-decoration: none;
+  min-width: 0;
+}
+.theme-product-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: #e5ebe4;
+}
+.theme-product-card strong {
+  color: var(--muted);
+  font-weight: 600;
+}
 @media (max-width: 760px) {
   .theme-product {
     grid-template-columns: 1fr;

@@ -52,11 +52,15 @@ final class ProductController
         ]);
     }
 
-    public function create(): Response
+    public function create(ReadCatalog $catalog): Response
     {
         Gate::authorize('catalog.write');
 
-        return Inertia::render('ProductEdit', ['product' => null, 'saved' => session()->get('product_saved', false)]);
+        return Inertia::render('ProductEdit', [
+            'product' => null,
+            'categories' => $catalog->staffCategories(),
+            'saved' => session()->get('product_saved', false),
+        ]);
     }
 
     public function edit(string $productId, ReadCatalog $catalog): Response
@@ -68,7 +72,11 @@ final class ProductController
             abort(404);
         }
 
-        return Inertia::render('ProductEdit', ['product' => $product, 'saved' => session()->get('product_saved', false)]);
+        return Inertia::render('ProductEdit', [
+            'product' => $product,
+            'categories' => $catalog->staffCategories(),
+            'saved' => session()->get('product_saved', false),
+        ]);
     }
 
     public function store(Request $request, SaveProduct $save, StoreMedia $media, ProcessMedia $processor): RedirectResponse
@@ -76,7 +84,7 @@ final class ProductController
         Gate::authorize('catalog.write');
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
-        $input = $this->validated($request, false);
+        $input = $this->validated($this->hydrateProduct($request), false);
         $input['image_asset_id'] = $this->storeImage($request, $media, $processor);
 
         return $this->persist($request, $save, $staff, $input, '/admin/products/create');
@@ -87,7 +95,7 @@ final class ProductController
         Gate::authorize('catalog.write');
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
-        $input = $this->validated($request, true);
+        $input = $this->validated($this->hydrateProduct($request), true);
         $input['id'] = $productId;
         if ($request->file('image') !== null) {
             $input['image_asset_id'] = $this->storeImage($request, $media, $processor);
@@ -102,13 +110,28 @@ final class ProductController
         return $this->persist($request, $save, $staff, $input, '/admin/products/'.$productId);
     }
 
+    private function hydrateProduct(Request $request): Request
+    {
+        $product = $request->input('product');
+        if (is_string($product) && $product !== '') {
+            $decoded = json_decode($product, true);
+            $product = is_array($decoded) ? $decoded : null;
+        }
+        if (! is_array($product)) {
+            $product = $request->only(['title', 'slug', 'description', 'status', 'sku', 'price_amount', 'image_alt', 'version', 'category_ids']);
+        }
+        if (($product['version'] ?? '') === '' || $product['version'] === null) {
+            unset($product['version']);
+        }
+        $request->merge(['product' => $product]);
+
+        return $request;
+    }
+
     /** @return array<string, mixed> */
     private function validated(Request $request, bool $update): array
     {
-        $keys = 'title,slug,description,status,sku,price_amount,image_alt';
-        if ($update) {
-            $keys .= ',version';
-        }
+        $keys = 'title,slug,description,status,sku,price_amount,image_alt,category_ids,version';
         $rules = [
             'product' => ['required', 'array:'.$keys],
             'product.title' => ['required', 'string', 'max:200'],
@@ -118,11 +141,11 @@ final class ProductController
             'product.sku' => ['required', 'string', 'max:64'],
             'product.price_amount' => ['required', 'integer'],
             'product.image_alt' => ['required', 'string', 'max:200'],
+            'product.category_ids' => ['sometimes', 'array', 'max:20'],
+            'product.category_ids.*' => ['uuid'],
+            'product.version' => [$update ? 'required' : 'sometimes', 'nullable', 'integer'],
             'image' => [$update ? 'nullable' : 'required', 'file'],
         ];
-        if ($update) {
-            $rules['product.version'] = ['required', 'integer'];
-        }
 
         return $request->validate($rules)['product'];
     }

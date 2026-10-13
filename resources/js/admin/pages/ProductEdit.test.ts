@@ -16,7 +16,7 @@ vi.mock('@inertiajs/vue3', () => ({
 }))
 
 it('creates a draft through the product form', async () => {
-  const wrapper = mount(ProductEdit, { props: { product: null, saved: false } })
+  const wrapper = mount(ProductEdit, { props: { product: null, categories: [], saved: false } })
   expect(wrapper.find('input[type="file"]').exists()).toBe(true)
   await wrapper.get('#product-title').setValue('Studio Lamp')
   await wrapper.get('form').trigger('submit')
@@ -39,7 +39,9 @@ it('does not execute untrusted product titles', () => {
           alt: 'Lamp',
         },
         variant: { sku: 'LAMP-001', money: { amount: 2499 } },
+        category_ids: [],
       },
+      categories: [],
     },
   })
   expect(wrapper.find('script').exists()).toBe(false)
