@@ -4,11 +4,16 @@ import { execFileSync } from 'node:child_process'
 import { exerciseCustomerDetails } from './customer-details-flow'
 
 function emailCode(purpose: 'verify_email' | 'reset_password'): string {
-  return execFileSync('bin/php', ['tests/Fixtures/customer-browser-mail.php'], {
+  const token = execFileSync('bin/php', ['tests/Fixtures/customer-browser-mail.php'], {
     input: purpose,
     encoding: 'utf8',
     timeout: 15000,
   }).trim()
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    throw new Error('Browser mail fixture did not return a 64-character credential.')
+  }
+
+  return token
 }
 
 export async function exerciseCustomerAccount(browser: Browser): Promise<void> {

@@ -60,3 +60,21 @@ it('PlatformEnvironment rejects broad or ambiguous grants', function (array $gra
     'wildcard semantics' => [['GRANT ALL PRIVILEGES ON `mrktflow_test`.* TO `mrktflow_test`@`localhost`'], false],
     'empty' => [[], true],
 ])->throws(RuntimeException::class);
+
+it('PlatformEnvironment accepts the browser mail fixture for socket and TCP accounts', function (string $account): void {
+    expect(fn () => TestDatabaseGuard::assertBrowserMailFixture('testing', 'mrktflow_browser', $account, 'array'))
+        ->not->toThrow(RuntimeException::class);
+})->with([
+    'local socket' => ['mrktflow_browser@localhost'],
+    'disposable CI host' => ['mrktflow_browser@%'],
+]);
+
+it('PlatformEnvironment rejects an unsafe browser mail fixture runtime', function (string $environment, string $database, string $account, string $mailer): void {
+    TestDatabaseGuard::assertBrowserMailFixture($environment, $database, $account, $mailer);
+})->with([
+    'production' => ['production', 'mrktflow_browser', 'mrktflow_browser@localhost', 'array'],
+    'php test database' => ['testing', 'mrktflow_test', 'mrktflow_test@localhost', 'array'],
+    'development database' => ['testing', 'mrktflow_dev', 'mrktflow_browser@localhost', 'array'],
+    'root account' => ['testing', 'mrktflow_browser', 'root@localhost', 'array'],
+    'smtp mailer' => ['testing', 'mrktflow_browser', 'mrktflow_browser@localhost', 'smtp'],
+])->throws(RuntimeException::class);
