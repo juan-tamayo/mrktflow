@@ -146,6 +146,149 @@ it('CatalogSchema HTTP denies guests customers and staff without catalog write',
     }
 });
 
+it('CatalogSchema updates unused fields and rejects field changes after products are assigned', function (): void {
+    $owner = catalogInstalledOwner();
+    $saved = app(SaveProductSchema::class)->save($owner, catalogSchemaInput());
+    $updated = app(SaveProductSchema::class)->save($owner, catalogSchemaInput([
+        'id' => $saved['id'],
+        'version' => $saved['version'],
+        'label' => 'Camera body',
+        'comparison_group' => 'mirrorless',
+        'attributes' => [[
+            'key' => 'body.color', 'type' => 'string', 'required' => true, 'comparable' => false,
+            'filterable' => true, 'label' => 'Color',
+        ]],
+    ]));
+    expect($updated['version'])->toBe(2);
+    expect($updated['schema_version'])->toBe(1);
+    expect(app(CatalogReader::class)->staffSchema($saved['id'])['attributes'][0]['key'])->toBe('body.color');
+    $image = catalogReadyImage($owner->id);
+    app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'schema_id' => $saved['id'],
+        'attributes' => ['body.color' => 'Pine'],
+    ]));
+    expect(fn () => app(SaveProductSchema::class)->save($owner, catalogSchemaInput([
+        'id' => $saved['id'],
+        'version' => $updated['version'],
+        'attributes' => [[
+            'key' => 'body.weight', 'type' => 'integer', 'unit' => 'g', 'required' => true,
+            'comparable' => true, 'filterable' => true, 'label' => 'Weight',
+        ]],
+    ])))->toThrow(ValidationException::class);
+    $relabeled = app(SaveProductSchema::class)->save($owner, catalogSchemaInput([
+        'id' => $saved['id'],
+        'version' => $updated['version'],
+        'label' => 'Assigned camera',
+        'comparison_group' => 'bodies',
+        'attributes' => [[
+            'key' => 'body.color', 'type' => 'string', 'required' => true, 'comparable' => false,
+            'filterable' => true, 'label' => 'Color',
+        ]],
+    ]));
+    expect($relabeled['comparison_group'])->toBe('bodies');
+});
+
+it('CatalogSchema stores string integer date and false boolean values and can clear a schema', function (): void {
+    $owner = catalogInstalledOwner();
+    $schema = app(SaveProductSchema::class)->save($owner, catalogSchemaInput([
+        'key' => 'notebook',
+        'label' => 'Notebook',
+        'comparison_group' => 'stationery',
+        'attributes' => [
+            ['key' => 'cover.material', 'type' => 'string', 'required' => true, 'comparable' => true, 'filterable' => true, 'label' => 'Material'],
+            ['key' => 'page.count', 'type' => 'integer', 'unit' => 'pp', 'required' => true, 'comparable' => true, 'filterable' => true, 'label' => 'Pages'],
+            ['key' => 'published.on', 'type' => 'date', 'required' => false, 'comparable' => false, 'filterable' => true, 'label' => 'Published'],
+            ['key' => 'cover.lined', 'type' => 'boolean', 'required' => false, 'comparable' => true, 'filterable' => true, 'label' => 'Lined'],
+        ],
+    ]));
+    $image = catalogReadyImage($owner->id);
+    $saved = app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'status' => 'published',
+        'schema_id' => $schema['id'],
+        'attributes' => [
+            'cover.material' => 'cloth',
+            'page.count' => 192,
+            'published.on' => '2026-03-01',
+            'cover.lined' => false,
+        ],
+    ]));
+    $staff = app(CatalogReader::class)->staffProduct($saved['id']);
+    expect($staff['schema_id'])->toBe($schema['id']);
+    expect($staff['attributes']['cover.material'])->toBe('cloth');
+    expect($staff['attributes']['page.count'])->toBe('192');
+    expect($staff['attributes']['cover.lined'])->toBeFalse();
+    $public = app(CatalogReader::class)->publicProduct($saved['id']);
+    expect(array_column($public['typed_attributes'], 'value'))->toContain('cloth', '192', '2026-03-01', 'No');
+    $cleared = app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'id' => $saved['id'], 'version' => $saved['version'], 'status' => 'published',
+        'schema_id' => null, 'attributes' => [],
+    ]));
+    expect(app(CatalogReader::class)->staffProduct($cleared['id'])['schema_id'])->toBeNull();
+    expect(app(CatalogReader::class)->publicProduct($cleared['id'])['typed_attributes'])->toBe([]);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'slug' => 'bad-int', 'sku' => 'NB-INT', 'schema_id' => $schema['id'],
+        'attributes' => ['cover.material' => 'cloth', 'page.count' => '12.5'],
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'slug' => 'bad-date', 'sku' => 'NB-DATE', 'schema_id' => $schema['id'],
+        'attributes' => ['cover.material' => 'cloth', 'page.count' => '10', 'published.on' => 'March 1'],
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'slug' => 'bad-bool', 'sku' => 'NB-BOOL', 'schema_id' => $schema['id'],
+        'attributes' => ['cover.material' => 'cloth', 'page.count' => '10', 'cover.lined' => 'maybe'],
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'slug' => 'bad-text', 'sku' => 'NB-TEXT', 'schema_id' => $schema['id'],
+        'attributes' => ['cover.material' => "cloth\x00", 'page.count' => '10'],
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'slug' => 'bad-float', 'sku' => 'NB-FLOAT', 'schema_id' => $schema['id'],
+        'attributes' => ['cover.material' => 'cloth', 'page.count' => '10', 'sensor.skip' => 1],
+    ])))->toThrow(ValidationException::class);
+});
+
+it('CatalogSchema rejects duplicate keys units on text fields and unknown schemas', function (): void {
+    $owner = catalogInstalledOwner();
+    app(SaveProductSchema::class)->save($owner, catalogSchemaInput());
+    expect(fn () => app(SaveProductSchema::class)->save($owner, catalogSchemaInput(['label' => 'Duplicate'])))
+        ->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProductSchema::class)->save($owner, catalogSchemaInput([
+        'key' => 'bag',
+        'label' => 'Bag',
+        'comparison_group' => 'bags',
+        'attributes' => [[
+            'key' => 'bag.color', 'type' => 'string', 'unit' => 'cm', 'required' => true,
+            'comparable' => true, 'filterable' => true, 'label' => 'Color',
+        ]],
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput(catalogReadyImage($owner->id), [
+        'schema_id' => '11111111-1111-4111-8111-111111111111',
+        'attributes' => [],
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveProduct::class)->save($owner, catalogProductInput(catalogReadyImage($owner->id), [
+        'slug' => 'float-price', 'sku' => 'CAM-FLT', 'schema_id' => DB::table('product_schemas')->value('id'),
+        'attributes' => ['sensor.megapixels' => 24.2, 'lens.mount' => 'rf'],
+    ])))->toThrow(ValidationException::class);
+});
+
+it('CatalogSchema HTTP updates a schema and keeps privileged 2FA', function (): void {
+    $owner = catalogInstalledOwner();
+    $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
+    $this->post('/admin/schemas', ['schema' => catalogSchemaInput()])->assertRedirect();
+    $id = (string) DB::table('product_schemas')->value('id');
+    $version = (int) DB::table('product_schemas')->value('version');
+    $this->from('/admin/schemas/'.$id)->patch('/admin/schemas/'.$id, ['schema' => catalogSchemaInput([
+        'label' => 'Field camera', 'version' => $version,
+    ])])->assertRedirect('/admin/schemas/'.$id);
+    expect(DB::table('product_schemas')->value('label'))->toBe('Field camera');
+    $this->from('/admin/schemas/'.$id)->patch('/admin/schemas/'.$id, ['schema' => catalogSchemaInput([
+        'label' => 'Stale', 'version' => $version,
+    ])])->assertRedirect('/admin/schemas/'.$id)->assertSessionHasErrors();
+    $this->get('/admin/schemas/'.$id)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('ProductSchema')->where('schema.label', 'Field camera'));
+    $this->get('/')->assertStatus(503);
+});
+
 it('CatalogSchema HTTP rejects forged saves and does not flash nested schema payloads', function (): void {
     $owner = catalogInstalledOwner();
     $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
