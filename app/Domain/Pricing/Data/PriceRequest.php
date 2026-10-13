@@ -17,6 +17,7 @@ final readonly class PriceRequest
         public DateTimeImmutable $quotedAt,
         public ?MerchandiseDiscount $discount = null,
         public ?Money $shipping = null,
+        public ?TaxContext $tax = null,
     ) {
         if ($this->lines === [] || ! PricedLine::isUtc($this->quotedAt)) {
             throw new PricingInvalidQuote;

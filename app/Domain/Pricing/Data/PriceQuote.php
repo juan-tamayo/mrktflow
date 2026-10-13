@@ -10,6 +10,7 @@ final readonly class PriceQuote
 {
     /**
      * @param  list<LineAllocation>  $lines
+     * @param  list<TaxAllocation>  $taxLines
      */
     public function __construct(
         public array $lines,
@@ -21,5 +22,7 @@ final readonly class PriceQuote
         public Money $grandTotal,
         public DateTimeImmutable $quotedAt,
         public string $fingerprint,
+        public string $priceMode = 'exclusive',
+        public array $taxLines = [],
     ) {}
 }

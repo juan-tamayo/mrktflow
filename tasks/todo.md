@@ -455,7 +455,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T031: Tax configuration and deterministic calculation
 
-- [ ] Complete T031.
+- [x] Complete T031 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `PricingTax` tests were written first, then `SaveTaxRules`/`CalculateTax`/`PreviewTax` with exclusive/inclusive line rounding. Documented USD fixtures match: exclusive 2250 + 300 shipping at 10% → tax 255 / total 2805; inclusive 2200 + 330 → tax 230 / total 2530. Physical uses shipping destination and digital uses billing; shipping has its own tax class. Equal-specificity overlapping destinations (including prefix vs exact, overlapping ranges, and nested prefixes) are rejected at save; draft duplicates do not conflict. Zero-rate rules persist explicitly; missing or ambiguous coverage fails closed. Privileged staff still must pass 2FA before tax admin; customers and non-pricing roles are denied. Checkout still does not collect a shopper address or freeze a payable quote. `GET /` remains 503. `PricingTax` 8 tests / 130 assertions. Full PHP suite: 407 tests / 3324 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 56 Vue tests; 10 Chromium journeys including taxes save/preview and `GET /` 503. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Pricing coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `pricing` · PRICE-03, PRICE-05.
 - **Depends on:** T027, T030.
 - **Acceptance:** Merchant tax classes/rules and price mode calculate documented line totals; ambiguous/missing coverage prevents approval.

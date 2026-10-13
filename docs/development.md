@@ -118,7 +118,7 @@ Guests and signed-in customers keep separate carts until the shopper signs in or
 
 ## Money and deterministic price engine
 
-`PriceCalculator` quotes immutable priced-line snapshots: currency-aware integer money (exponents 0–3), active UTC sale windows, optional fixed or percentage merchandise discounts, and integer largest-remainder allocations with stable line-ID ties. Line totals and per-unit discount residuals sum to the quoted discount; mixed currencies, sale prices above regular, missing sale windows, overflow, and discounts larger than the eligible subtotal are rejected. Tax classes, coupon persistence, and checkout quotes remain later tasks; tax on the quote is zero until T031. Cart HTML still uses catalog regular prices. Privileged staff still must pass 2FA before catalog admin. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=PricingMoney`.
+`PriceCalculator` quotes immutable priced-line snapshots: currency-aware integer money (exponents 0–3), active UTC sale windows, optional fixed or percentage merchandise discounts, and integer largest-remainder allocations with stable line-ID ties. Line totals and per-unit discount residuals sum to the quoted discount; mixed currencies, sale prices above regular, missing sale windows, overflow, and discounts larger than the eligible subtotal are rejected. Without a tax context, tax on the quote remains zero. Cart HTML still uses catalog regular prices. Privileged staff still must pass 2FA before catalog admin. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=PricingMoney`.
 
 ## Coupon configuration and redemption holds
 
@@ -131,6 +131,10 @@ Authorized staff with `shipping.manage` configure one origin, shipping classes, 
 ## Physical and mixed-cart shipping quotes
 
 `ShippingQuoter` quotes immutable physical-line snapshots: destination zones, include/exclude shipping classes, discounted physical merchandise subtotals, and integer gram weights. Digital-only baskets quote zero shipping without an address or method. Mixed carts ignore digital lines for charges, free-shipping thresholds, and class coverage. Unsupported destinations or mixed classes that no single method covers fail with no-service; missing weights fail weight tables without inventing grams. Local pickup skips the delivery address and uses the configured pickup location as the physical tax destination, with instructions and no stock promise. The quote freezes method/rule revision, charge, and a SHA-256 fingerprint so later rule edits do not change that snapshot. Checkout still does not collect a shopper address. Privileged staff still must pass 2FA before shipping admin. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=ShippingQuote`.
+
+## Tax configuration and deterministic calculation
+
+Authorized staff with `pricing.manage` configure tax classes, destination rules, shipping tax class, and exclusive or inclusive price mode at `/admin/taxes`. Rules match country, optional region, and postal patterns. Equal-specificity overlapping destinations are rejected at save; draft rules do not participate. Physical lines use the shipping destination and digital lines use billing. Exclusive tax is round-half-up(discounted base × n/d) per line then summed; inclusive tax is round-half-up(gross × n/(d+n)) and displayed without adding it again to the grand total. Documented USD fixtures: exclusive 2250 merchandise + 300 shipping at 10% → tax 255, total 2805; inclusive 2200 + 330 → tax 230, total 2530. Zero-rate rules must be explicit; missing or ambiguous coverage fails closed. Staff can preview physical, digital, and mixed carts without opening checkout. Checkout still does not collect a shopper address or freeze a payable quote. Privileged staff still must pass 2FA before tax admin. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=PricingTax`.
 
 ## Payment/reservation contract spike
 
