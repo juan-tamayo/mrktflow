@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Domain\Catalog\Actions;
 
 use App\Domain\Catalog\Support\ProductAttributes;
+use App\Domain\Catalog\Support\ProductSchemaPayload;
+use App\Domain\Catalog\Support\ProductSchemaWriter;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 final class SaveProductSchema
@@ -26,39 +26,7 @@ final class SaveProductSchema
         if (! $actor->hasPermission('catalog.write')) {
             throw new AuthorizationException;
         }
-        $data = Validator::make(['schema' => $input], [
-            'schema' => ['required', 'array:id,version,key,label,comparison_group,default_template_key,attributes'],
-            'schema.id' => ['nullable', 'uuid'],
-            'schema.version' => ['required_with:schema.id', 'integer', 'min:1', 'max:4294967295'],
-            'schema.key' => ['required', 'string', 'max:40', 'regex:/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/'],
-            'schema.label' => ['required', 'string', 'max:80'],
-            'schema.comparison_group' => ['required', 'string', 'max:40', 'regex:/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/'],
-            'schema.default_template_key' => ['required', 'string', Rule::in(['product.default'])],
-            'schema.attributes' => ['required', 'array', 'list', 'min:1', 'max:30'],
-            'schema.attributes.*' => ['required', 'array'],
-            'schema.attributes.*.key' => ['required', 'string', 'max:80', 'distinct:strict', 'regex:/^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*){0,4}$/'],
-            'schema.attributes.*.type' => ['required', Rule::in(['string', 'integer', 'decimal', 'boolean', 'date', 'enum'])],
-            'schema.attributes.*.unit' => ['nullable', 'string', 'max:16', 'regex:/^[A-Za-z%][A-Za-z0-9%]{0,15}$/'],
-            'schema.attributes.*.required' => ['required', 'boolean'],
-            'schema.attributes.*.comparable' => ['required', 'boolean'],
-            'schema.attributes.*.filterable' => ['required', 'boolean'],
-            'schema.attributes.*.label' => ['required', 'string', 'max:120'],
-            'schema.attributes.*.options' => ['exclude_unless:schema.attributes.*.type,enum', 'required', 'array', 'list', 'min:2', 'max:30'],
-            'schema.attributes.*.options.*' => ['required', 'string', 'max:40', 'distinct:strict', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
-        ])->validate()['schema'];
-        foreach ($data['attributes'] as $index => $attribute) {
-            $unit = $attribute['unit'] ?? null;
-            if ($unit === '') {
-                $data['attributes'][$index]['unit'] = null;
-                $unit = null;
-            }
-            if ($unit !== null && ! in_array($attribute['type'], ['integer', 'decimal'], true)) {
-                throw ValidationException::withMessages(['schema.attributes.'.$index.'.unit' => 'Units apply only to numeric attributes.']);
-            }
-            if ($attribute['type'] !== 'enum') {
-                $data['attributes'][$index]['options'] = [];
-            }
-        }
+        $data = ProductSchemaPayload::fromInput($input);
         try {
             return DB::transaction(function () use ($actor, $data): array {
                 $now = now();
@@ -87,7 +55,7 @@ final class SaveProductSchema
                     DB::table('product_schemas')->insert($schemaRow + [
                         'id' => $id, 'current_version_id' => null, 'created_at' => $now,
                     ]);
-                    $versionId = $this->writeVersion($id, 1, $data, $now);
+                    $versionId = app(ProductSchemaWriter::class)->writeVersion($id, 1, $data, $now);
                     DB::table('product_schemas')->where('id', $id)->update(['current_version_id' => $versionId]);
                     $schemaVersion = 1;
                 } else {
@@ -100,7 +68,7 @@ final class SaveProductSchema
                             'default_template_key' => $data['default_template_key'],
                             'updated_at' => $now,
                         ]);
-                        $this->attachFields($currentVersionId, $data['attributes'], $now);
+                        app(ProductSchemaWriter::class)->attachFields($currentVersionId, $data['attributes'], $now);
                     } else {
                         DB::table('product_schema_versions')->where('id', $currentVersionId)->update([
                             'comparison_group' => $data['comparison_group'],
@@ -128,107 +96,6 @@ final class SaveProductSchema
                 throw ValidationException::withMessages(['schema.key' => 'This schema key is already used.']);
             }
             throw $exception;
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function writeVersion(string $schemaId, int $version, array $data, mixed $now): string
-    {
-        $versionId = (string) Str::uuid();
-        DB::table('product_schema_versions')->insert([
-            'id' => $versionId,
-            'product_schema_id' => $schemaId,
-            'version' => $version,
-            'comparison_group' => $data['comparison_group'],
-            'default_template_key' => $data['default_template_key'],
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-        $this->attachFields($versionId, $data['attributes'], $now);
-
-        return $versionId;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $attributes
-     */
-    private function attachFields(string $versionId, array $attributes, mixed $now): void
-    {
-        foreach ($attributes as $index => $attribute) {
-            $definitionId = $this->definitionId($attribute, $index, $now);
-            DB::table('product_schema_version_fields')->insert([
-                'id' => (string) Str::uuid(),
-                'schema_version_id' => $versionId,
-                'attribute_definition_id' => $definitionId,
-                'label' => $attribute['label'],
-                'required' => $attribute['required'],
-                'sort_order' => $index,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $attribute
-     */
-    private function definitionId(array $attribute, int $index, mixed $now): string
-    {
-        $existing = DB::table('attribute_definitions')->where('semantic_key', $attribute['key'])->lockForUpdate()->first();
-        $unit = is_string($attribute['unit'] ?? null) ? $attribute['unit'] : null;
-        if ($existing === null) {
-            $id = (string) Str::uuid();
-            DB::table('attribute_definitions')->insert([
-                'id' => $id,
-                'semantic_key' => $attribute['key'],
-                'type' => $attribute['type'],
-                'unit' => $unit,
-                'comparable' => $attribute['comparable'],
-                'filterable' => $attribute['filterable'],
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-            $this->replaceEnumOptions($id, $attribute['type'] === 'enum' ? $attribute['options'] : [], $now);
-
-            return $id;
-        }
-        $options = [];
-        if ((string) $existing->type === 'enum') {
-            foreach (DB::table('attribute_enum_options')->where('attribute_definition_id', $existing->id)->orderBy('sort_order')->pluck('option_value') as $option) {
-                if (is_string($option)) {
-                    $options[] = $option;
-                }
-            }
-        }
-        $same = (string) $existing->type === $attribute['type']
-            && ($existing->unit === $unit || ($existing->unit === null && $unit === null))
-            && (bool) $existing->comparable === (bool) $attribute['comparable']
-            && (bool) $existing->filterable === (bool) $attribute['filterable']
-            && $options === ($attribute['type'] === 'enum' ? $attribute['options'] : []);
-        if (! $same) {
-            throw ValidationException::withMessages([
-                'schema.attributes.'.$index.'.key' => 'This attribute key already has a different type or comparison meaning.',
-            ]);
-        }
-
-        return (string) $existing->id;
-    }
-
-    /** @param list<string> $options */
-    private function replaceEnumOptions(string $definitionId, array $options, mixed $now): void
-    {
-        DB::table('attribute_enum_options')->where('attribute_definition_id', $definitionId)->delete();
-        foreach ($options as $index => $option) {
-            DB::table('attribute_enum_options')->insert([
-                'id' => (string) Str::uuid(),
-                'attribute_definition_id' => $definitionId,
-                'option_value' => $option,
-                'sort_order' => $index,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
         }
     }
 

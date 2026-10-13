@@ -36,12 +36,12 @@ interface CatalogReader
     public function staffCategories(): array;
 
     /**
-     * @return array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}
+     * @return array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, assigned_product_count: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}
      */
     public function staffSchema(string $id): array;
 
     /**
-     * @return list<array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}>
+     * @return list<array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, assigned_product_count: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}>
      */
     public function staffSchemas(): array;
 

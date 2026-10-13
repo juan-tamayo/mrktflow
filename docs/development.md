@@ -106,7 +106,7 @@ Authorized staff manage nested categories at `/admin/categories`. Saves reject c
 
 ## Typed product schemas
 
-Authorized staff with `catalog.write` create versioned schemas at `/admin/schemas`. A schema has a stable key, comparison group, and typed fields (text, integer, decimal, boolean, date, or enum) with required/comparable/filterable flags. Attribute keys are globally unique in meaning: a later schema cannot reuse `sensor.megapixels` as a different type. Products may assign the current schema version and must supply valid values; invalid numeric, enum, and missing required values are rejected. Public product pages show those fields as escaped text. Schema field migrations stay T018. No cart or checkout.
+Authorized staff with `catalog.write` create versioned schemas at `/admin/schemas`. A schema has a stable key, comparison group, and typed fields (text, integer, decimal, boolean, date, or enum) with required/comparable/filterable flags. Attribute keys are globally unique in meaning: a later schema cannot reuse `sensor.megapixels` as a different type. Products may assign the current schema version and must supply valid values; invalid numeric, enum, and missing required values are rejected. Public product pages show those fields as escaped text. When products already use a schema, staff preview a new version (affected products, invalid values, comparison/filter changes) and apply it only when conversion succeeds; a failed conversion keeps the prior version and values. No cart or checkout.
 
 ## Payment/reservation contract spike
 

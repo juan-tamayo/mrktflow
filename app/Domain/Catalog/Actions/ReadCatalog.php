@@ -422,7 +422,7 @@ final class ReadCatalog implements CatalogReader
     }
 
     /**
-     * @return array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}
+     * @return array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, assigned_product_count: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}
      */
     private function schemaSnapshot(mixed $row): array
     {
@@ -433,14 +433,23 @@ final class ReadCatalog implements CatalogReader
             $schemaVersion = (int) DB::table('product_schema_versions')->where('id', $versionId)->value('version');
         }
 
+        $schemaId = is_string($data['id'] ?? null) ? $data['id'] : '';
+        $versionIds = $schemaId === ''
+            ? collect()
+            : DB::table('product_schema_versions')->where('product_schema_id', $schemaId)->pluck('id');
+        $assigned = $versionIds->isEmpty()
+            ? 0
+            : (int) DB::table('products')->whereIn('schema_version_id', $versionIds)->count();
+
         return [
-            'id' => is_string($data['id'] ?? null) ? $data['id'] : '',
+            'id' => $schemaId,
             'key' => is_string($data['semantic_key'] ?? null) ? $data['semantic_key'] : '',
             'label' => is_string($data['label'] ?? null) ? $data['label'] : '',
             'comparison_group' => is_string($data['comparison_group'] ?? null) ? $data['comparison_group'] : '',
             'default_template_key' => is_string($data['default_template_key'] ?? null) ? $data['default_template_key'] : '',
             'version' => (int) ($data['version'] ?? 1),
             'schema_version' => $schemaVersion,
+            'assigned_product_count' => $assigned,
             'attributes' => $versionId === '' ? [] : app(ProductAttributes::class)->fieldsForVersion($versionId),
         ];
     }

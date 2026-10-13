@@ -17,7 +17,9 @@ vi.mock('@inertiajs/vue3', () => ({
 }))
 
 it('creates a schema through the editor form', async () => {
-  const wrapper = mount(ProductSchema, { props: { schema: null, saved: false } })
+  const wrapper = mount(ProductSchema, {
+    props: { schema: null, saved: false, migrated: false, migration: null },
+  })
   await wrapper.get('#schema-label').setValue('Camera')
   await wrapper.get('form').trigger('submit')
   expect(post).toHaveBeenCalled()
@@ -27,6 +29,8 @@ it('does not execute untrusted schema labels', () => {
   const wrapper = mount(ProductSchema, {
     props: {
       saved: false,
+      migrated: false,
+      migration: null,
       schema: {
         id: '11111111-1111-4111-8111-111111111111',
         key: 'camera',
@@ -34,10 +38,36 @@ it('does not execute untrusted schema labels', () => {
         comparison_group: 'cameras',
         default_template_key: 'product.default',
         version: 1,
+        assigned_product_count: 0,
         attributes: [],
       },
     },
   })
   expect(wrapper.find('script').exists()).toBe(false)
   expect(wrapper.get('#schema-label').element).toHaveProperty('value', '<script>alert(1)</script>')
+})
+
+it('posts a migration preview for assigned schemas', async () => {
+  const wrapper = mount(ProductSchema, {
+    props: {
+      saved: false,
+      migrated: false,
+      migration: null,
+      schema: {
+        id: '11111111-1111-4111-8111-111111111111',
+        key: 'camera',
+        label: 'Camera',
+        comparison_group: 'cameras',
+        default_template_key: 'product.default',
+        version: 1,
+        assigned_product_count: 1,
+        attributes: [],
+      },
+    },
+  })
+  await wrapper.get('button.text-link').trigger('click')
+  expect(post).toHaveBeenCalledWith(
+    '/admin/schemas/11111111-1111-4111-8111-111111111111/migration/preview',
+    expect.any(Object),
+  )
 })

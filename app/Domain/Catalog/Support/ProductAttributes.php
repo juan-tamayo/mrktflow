@@ -90,6 +90,37 @@ final class ProductAttributes
         DB::table('attribute_values')->where('product_id', $productId)->delete();
     }
 
+    /**
+     * @param  list<array{id?: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>  $fields
+     * @param  array<string, mixed>  $values
+     * @return list<array{key: string, message: string}>
+     */
+    public function problemsFor(array $fields, array $values): array
+    {
+        $problems = [];
+        foreach ($fields as $field) {
+            $present = array_key_exists($field['key'], $values);
+            $raw = $present ? $values[$field['key']] : null;
+            if (! $present || $this->isBlank($raw)) {
+                if ($field['required']) {
+                    $problems[] = ['key' => $field['key'], 'message' => 'This attribute is required.'];
+                }
+
+                continue;
+            }
+            $typed = $field;
+            $typed['id'] = $field['id'] ?? '00000000-0000-4000-8000-000000000000';
+            try {
+                $this->typedRow('00000000-0000-4000-8000-000000000000', $typed, $raw, now());
+            } catch (ValidationException $exception) {
+                $messages = $exception->validator->errors()->all();
+                $problems[] = ['key' => $field['key'], 'message' => $messages[0] ?? 'This attribute is invalid.'];
+            }
+        }
+
+        return $problems;
+    }
+
     /** @return array<string, string|bool> */
     public function staffValues(string $productId): array
     {

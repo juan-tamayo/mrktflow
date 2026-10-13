@@ -52,6 +52,8 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/schemas', [ProductSchemaController::class, 'store'])->middleware('throttle:30,1,catalog-schema:');
         Route::get('/admin/schemas/{schemaId}', [ProductSchemaController::class, 'edit'])->whereUuid('schemaId');
         Route::patch('/admin/schemas/{schemaId}', [ProductSchemaController::class, 'update'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema:');
+        Route::post('/admin/schemas/{schemaId}/migration/preview', [ProductSchemaController::class, 'previewMigration'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema-migration:');
+        Route::post('/admin/schemas/{schemaId}/migration', [ProductSchemaController::class, 'applyMigration'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema-migration:');
         Route::get('/admin/categories', [CategoryController::class, 'index']);
         Route::get('/admin/categories/create', [CategoryController::class, 'create']);
         Route::post('/admin/categories', [CategoryController::class, 'store'])->middleware('throttle:30,1,catalog-category:');
