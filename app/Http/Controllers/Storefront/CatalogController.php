@@ -82,8 +82,11 @@ final class CatalogController
             'optionAxes' => $snapshot['option_axes'],
             'attributes' => array_merge([
                 ['label' => 'SKU', 'value' => $selected['sku']],
-                ['label' => 'Delivery', 'value' => 'Physical product'],
-            ], $snapshot['typed_attributes']),
+                ['label' => 'Delivery', 'value' => $snapshot['type'] === 'digital' ? 'Digital download' : 'Physical product'],
+            ], $snapshot['type'] === 'digital' ? array_merge(
+                [['label' => 'Per-order quantity', 'value' => 'Quantity one']],
+                array_map(fn (array $file): array => ['label' => 'Download', 'value' => $file['label']], $selected['digital_files'] ?? []),
+            ) : [], $snapshot['typed_attributes']),
         ]);
 
         return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState);

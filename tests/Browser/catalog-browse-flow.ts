@@ -110,6 +110,47 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await page.getByLabel('Finish').selectOption({ label: 'Chalk' })
   await expect(page.getByRole('status')).toContainText('USD 26.99')
   expect((await page.request.get('/products/missing-lamp')).status()).toBe(404)
+  await page.goto('http://127.0.0.1:8011/admin/products/create')
+  await page.getByLabel('Product type').selectOption('digital')
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Studio Lighting Guide')
+  await page.getByRole('textbox', { name: 'Slug', exact: true }).fill('studio-guide')
+  await page.getByRole('textbox', { name: 'SKU', exact: true }).fill('GUIDE-001')
+  await page
+    .getByRole('textbox', { name: 'Description', exact: true })
+    .fill('A fictional downloadable lighting guide.')
+  await page.getByLabel('Price in the smallest currency unit').fill('899')
+  await page
+    .getByRole('textbox', { name: 'Image description', exact: true })
+    .fill('Cover of the studio lighting guide')
+  await page.getByLabel('Image', { exact: true }).setInputFiles({
+    name: 'cover.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  })
+  await page.getByRole('button', { name: 'Publish' }).click()
+  await expect(page.getByRole('status')).toContainText('Product saved')
+  await page.getByRole('textbox', { name: 'File label' }).fill('Lighting guide')
+  await page.getByLabel('Private file').setInputFiles({
+    name: 'studio-guide.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Fictional studio lighting guide.\n'),
+  })
+  await page.getByRole('button', { name: 'Upload file version' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Product saved' })).toBeVisible()
+  await page.getByRole('checkbox', { name: /Lighting guide/ }).check()
+  await page.getByRole('button', { name: 'Attach files' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Product saved' })).toBeVisible()
+  const digital = await page.request.get('/products/studio-guide')
+  expect(digital.status()).toBe(200)
+  const digitalBody = await digital.text()
+  expect(digitalBody).toContain('Digital download')
+  expect(digitalBody).toContain('Lighting guide')
+  expect(digitalBody).toContain('Quantity one')
+  expect(digitalBody).not.toContain('original_key')
+  expect(digitalBody).not.toContain('/original')
   expect((await page.request.get('/')).status()).toBe(503)
   expect(
     (

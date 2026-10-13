@@ -77,7 +77,27 @@ function catalogProductInput(string $imageId, array $overrides = []): array
         'price_amount' => 2499,
         'image_asset_id' => $imageId,
         'image_alt' => 'Brushed steel studio lamp',
+        'type' => 'physical',
     ], $overrides);
+}
+
+/** @param array<string, mixed> $overrides */
+function catalogDigitalProductInput(string $imageId, array $overrides = []): array
+{
+    return catalogProductInput($imageId, array_replace([
+        'title' => 'Studio Lighting Guide',
+        'slug' => 'studio-guide',
+        'description' => 'A fictional downloadable lighting guide.',
+        'sku' => 'GUIDE-001',
+        'price_amount' => 899,
+        'image_alt' => 'Cover of the studio lighting guide',
+        'type' => 'digital',
+    ], $overrides));
+}
+
+function catalogPrivateTextFile(string $name = 'studio-guide.txt', string $contents = "Fictional studio lighting guide.\n"): UploadedFile
+{
+    return UploadedFile::fake()->createWithContent($name, $contents);
 }
 
 /** @param array<string, mixed> $overrides */

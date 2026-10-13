@@ -11,6 +11,7 @@ use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
 use App\Domain\Catalog\Support\ProductAttributes;
 use App\Domain\Catalog\Support\VariantOptions;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -28,7 +29,7 @@ final class ReadCatalog implements CatalogReader
         $product = $this->productSnapshot($row, false);
         $product['breadcrumbs'] = $this->productBreadcrumbs($product['id']);
         $product['option_axes'] = $this->optionAxes($product['id']);
-        $product['variants'] = $this->variants($product['id'], $product['image'], false);
+        $product['variants'] = $this->variants($product['id'], $product['image'], false, $product['type'] === 'digital');
         $product['schema'] = $this->publicSchema($row);
         $product['typed_attributes'] = app(ProductAttributes::class)->publicAttributes($product['id']);
 
@@ -53,10 +54,13 @@ final class ReadCatalog implements CatalogReader
         }
         $product['category_ids'] = $categoryIds;
         $product['option_axes'] = $this->optionAxes($product['id']);
-        $product['variants'] = $this->variants($product['id'], $product['image'], true);
+        $product['variants'] = $this->variants($product['id'], $product['image'], true, $product['type'] === 'digital');
         $schemaId = $this->schemaIdFromVersion(is_string($row['schema_version_id'] ?? null) ? $row['schema_version_id'] : null);
         $product['schema_id'] = $schemaId;
         $product['attributes'] = app(ProductAttributes::class)->staffValues($product['id']);
+        if ($product['type'] === 'digital') {
+            $product['digital_assets'] = $this->staffDigitalAssets($product['id']);
+        }
 
         return $product;
     }
@@ -330,9 +334,9 @@ final class ReadCatalog implements CatalogReader
 
     /**
      * @param  array{url: string, alt: string, assetId?: string}  $fallbackImage
-     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, tracks_inventory?: bool, on_hand?: int|null, reserved?: int, available_quantity?: int|null, low_stock_threshold?: int|null, low_stock?: bool}>
+     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, tracks_inventory?: bool, on_hand?: int|null, reserved?: int, available_quantity?: int|null, low_stock_threshold?: int|null, low_stock?: bool, max_quantity?: int, digital_files?: list<array{label: string, version: int, bytes: int, content_type: string, id?: string, asset_id?: string, status?: string, checksum?: string}>}>
      */
-    private function variants(string $productId, array $fallbackImage, bool $staff): array
+    private function variants(string $productId, array $fallbackImage, bool $staff, bool $digital): array
     {
         $variants = [];
         $rows = DB::table('product_variants')
@@ -399,10 +403,108 @@ final class ReadCatalog implements CatalogReader
                 $variant['low_stock_threshold'] = $threshold;
                 $variant['low_stock'] = $tracks && $threshold !== null && $available !== null && $available <= $threshold;
             }
+            if ($digital) {
+                $variant['max_quantity'] = 1;
+                $variant['digital_files'] = $staff
+                    ? $this->staffDigitalFiles((string) $row->id)
+                    : $this->publicDigitalFiles((string) $row->id);
+            }
             $variants[] = $variant;
         }
 
         return $variants;
+    }
+
+    /**
+     * @return list<array{label: string, version: int, bytes: int, content_type: string}>
+     */
+    private function publicDigitalFiles(string $variantId): array
+    {
+        $files = [];
+        foreach ($this->attachedDigitalRows($variantId) as $row) {
+            if ((string) $row->status !== 'ready') {
+                continue;
+            }
+            $files[] = [
+                'label' => (string) $row->label,
+                'version' => (int) $row->version,
+                'bytes' => (int) $row->bytes,
+                'content_type' => (string) $row->content_type,
+            ];
+        }
+
+        return $files;
+    }
+
+    /**
+     * @return list<array{label: string, version: int, bytes: int, content_type: string, id: string, asset_id: string, status: string, checksum: string}>
+     */
+    private function staffDigitalFiles(string $variantId): array
+    {
+        $files = [];
+        foreach ($this->attachedDigitalRows($variantId) as $row) {
+            $files[] = [
+                'label' => (string) $row->label,
+                'version' => (int) $row->version,
+                'bytes' => (int) $row->bytes,
+                'content_type' => (string) $row->content_type,
+                'id' => (string) $row->id,
+                'asset_id' => (string) $row->asset_id,
+                'status' => (string) $row->status,
+                'checksum' => (string) $row->checksum,
+            ];
+        }
+
+        return $files;
+    }
+
+    /** @return Collection<int, \stdClass> */
+    private function attachedDigitalRows(string $variantId): Collection
+    {
+        return DB::table('variant_digital_assets')
+            ->join('digital_asset_versions', 'variant_digital_assets.digital_asset_version_id', '=', 'digital_asset_versions.id')
+            ->join('digital_assets', 'variant_digital_assets.digital_asset_id', '=', 'digital_assets.id')
+            ->where('variant_digital_assets.variant_id', $variantId)
+            ->orderBy('variant_digital_assets.sort_order')
+            ->orderBy('digital_assets.id')
+            ->select([
+                'digital_asset_versions.id',
+                'digital_assets.id as asset_id',
+                'digital_assets.label',
+                'digital_asset_versions.version',
+                'digital_asset_versions.status',
+                'digital_asset_versions.bytes',
+                'digital_asset_versions.content_type',
+                'digital_asset_versions.checksum',
+            ])
+            ->get();
+    }
+
+    /**
+     * @return list<array{id: string, label: string, versions: list<array{id: string, version: int, status: string, bytes: int, content_type: string}>}>
+     */
+    private function staffDigitalAssets(string $productId): array
+    {
+        $assets = [];
+        foreach (DB::table('digital_assets')->where('product_id', $productId)->orderBy('created_at')->orderBy('id')->get() as $asset) {
+            $versions = [];
+            foreach (DB::table('digital_asset_versions')->where('digital_asset_id', $asset->id)->orderBy('version')->get() as $version) {
+                $versions[] = [
+                    'id' => (string) $version->id,
+                    'version' => (int) $version->version,
+                    'status' => (string) $version->status,
+                    'bytes' => (int) $version->bytes,
+                    'content_type' => (string) $version->content_type,
+                ];
+            }
+            $assets[] = [
+                'id' => (string) $asset->id,
+                'label' => (string) $asset->label,
+                'versions' => $versions,
+            ];
+        }
+
+        return $assets;
     }
 
     /**

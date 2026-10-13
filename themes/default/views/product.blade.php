@@ -24,7 +24,7 @@
         <main id="product-main" class="theme-product">
             <div class="theme-product-image"><img id="product-hero" src="{{ ($selectionState === 'selected' ? $selected['image']['url'] : $product->image['url']) }}" alt="{{ ($selectionState === 'selected' ? $selected['image']['alt'] : $product->image['alt']) }}" width="640" height="720"></div>
             <section class="theme-product-detail" aria-labelledby="product-title">
-                <p class="eyebrow">{{ $preview ? 'A considered everyday' : 'Physical product' }}</p>
+                <p class="eyebrow">{{ $preview ? 'A considered everyday' : data_get(collect($product->attributes)->firstWhere('label', 'Delivery'), 'value', 'Physical product') }}</p>
                 <h1 id="product-title">{{ $product->title }}<span class="accent">.</span></h1>
                 <p class="theme-description">{{ $product->description }}</p>
                 <div id="variant-picker" data-variants="{{ json_encode($preview

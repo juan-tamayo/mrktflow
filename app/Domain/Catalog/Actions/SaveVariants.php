@@ -87,6 +87,14 @@ final class SaveVariants
                 abort_unless($existing !== null, 404);
                 abort_unless((int) $existing->version === (int) $data['version'], 409, 'This product changed. Reload before saving.');
                 abort_if((int) $existing->version >= 4294967295, 409);
+                $digital = $existing->type === 'digital';
+                if ($digital) {
+                    foreach ($data['variants'] as $index => $variant) {
+                        if (isset($variant['weight_grams']) || isset($variant['length_mm']) || isset($variant['width_mm']) || isset($variant['height_mm'])) {
+                            throw ValidationException::withMessages(['variants.'.$index.'.weight_grams' => 'Digital variants cannot have physical dimensions or weight.']);
+                        }
+                    }
+                }
                 $keepIds = [];
                 foreach ($data['variants'] as $variant) {
                     if (isset($variant['id'])) {
@@ -150,11 +158,12 @@ final class SaveVariants
                         'shipping_class_key' => 'general',
                         'media_asset_id' => $media['id'],
                         'image_alt' => $media['id'] === null ? null : (is_string($variant['image_alt'] ?? null) ? $variant['image_alt'] : 'Product variant'),
-                        'weight_grams' => $variant['weight_grams'] ?? null,
-                        'length_mm' => $variant['length_mm'] ?? null,
-                        'width_mm' => $variant['width_mm'] ?? null,
-                        'height_mm' => $variant['height_mm'] ?? null,
-                        'tracks_inventory' => isset($variant['id']) && (bool) DB::table('product_variants')->where('id', $id)->value('tracks_inventory'),
+                        'weight_grams' => $digital ? null : ($variant['weight_grams'] ?? null),
+                        'length_mm' => $digital ? null : ($variant['length_mm'] ?? null),
+                        'width_mm' => $digital ? null : ($variant['width_mm'] ?? null),
+                        'height_mm' => $digital ? null : ($variant['height_mm'] ?? null),
+                        'max_quantity' => $digital ? 1 : 99,
+                        'tracks_inventory' => ! $digital && isset($variant['id']) && (bool) DB::table('product_variants')->where('id', $id)->value('tracks_inventory'),
                         'updated_at' => $now,
                     ];
                     if (isset($variant['id'])) {
