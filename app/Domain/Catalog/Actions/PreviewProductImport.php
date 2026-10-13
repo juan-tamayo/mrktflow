@@ -31,7 +31,7 @@ final class PreviewProductImport
      *     headers: list<string>,
      *     mapping: array<string, string>,
      *     unmapped: list<string>,
-     *     rows: list<array{line: int, sku: string, intent: string, valid: bool, errors: list<string>, product_id: string|null}>,
+     *     rows: list<array{line: int, sku: string, intent: string, valid: bool, errors: list<string>, product_id: string|null, values?: array<string, string>}>,
      *     valid_count: int,
      *     error_count: int,
      *     create_count: int,
@@ -216,7 +216,7 @@ final class PreviewProductImport
      * @param  list<string>  $headers
      * @param  list<array{line: int, cells: list<string>}>  $rows
      * @param  array<string, string>  $mapping
-     * @return list<array{line: int, sku: string, intent: string, valid: bool, errors: list<string>, product_id: string|null}>
+     * @return list<array{line: int, sku: string, intent: string, valid: bool, errors: list<string>, product_id: string|null, values: array<string, string>}>
      */
     private function validateRows(array $headers, array $rows, array $mapping): array
     {
@@ -268,6 +268,7 @@ final class PreviewProductImport
                 'valid' => $errors === [],
                 'errors' => $errors,
                 'product_id' => $productId,
+                'values' => $values,
             ];
         }
 

@@ -64,6 +64,22 @@ const props = withDefaults(
   { schemas: () => [] },
 )
 const errors = ref<HTMLElement | null>(null)
+const archiveForm = useForm({
+  version: props.product?.version,
+})
+function archive() {
+  if (props.product === null || props.product.status === 'archived') {
+    return
+  }
+  archiveForm.version = props.product.version
+  archiveForm.post(`/admin/products/${props.product.id}/archive`, {
+    preserveScroll: true,
+    onError: async () => {
+      await nextTick()
+      errors.value?.focus()
+    },
+  })
+}
 const form = useForm({
   title: props.product?.title ?? '',
   slug: props.product?.slug ?? '',
@@ -114,7 +130,8 @@ function submit(status: 'draft' | 'published') {
       <h1>{{ product ? 'Edit product' : 'Create a product' }}<span class="accent">.</span></h1>
       <p class="lede">
         Save the product, then add option combinations with unique SKUs. Digital products attach
-        private file versions after save. Drafts stay private. The store homepage stays closed;
+        private file versions after save. Drafts stay private. Archiving keeps SKUs for order
+        history and hides the product from the storefront. The store homepage stays closed;
         published products and categories can be browsed.
       </p>
       <p v-if="saved" role="status" class="success-notice">Product saved.</p>
@@ -236,18 +253,39 @@ function submit(status: 'draft' | 'published') {
             {{ category.path }}
           </label>
         </fieldset>
-        <button type="submit" class="quiet-button" :disabled="form.processing">
+        <button
+          type="submit"
+          class="quiet-button"
+          :disabled="form.processing || product?.status === 'archived'"
+        >
           {{ form.processing && form.status === 'draft' ? 'Saving…' : 'Save draft' }}
         </button>
         <button
           type="button"
           class="primary-button"
-          :disabled="form.processing"
+          :disabled="form.processing || product?.status === 'archived'"
           @click="submit('published')"
         >
           {{ form.processing && form.status === 'published' ? 'Publishing…' : 'Publish' }}
         </button>
       </form>
+      <form
+        v-if="product && product.status !== 'archived'"
+        class="setup-form"
+        @submit.prevent="archive"
+      >
+        <p class="workspace-note">
+          Archive removes this product from public browse and search. Variants and SKUs stay stored
+          so later orders can still refer to them.
+        </p>
+        <button type="submit" class="quiet-button" :disabled="archiveForm.processing">
+          {{ archiveForm.processing ? 'Archiving…' : 'Archive product' }}
+        </button>
+      </form>
+      <p v-else-if="product?.status === 'archived'" class="workspace-note">
+        This product is archived. SKUs remain for order history and are omitted from the public
+        catalog.
+      </p>
       <StockEditor
         v-if="product && product.type !== 'digital'"
         :key="product.version"

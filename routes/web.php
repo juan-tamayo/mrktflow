@@ -52,9 +52,12 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/products/import', [ProductImportController::class, 'store'])->middleware('throttle:10,1,catalog-import:');
         Route::get('/admin/products/import/{importId}', [ProductImportController::class, 'show'])->whereUuid('importId');
         Route::get('/admin/products/import/{importId}/errors.csv', [ProductImportController::class, 'errors'])->whereUuid('importId');
+        Route::post('/admin/products/import/{importId}/apply', [ProductImportController::class, 'apply'])->whereUuid('importId')->middleware('throttle:10,1,catalog-import-apply:');
+        Route::get('/admin/products/export.csv', [ProductController::class, 'export']);
         Route::post('/admin/products', [ProductController::class, 'store'])->middleware('throttle:30,1,catalog-product:');
         Route::get('/admin/products/{productId}', [ProductController::class, 'edit'])->whereUuid('productId');
         Route::patch('/admin/products/{productId}', [ProductController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product:');
+        Route::post('/admin/products/{productId}/archive', [ProductController::class, 'archive'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product-archive:');
         Route::put('/admin/products/{productId}/variants', [ProductVariantController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-variants:');
         Route::patch('/admin/products/{productId}/inventory', [ProductInventoryController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-inventory:');
         Route::post('/admin/products/{productId}/digital-assets', [DigitalAssetController::class, 'store'])->whereUuid('productId')->middleware('throttle:20,1,catalog-digital:');

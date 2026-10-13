@@ -181,6 +181,21 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await expect(page.getByRole('status')).toContainText('No catalog rows were written')
   await expect(page.getByText('sku contains a spreadsheet formula.', { exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Download row errors' })).toBeVisible()
+  await page.getByRole('button', { name: 'Apply validated rows' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Applied 0 created' })).toContainText(
+    '1 updated',
+  )
+  const exportCsv = await page.request.get('/admin/products/export.csv')
+  expect(exportCsv.status()).toBe(200)
+  expect(exportCsv.headers()['content-type'] ?? '').toContain('text/csv')
+  const exportBody = await exportCsv.text()
+  expect(exportBody).toContain('GUIDE-001')
+  expect(exportBody).not.toMatch(/(?:^|,)=CMD/m)
+  await page.goto('http://127.0.0.1:8011/admin/products')
+  await page.getByRole('link', { name: 'Studio Lamp' }).click()
+  await page.getByRole('button', { name: 'Archive product' }).click()
+  await expect(page.getByText('This product is archived')).toBeVisible()
+  expect((await page.request.get('/products/studio-lamp')).status()).toBe(404)
   expect((await page.request.get('/')).status()).toBe(503)
   expect(
     (
