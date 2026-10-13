@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 final class CartCatalog
 {
     /**
-     * @return array{variant_id: string, product_id: string, title: string, sku: string, type: string, status: string, price_amount: int, currency: string, exponent: int, available: bool, availability: string, max_quantity: int, tax_class_key: string, shipping_class_key: string, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, category_ids: list<string>}|null
+     * @return array{variant_id: string, product_id: string, title: string, sku: string, type: string, status: string, price_amount: int, currency: string, exponent: int, available: bool, availability: string, max_quantity: int, tracks_inventory: bool, tax_class_key: string, shipping_class_key: string, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, category_ids: list<string>}|null
      */
     public function variant(string $variantId): ?array
     {
@@ -89,6 +89,7 @@ final class CartCatalog
             'available' => $sellable,
             'availability' => $availability,
             'max_quantity' => $max,
+            'tracks_inventory' => (bool) $row->tracks_inventory,
             'tax_class_key' => (string) $row->tax_class_key,
             'shipping_class_key' => (string) $row->shipping_class_key,
             'weight_grams' => $row->weight_grams === null ? null : (int) $row->weight_grams,
