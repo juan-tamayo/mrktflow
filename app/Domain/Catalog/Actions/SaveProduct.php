@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalog\Actions;
 
+use App\Domain\Catalog\Support\ProductAttributes;
 use App\Domain\Catalog\Support\ReservedCatalogSlugs;
 use App\Domain\Catalog\Support\StoreCurrency;
 use App\Domain\Identity\Models\StaffAccount;
@@ -30,7 +31,7 @@ final class SaveProduct
         }
         $money = app(StoreCurrency::class)->current();
         $data = Validator::make(['product' => $input], [
-            'product' => ['required', 'array:id,version,title,slug,description,status,sku,price_amount,image_asset_id,image_alt,category_ids'],
+            'product' => ['required', 'array:id,version,title,slug,description,status,sku,price_amount,image_asset_id,image_alt,category_ids,schema_id,attributes'],
             'product.id' => ['nullable', 'uuid'],
             'product.version' => ['required_with:product.id', 'integer', 'min:1', 'max:4294967295'],
             'product.title' => ['required', 'string', 'max:200'],
@@ -43,6 +44,8 @@ final class SaveProduct
             'product.image_alt' => ['required', 'string', 'max:200'],
             'product.category_ids' => ['sometimes', 'array', 'max:20'],
             'product.category_ids.*' => ['uuid', 'distinct:strict'],
+            'product.schema_id' => ['nullable', 'uuid'],
+            'product.attributes' => ['sometimes', 'array', 'max:30'],
         ])->validate()['product'];
         try {
             return DB::transaction(function () use ($actor, $data, $money): array {
@@ -100,6 +103,9 @@ final class SaveProduct
                 if (array_key_exists('category_ids', $data)) {
                     $this->syncCategories($id, $data['category_ids'], $now);
                 }
+                if (array_key_exists('schema_id', $data) || array_key_exists('attributes', $data)) {
+                    $this->syncSchema($id, is_string($data['schema_id'] ?? null) ? $data['schema_id'] : null, is_array($data['attributes'] ?? null) ? $data['attributes'] : [], $now);
+                }
                 $action = $data['status'] === 'published' ? 'catalog.product.published' : 'catalog.product.saved';
                 app(RecordEvent::class)->record('platform.audit.recorded', 'catalog:product:'.$id.':'.$version, [
                     'action' => $action, 'subject_type' => 'product', 'subject_id' => $id,
@@ -141,5 +147,23 @@ final class SaveProduct
                 'updated_at' => $now,
             ]);
         }
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function syncSchema(string $productId, ?string $schemaId, array $attributes, mixed $now): void
+    {
+        $values = app(ProductAttributes::class);
+        if ($schemaId === null || $schemaId === '') {
+            DB::table('products')->where('id', $productId)->update(['schema_version_id' => null, 'updated_at' => $now]);
+            $values->clearValues($productId);
+
+            return;
+        }
+        $schema = DB::table('product_schemas')->where('id', $schemaId)->lockForUpdate()->first();
+        if ($schema === null || ! is_string($schema->current_version_id)) {
+            throw ValidationException::withMessages(['product.schema_id' => 'Choose a product schema that exists.']);
+        }
+        $values->replaceValues($productId, $schema->current_version_id, $attributes, $now);
+        DB::table('products')->where('id', $productId)->update(['schema_version_id' => $schema->current_version_id, 'updated_at' => $now]);
     }
 }

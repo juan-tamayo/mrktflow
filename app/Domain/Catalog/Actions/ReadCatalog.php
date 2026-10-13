@@ -9,6 +9,7 @@ use App\Domain\Catalog\Exceptions\CatalogCategoryNotFound;
 use App\Domain\Catalog\Exceptions\CatalogCategoryUnpublished;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
+use App\Domain\Catalog\Support\ProductAttributes;
 use App\Domain\Catalog\Support\VariantOptions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -28,6 +29,8 @@ final class ReadCatalog implements CatalogReader
         $product['breadcrumbs'] = $this->productBreadcrumbs($product['id']);
         $product['option_axes'] = $this->optionAxes($product['id']);
         $product['variants'] = $this->variants($product['id'], $product['image'], false);
+        $product['schema'] = $this->publicSchema($row);
+        $product['typed_attributes'] = app(ProductAttributes::class)->publicAttributes($product['id']);
 
         return $product;
     }
@@ -51,6 +54,9 @@ final class ReadCatalog implements CatalogReader
         $product['category_ids'] = $categoryIds;
         $product['option_axes'] = $this->optionAxes($product['id']);
         $product['variants'] = $this->variants($product['id'], $product['image'], true);
+        $schemaId = $this->schemaIdFromVersion(is_string($row['schema_version_id'] ?? null) ? $row['schema_version_id'] : null);
+        $product['schema_id'] = $schemaId;
+        $product['attributes'] = app(ProductAttributes::class)->staffValues($product['id']);
 
         return $product;
     }
@@ -153,6 +159,26 @@ final class ReadCatalog implements CatalogReader
         return $categories;
     }
 
+    public function staffSchema(string $id): array
+    {
+        $row = DB::table('product_schemas')->where('id', $id)->first();
+        if ($row === null) {
+            abort(404);
+        }
+
+        return $this->schemaSnapshot($row);
+    }
+
+    public function staffSchemas(): array
+    {
+        $schemas = [];
+        foreach (DB::table('product_schemas')->orderBy('semantic_key')->orderBy('id')->get() as $row) {
+            $schemas[] = $this->schemaSnapshot($row);
+        }
+
+        return $schemas;
+    }
+
     public function publishedCount(): int
     {
         return (int) DB::table('products')->where('status', 'published')->count();
@@ -171,7 +197,7 @@ final class ReadCatalog implements CatalogReader
             ->join('media_assets', 'product_media.media_asset_id', '=', 'media_assets.id')
             ->select([
                 'products.id', 'products.slug', 'products.title', 'products.description', 'products.type',
-                'products.status', 'products.version', 'product_variants.id as variant_id', 'product_variants.sku',
+                'products.status', 'products.version', 'products.schema_version_id', 'product_variants.id as variant_id', 'product_variants.sku',
                 'product_variants.price_amount', 'product_variants.currency', 'product_variants.exponent',
                 'product_media.alt', 'product_media.media_asset_id', 'media_assets.public_key', 'media_assets.kind',
                 'media_assets.status as media_status',
@@ -357,5 +383,65 @@ final class ReadCatalog implements CatalogReader
         }
 
         return $variants;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array{id: string, key: string, comparison_group: string}|null
+     */
+    private function publicSchema(array $row): ?array
+    {
+        $versionId = is_string($row['schema_version_id'] ?? null) ? $row['schema_version_id'] : null;
+        if ($versionId === null) {
+            return null;
+        }
+        $version = DB::table('product_schema_versions')
+            ->join('product_schemas', 'product_schema_versions.product_schema_id', '=', 'product_schemas.id')
+            ->where('product_schema_versions.id', $versionId)
+            ->select(['product_schemas.id', 'product_schemas.semantic_key', 'product_schema_versions.comparison_group'])
+            ->first();
+        if ($version === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $version->id,
+            'key' => (string) $version->semantic_key,
+            'comparison_group' => (string) $version->comparison_group,
+        ];
+    }
+
+    private function schemaIdFromVersion(?string $versionId): ?string
+    {
+        if ($versionId === null) {
+            return null;
+        }
+        $schemaId = DB::table('product_schema_versions')->where('id', $versionId)->value('product_schema_id');
+
+        return is_string($schemaId) ? $schemaId : null;
+    }
+
+    /**
+     * @return array{id: string, key: string, label: string, comparison_group: string, default_template_key: string, version: int, schema_version: int, attributes: list<array{id: string, key: string, type: string, unit: string|null, required: bool, comparable: bool, filterable: bool, label: string, options: list<string>}>}
+     */
+    private function schemaSnapshot(mixed $row): array
+    {
+        $data = is_object($row) ? get_object_vars($row) : [];
+        $versionId = is_string($data['current_version_id'] ?? null) ? $data['current_version_id'] : '';
+        $schemaVersion = 1;
+        if ($versionId !== '') {
+            $schemaVersion = (int) DB::table('product_schema_versions')->where('id', $versionId)->value('version');
+        }
+
+        return [
+            'id' => is_string($data['id'] ?? null) ? $data['id'] : '',
+            'key' => is_string($data['semantic_key'] ?? null) ? $data['semantic_key'] : '',
+            'label' => is_string($data['label'] ?? null) ? $data['label'] : '',
+            'comparison_group' => is_string($data['comparison_group'] ?? null) ? $data['comparison_group'] : '',
+            'default_template_key' => is_string($data['default_template_key'] ?? null) ? $data['default_template_key'] : '',
+            'version' => (int) ($data['version'] ?? 1),
+            'schema_version' => $schemaVersion,
+            'attributes' => $versionId === '' ? [] : app(ProductAttributes::class)->fieldsForVersion($versionId),
+        ];
     }
 }

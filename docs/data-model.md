@@ -26,7 +26,7 @@ Logical model for migrations, not a claim that tables already exist. Each group 
 
 Logical keys such as tax/shipping class keys referenced by catalog avoid reverse model imports. Their existence is checked by application composition at product publication; deleting a referenced class is blocked. Published products cannot have unresolved configuration references.
 
-Before configurable rules exist, reserved built-in keys `standard` (tax) and `general` (shipping) are valid classification labels only, not rates or authorization to sell. T029/T031 register these keys with configured methods/rates; checkout still blocks missing coverage. Other class keys require an installed registry entry. A product may have no custom schema version and use core fields alone; typed custom schemas become available in T017. This keeps the initial publish/browse slice implementable without inventing tax rates or premature schema tables.
+Before configurable rules exist, reserved built-in keys `standard` (tax) and `general` (shipping) are valid classification labels only, not rates or authorization to sell. T029/T031 register these keys with configured methods/rates; checkout still blocks missing coverage. Other class keys require an installed registry entry. A product may have no custom schema version and use core fields alone. Typed custom schemas are available from T017; changing fields on products that already use a version remains T018. This keeps the initial publish/browse slice implementable without inventing tax rates.
 
 ## Core relationships
 

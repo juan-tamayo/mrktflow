@@ -88,6 +88,34 @@ function catalogCategoryInput(array $overrides = []): array
     ], $overrides);
 }
 
+/** @param array<string, mixed> $overrides */
+function catalogSchemaInput(array $overrides = []): array
+{
+    $attributes = $overrides['attributes'] ?? [
+        [
+            'key' => 'sensor.megapixels', 'type' => 'decimal', 'unit' => 'MP', 'required' => true,
+            'comparable' => true, 'filterable' => true, 'label' => 'Megapixels',
+        ],
+        [
+            'key' => 'lens.mount', 'type' => 'enum', 'required' => true, 'comparable' => true,
+            'filterable' => true, 'label' => 'Lens mount', 'options' => ['rf', 'e', 'z'],
+        ],
+        [
+            'key' => 'body.stabilized', 'type' => 'boolean', 'required' => false, 'comparable' => true,
+            'filterable' => true, 'label' => 'Stabilized',
+        ],
+    ];
+    unset($overrides['attributes']);
+
+    return array_replace([
+        'key' => 'camera',
+        'label' => 'Camera',
+        'comparison_group' => 'cameras',
+        'default_template_key' => 'product.default',
+        'attributes' => $attributes,
+    ], $overrides);
+}
+
 /**
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>

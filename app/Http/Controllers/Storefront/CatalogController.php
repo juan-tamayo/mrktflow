@@ -80,10 +80,10 @@ final class CatalogController
             'image' => $selectionState === 'selected' ? $selected['image'] : $snapshot['image'],
             'variants' => $variants,
             'optionAxes' => $snapshot['option_axes'],
-            'attributes' => [
+            'attributes' => array_merge([
                 ['label' => 'SKU', 'value' => $selected['sku']],
                 ['label' => 'Delivery', 'value' => 'Physical product'],
-            ],
+            ], $snapshot['typed_attributes']),
         ]);
 
         return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState);

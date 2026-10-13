@@ -59,6 +59,7 @@ final class ProductController
         return Inertia::render('ProductEdit', [
             'product' => null,
             'categories' => $catalog->staffCategories(),
+            'schemas' => $catalog->staffSchemas(),
             'saved' => session()->get('product_saved', false),
         ]);
     }
@@ -75,6 +76,7 @@ final class ProductController
         return Inertia::render('ProductEdit', [
             'product' => $product,
             'categories' => $catalog->staffCategories(),
+            'schemas' => $catalog->staffSchemas(),
             'saved' => session()->get('product_saved', false),
         ]);
     }
@@ -118,10 +120,13 @@ final class ProductController
             $product = is_array($decoded) ? $decoded : null;
         }
         if (! is_array($product)) {
-            $product = $request->only(['title', 'slug', 'description', 'status', 'sku', 'price_amount', 'image_alt', 'version', 'category_ids']);
+            $product = $request->only(['title', 'slug', 'description', 'status', 'sku', 'price_amount', 'image_alt', 'version', 'category_ids', 'schema_id', 'attributes']);
         }
         if (($product['version'] ?? '') === '' || $product['version'] === null) {
             unset($product['version']);
+        }
+        if (($product['schema_id'] ?? null) === '') {
+            $product['schema_id'] = null;
         }
         $request->merge(['product' => $product]);
 
@@ -131,7 +136,7 @@ final class ProductController
     /** @return array<string, mixed> */
     private function validated(Request $request, bool $update): array
     {
-        $keys = 'title,slug,description,status,sku,price_amount,image_alt,category_ids,version';
+        $keys = 'title,slug,description,status,sku,price_amount,image_alt,category_ids,version,schema_id,attributes';
         $rules = [
             'product' => ['required', 'array:'.$keys],
             'product.title' => ['required', 'string', 'max:200'],
@@ -143,6 +148,8 @@ final class ProductController
             'product.image_alt' => ['required', 'string', 'max:200'],
             'product.category_ids' => ['sometimes', 'array', 'max:20'],
             'product.category_ids.*' => ['uuid'],
+            'product.schema_id' => ['nullable', 'uuid'],
+            'product.attributes' => ['sometimes', 'array', 'max:30'],
             'product.version' => [$update ? 'required' : 'sometimes', 'nullable', 'integer'],
             'image' => [$update ? 'nullable' : 'required', 'file'],
         ];
