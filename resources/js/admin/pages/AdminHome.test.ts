@@ -14,6 +14,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       canManageStaff: true,
       canManageCatalog: true,
       canManagePricing: true,
+      canManageShipping: true,
       canPreviewTheme: true,
     },
   })
@@ -24,18 +25,21 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/schemas"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/coupons"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
   await wrapper.setProps({
     canManageStaff: false,
     canManageCatalog: false,
     canManagePricing: false,
+    canManageShipping: false,
     canPreviewTheme: false,
   })
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/schemas"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/coupons"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
   expect(
@@ -49,6 +53,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/categories',
           '/admin/schemas',
           '/admin/coupons',
+          '/admin/shipping',
           '/admin/staff',
           '/admin/two-factor',
           '/admin/theme-preview',
@@ -65,6 +70,7 @@ it('escapes staff names in the branded workspace', () => {
       canManageStaff: false,
       canManageCatalog: false,
       canManagePricing: false,
+      canManageShipping: false,
       canPreviewTheme: false,
     },
   })

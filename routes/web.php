@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\ProductInventoryController;
 use App\Http\Controllers\Admin\ProductSchemaController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
@@ -87,6 +88,9 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/coupons', [CouponController::class, 'store'])->middleware('throttle:30,1,pricing-coupon:');
         Route::get('/admin/coupons/{couponId}', [CouponController::class, 'edit'])->whereUuid('couponId');
         Route::patch('/admin/coupons/{couponId}', [CouponController::class, 'update'])->whereUuid('couponId')->middleware('throttle:30,1,pricing-coupon:');
+        Route::get('/admin/shipping', [ShippingController::class, 'show']);
+        Route::post('/admin/shipping', [ShippingController::class, 'update'])->middleware('throttle:30,1,shipping-rules:');
+        Route::post('/admin/shipping/preview', [ShippingController::class, 'preview'])->middleware('throttle:30,1,shipping-preview:');
         Route::get('/admin/categories', [CategoryController::class, 'index']);
         Route::get('/admin/categories/create', [CategoryController::class, 'create']);
         Route::post('/admin/categories', [CategoryController::class, 'store'])->middleware('throttle:30,1,catalog-category:');
