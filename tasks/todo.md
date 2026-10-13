@@ -438,7 +438,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T030: Physical and mixed-cart shipping quotes
 
-- [ ] Complete T030.
+- [x] Complete T030 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `ShippingQuote` tests were written first, then `ShippingQuoter`/`QuoteShipping` with immutable physical-line snapshots. Digital-only quotes zero without an address or method. Mixed carts ignore digital lines for charges, free-shipping thresholds, and class coverage. Unsupported destinations and mixed classes that no single method covers fail with no-service; missing grams fail weight tables without inventing a weight. Pickup skips delivery address, uses the configured location as tax destination, and does not promise stock. Frozen revision/charge/fingerprint stay on the first quote after a later rule edit. Privileged staff still must pass 2FA before shipping admin. Checkout still does not collect a shopper address. `GET /` remains 503. `ShippingQuote` 7 tests / 66 assertions. Full PHP suite: 399 tests / 3197 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 54 Vue tests; 10 Chromium journeys including `GET /` 503. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Shipping coverage was not collected (no coverage driver; Shipping is not in the 90% domain gate). Hosted Quality for this branch is pending.
 - **Module / requirements:** `shipping` · SHIP-03, SHIP-04, SHIP-05, SHIP-06.
 - **Depends on:** T027, T029.
 - **Acceptance:** Only physical lines affect charge/threshold; unsupported destinations/classes fail; digital-only skips shipping; pickup destination explicit.
@@ -448,9 +449,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 #### Checkpoint after T028, T029, T030
 
-- [ ] Acceptance and focused verification recorded; no zero-test pass.
-- [ ] Relevant build/browser flow passes, including failure, permission and replay cases.
-- [ ] Changes documented; pending external-provider evidence remains explicit.
+- [x] Acceptance and focused verification recorded; no zero-test pass. T028/T029/T030 each have failing-first tests and local evidence; hosted Quality for this branch is pending.
+- [x] Relevant build/browser flow passes, including failure, permission and replay cases. Chromium journeys cover coupon/shipping admin, privileged 2FA setup, and `GET /` 503. ShippingQuote covers digital-only, mixed-cart threshold, unsupported destination/class, missing weight, pickup tax destination, and frozen revision after rule edits.
+- [x] Changes documented in `docs/development.md`; pending external-provider evidence remains explicit. Live payment/AI replay remain T035/T074. Checkout quote collection remains T032.
 
 ### T031: Tax configuration and deterministic calculation
 
