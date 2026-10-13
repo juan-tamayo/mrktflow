@@ -319,7 +319,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T021: Catalog search and typed filters
 
-- [ ] Complete T021.
+- [x] Complete T021 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogSearch` tests were written first, then `SearchCatalog`, storefront `SearchController`, default-theme search page, and `CatalogFilters`. Shoppers search published titles/SKUs at `/search` and filter by category, price, availability, and schema-defined facets. Drafts are omitted from results and facet values/counts. Numeric attributes sort numerically; unsafe sort fields and oversized queries are ignored. Pagination and filter state live in the URL so back navigation restores them. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 345 tests / 2325 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 43 Vue tests; 10 Chromium journeys including search query back-navigation. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-08, WEB-04.
 - **Depends on:** T015, T017.
 - **Acceptance:** Search title/SKU, category, price and typed facets with stable pagination; drafts excluded from values/counts.

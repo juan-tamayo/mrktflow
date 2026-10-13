@@ -18,6 +18,7 @@ use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
 use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
 use App\Http\Controllers\Storefront\CustomerProfileController;
+use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Middleware\RequireCustomerGuest;
 use App\Http\Middleware\RequireCustomerSession;
 use App\Http\Middleware\RequireInstalledStore;
@@ -26,6 +27,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 
 Route::get('/', fn () => response()->view('storefront.closed', [], 503)->header('Retry-After', '3600'));
+Route::get('/search', [SearchController::class, 'show']);
 Route::get('/products/{slug}', [CatalogController::class, 'product'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
 Route::get('/categories/{path}', [CatalogController::class, 'category'])->where('path', '[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*');
 Route::get('/admin/theme-preview', [ThemePreviewController::class, 'show'])->middleware(RequireStaffSession::class);

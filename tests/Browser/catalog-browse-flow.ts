@@ -151,6 +151,16 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   expect(digitalBody).toContain('Quantity one')
   expect(digitalBody).not.toContain('original_key')
   expect(digitalBody).not.toContain('/original')
+  await page.goto('http://127.0.0.1:8011/search?q=Studio&sort=price')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Search.')
+  await expect(page.getByRole('link', { name: 'Studio Lamp' })).toBeVisible()
+  await expect(page.getByLabel('Find a product')).toHaveValue('Studio')
+  await page.getByRole('link', { name: 'Studio Lamp' }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Studio Lamp.')
+  await page.goBack()
+  await expect(page).toHaveURL(/\/search\?/)
+  await expect(page).toHaveURL(/q=Studio/)
+  await expect(page.getByLabel('Find a product')).toHaveValue('Studio')
   expect((await page.request.get('/')).status()).toBe(503)
   expect(
     (
