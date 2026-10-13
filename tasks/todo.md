@@ -93,7 +93,7 @@ Evidence: [foundation verification](../docs/foundation-verification.md). Setup/i
 ### T004b: Continuous integration and quality gates
 
 - [ ] Complete T004b.
-- **Progress:** Workflow and coverage gate implemented; local equivalents pass. Hosted run and branch protection remain pending until a repository remote is configured. See [CI evidence](../docs/continuous-integration.md).
+- **Progress:** Workflow and coverage gate implemented. Hosted Quality on main ([run 38194214664](https://github.com/juan-tamayo/mrktflow/actions/runs/38194214664), 2026-10-12) provisioned MySQL, ran PHP 272/272 (1450 assertions), and passed the coverage gate; Vitest then aborted because laravel-vite-plugin treats Vitest’s Vite `serve` resolve as an HMR server when `CI=true` (`Error: You should not run the Vite HMR server in CI environments`). Local fix skips that plugin while `VITEST` is set; `CI=true bin/npm run test:unit -- --run` passed 21 tests, and typecheck/lint/format/`CI=true` production build passed. Browser tests in the same Quality step did not start on that hosted run. Hosted Quality after this change, required branch checks, and npm audit/signature steps remain unverified until the job is green on the default branch. See [CI evidence](../docs/continuous-integration.md).
 - **Module / requirements:** `platform` · PLAT-01.
 - **Depends on:** T003a, T004a.
 - **Acceptance:** Add CI on PHP 8.4/MySQL 8.4 and pinned Node, using lockfile installs and fixture-only provider tests. Check formatting/static types/PHP/MySQL/Vue/build/browser smoke; configure a coverage driver and the documented domain coverage gate as domain code lands; upload diagnostics without secrets.
