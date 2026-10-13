@@ -55,9 +55,14 @@
                         <button type="submit" class="primary-button">Confirm these totals</button>
                     </form>
                     @if($quote['accepted_at'])
-                        <p class="theme-purchase-note" role="status">Totals confirmed. Payment is not available yet.</p>
+                        <p class="theme-purchase-note" role="status">Totals confirmed. Continue to hosted payment.</p>
+                        <form method="post" action="/checkout/{{ $quote['id'] }}/pay" class="theme-checkout-form">
+                            @csrf
+                            <input type="hidden" name="fingerprint" value="{{ $quote['fingerprint'] }}">
+                            <button type="submit" class="primary-button">Pay now</button>
+                        </form>
                     @else
-                        <p class="theme-purchase-note">Payment is not available yet. Confirming stores this quote until it expires or the cart changes.</p>
+                        <p class="theme-purchase-note">Confirm these totals before payment. Hosted payment starts after confirmation.</p>
                     @endif
                 </div>
             @endif

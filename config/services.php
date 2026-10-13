@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'account' => env('STRIPE_ACCOUNT'),
+        'live' => (bool) env('STRIPE_LIVE', false),
+    ],
+
 ];

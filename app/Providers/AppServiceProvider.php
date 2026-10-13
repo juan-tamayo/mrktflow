@@ -6,6 +6,8 @@ use App\Domain\Catalog\Actions\AllocateInventory;
 use App\Domain\Catalog\Actions\ReadCatalog;
 use App\Domain\Catalog\Contracts\CatalogReader;
 use App\Domain\Catalog\Contracts\InventoryAllocator;
+use App\Domain\CheckoutOrders\Adapters\StripeGateway;
+use App\Domain\CheckoutOrders\Contracts\PaymentGateway;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Support\TestDatabaseGuard;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(InventoryAllocator::class, AllocateInventory::class);
         $this->app->singleton(PriceCalculator::class, CalculatePrice::class);
         $this->app->singleton(ShippingQuoter::class, QuoteShipping::class);
+        $this->app->singleton(PaymentGateway::class, StripeGateway::class);
     }
 
     /**

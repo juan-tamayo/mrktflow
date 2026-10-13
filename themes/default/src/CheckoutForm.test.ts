@@ -36,9 +36,16 @@ describe('default theme checkout quote', () => {
   it('shows itemized totals without payment authority', () => {
     const wrapper = mount(CheckoutForm, { props: { quote } })
     expect(wrapper.text()).toContain('USD 28.05')
-    expect(wrapper.text()).toContain('Payment is not available yet')
+    expect(wrapper.text()).toContain('Confirm these totals before payment')
     expect(wrapper.text()).not.toContain('Pay now')
     expect(parseCheckoutQuote(quote)).not.toBeNull()
     expect(parseCheckoutQuote({ ...quote, secret: true })).toBeNull()
+  })
+  it('offers hosted payment after totals are confirmed', () => {
+    const wrapper = mount(CheckoutForm, {
+      props: { quote: { ...quote, acceptedAt: '2026-10-13T18:00:00Z' } },
+    })
+    expect(wrapper.text()).toContain('Continue to hosted payment')
+    expect(wrapper.text()).not.toContain('Payment is not available yet')
   })
 })
