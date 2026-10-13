@@ -8,6 +8,7 @@ const laravelEntries = [
   'resources/js/storefront.ts',
   'themes/default/src/theme.css',
   'themes/default/src/product.ts',
+  'themes/default/src/search.ts',
 ] as const
 
 export default defineConfig({

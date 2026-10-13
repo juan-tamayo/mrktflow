@@ -6,6 +6,7 @@ namespace App\Domain\ThemesContent\Rendering;
 
 use App\Domain\ThemesContent\Data\CategoryView;
 use App\Domain\ThemesContent\Data\ProductView;
+use App\Domain\ThemesContent\Data\SearchView;
 use Illuminate\Contracts\View\View;
 use InvalidArgumentException;
 
@@ -40,5 +41,10 @@ final class DefaultThemeRenderer
     public function category(CategoryView $category): View
     {
         return view('default-theme::category', ['category' => $category]);
+    }
+
+    public function search(SearchView $search): View
+    {
+        return view('default-theme::search', ['search' => $search]);
     }
 }
