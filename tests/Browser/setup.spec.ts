@@ -34,6 +34,8 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
     '/account/addresses',
     '/account/addresses/00000000-0000-4000-8000-000000000000',
     '/account/addresses/00000000-0000-4000-8000-000000000000/delete',
+    '/checkout',
+    '/store-api/v1/checkout-quotes',
   ]) {
     expect(
       (

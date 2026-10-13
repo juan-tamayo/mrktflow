@@ -47,8 +47,9 @@
                         @endforeach
                     </ul>
                     <p class="theme-price"><span>Merchandise</span><strong>{{ $cart['subtotal']['formatted'] }}</strong></p>
+                    <p><a class="primary-button" href="/checkout">Checkout</a></p>
                 @endif
-                <p class="theme-purchase-note">Checkout is not available yet. Posted prices are ignored.</p>
+                <p class="theme-purchase-note">Posted prices are ignored. Totals are calculated at checkout.</p>
             </div>
         </main>
         <footer class="footer"><span>Cart</span><span>MRKTFlow</span></footer>

@@ -14,4 +14,4 @@ Objective: transform a validated cart into one accurate, paid, auditable order. 
 
 ## Verification
 
-Payment fixtures and sandbox tests cover success, decline, authentication step, abandoned session, expired quote, duplicate clicks/events, timeout-after-provider-success, mismatch, zero total, partial refund and refund race. Target `php artisan test --filter=CheckoutOrders`; physical/digital/mixed browser checkout suites. Live charges are excluded from development validation.
+T032 implements expiring quotes and stale-total confirmation (`bin/php artisan test --filter=CheckoutOrdersQuote`). Payment fixtures and sandbox tests cover success, decline, authentication step, abandoned session, expired quote, duplicate clicks/events, timeout-after-provider-success, mismatch, zero total, partial refund and refund race. Target `php artisan test --filter=CheckoutOrders`; physical/digital/mixed browser checkout suites. Live charges are excluded from development validation. Order freeze and hosted payment remain T034/T035.

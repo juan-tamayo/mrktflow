@@ -184,7 +184,7 @@ it('CheckoutOrdersCartMerge login transfers the current guest cart and logout hi
         ->assertSee('id="cart-indicator"', false)
         ->assertSee('Cart (')
         ->assertDontSee('Buy now')
-        ->assertDontSee('/checkout');
+        ->assertSee('href="/checkout"', false);
     $this->get('/products/studio-lamp')->assertOk()->assertSee('id="cart-indicator"', false)->assertSee('Cart (');
     expect(DB::table('carts')->where('customer_id', $bob->id)->exists())->toBeTrue();
     expect((int) DB::table('cart_lines')->where('cart_id', DB::table('carts')->where('customer_id', $bob->id)->value('id'))->value('quantity'))->toBe(1);

@@ -27,16 +27,15 @@ const cart = {
 }
 
 describe('default theme cart lines', () => {
-  it('shows merge adjustment notices without creating checkout authority', () => {
+  it('shows merge adjustment notices and a checkout link', () => {
     const wrapper = mount(CartLines, { props: { cart } })
     expect(wrapper.get('[role="status"]').text()).toContain(
       'Some quantities were adjusted to the allowed maximum.',
     )
     expect(wrapper.text()).toContain('Studio Lamp')
     expect(wrapper.text()).toContain('USD 124.95')
-    expect(wrapper.text()).toContain('Checkout is not available yet')
-    expect(wrapper.text()).not.toContain('Checkout now')
-    expect(wrapper.find('a[href="/checkout"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Totals are calculated at checkout')
+    expect(wrapper.find('a[href="/checkout"]').exists()).toBe(true)
   })
 
   it('accepts only bounded public cart payloads', () => {

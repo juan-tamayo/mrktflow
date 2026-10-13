@@ -10,6 +10,7 @@ const laravelEntries = [
   'themes/default/src/product.ts',
   'themes/default/src/search.ts',
   'themes/default/src/cart.ts',
+  'themes/default/src/checkout.ts',
   'themes/default/src/cartIndicator.ts',
 ] as const
 
