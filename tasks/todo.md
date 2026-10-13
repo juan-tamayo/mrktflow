@@ -427,7 +427,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T029: Shipping zones and rule editor
 
-- [ ] Complete T029.
+- [x] Complete T029 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `ShippingRules` tests were written first, then shipping tables, `SaveShippingRules`/`ReadShippingRules`/`PreviewShipping`, destination overlap matching, and admin `/admin/shipping`. Staff with `shipping.manage` save one origin, the built-in `general` class plus extra classes, prioritized zones, and flat/free/table/pickup methods. Same-priority overlapping country/region/postal patterns are rejected. Preview uses physical subtotal and grams at postal and free/table boundaries; weight tables refuse missing grams. Privileged staff still must pass 2FA before shipping admin. Checkout still does not quote a cart. `GET /` remains 503. `ShippingRules` 7 tests / 97 assertions. Full PHP suite: 392 tests / 3134 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 54 Vue tests; 10 Chromium journeys including origin/zone save and destination preview. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Shipping coverage was not collected (no coverage driver; Shipping is not in the 90% domain gate). Hosted Quality for this branch is pending.
 - **Module / requirements:** `shipping` · SHIP-01, SHIP-02.
 - **Depends on:** T005.
 - **Acceptance:** Configure deterministic destination zones, flat/free/table/pickup methods; conflicting same-priority rules rejected.
