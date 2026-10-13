@@ -490,11 +490,17 @@ a {
 }
 .workspace-tool {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
   gap: 1rem;
   padding-block: 1.5rem;
   border-block: 1px solid var(--line);
+}
+.tool-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1.25rem;
 }
 .tool-number {
   font-size: 0.8125rem;

@@ -27,6 +27,12 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/coupons"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/taxes"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/pricing-preview"]').exists()).toBe(true)
+  expect(
+    wrapper
+      .get('.tool-links')
+      .findAll('.tool-link')
+      .map((link) => link.attributes('href')),
+  ).toEqual(['/admin/coupons', '/admin/taxes', '/admin/pricing-preview'])
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)

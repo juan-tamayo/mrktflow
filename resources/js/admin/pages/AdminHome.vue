@@ -83,9 +83,11 @@ const logout = useForm({})
           <div v-if="canManagePricing" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">04</span>
             <div>
-              <a class="tool-link" href="/admin/coupons">Coupons</a>
-              <a class="tool-link" href="/admin/taxes">Taxes</a>
-              <a class="tool-link" href="/admin/pricing-preview">Pricing preview</a>
+              <div class="tool-links">
+                <a class="tool-link" href="/admin/coupons">Coupons</a>
+                <a class="tool-link" href="/admin/taxes">Taxes</a>
+                <a class="tool-link" href="/admin/pricing-preview">Pricing preview</a>
+              </div>
               <p>Configure coupons, tax classes, destination rates, and preview cart totals.</p>
             </div>
             <span aria-hidden="true">↗</span>
