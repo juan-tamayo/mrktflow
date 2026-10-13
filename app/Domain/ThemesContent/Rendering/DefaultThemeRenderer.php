@@ -13,7 +13,7 @@ use InvalidArgumentException;
 final class DefaultThemeRenderer
 {
     /** @param list<array{title: string, url: string}> $breadcrumbs */
-    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected', int $cartRevision = 1): View
+    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected', int $cartRevision = 1, int $cartItemCount = 0): View
     {
         $selected = null;
         foreach ($product->variants as $variant) {
@@ -31,6 +31,9 @@ final class DefaultThemeRenderer
         if ($cartRevision < 1) {
             throw new InvalidArgumentException('Unknown cart revision.');
         }
+        if ($cartItemCount < 0) {
+            throw new InvalidArgumentException('Unknown cart item count.');
+        }
 
         return view('default-theme::product', [
             'product' => $product,
@@ -39,17 +42,25 @@ final class DefaultThemeRenderer
             'breadcrumbs' => $breadcrumbs,
             'selectionState' => $selectionState,
             'cartRevision' => $cartRevision,
+            'cartItemCount' => $cartItemCount,
         ]);
     }
 
-    /** @param array{id: ?string, revision: int, lines: list<array<string, mixed>>, subtotal: array{amount: int, currency: string, exponent: int, formatted: string}, notices: list<string>} $cart */
-    public function cart(array $cart): View
+    /**
+     * @param  array{id: ?string, revision: int, lines: list<array<string, mixed>>, subtotal: array{amount: int, currency: string, exponent: int, formatted: string}, notices: list<string>}  $cart
+     * @param  array<string, mixed>  $payload
+     */
+    public function cart(array $cart, array $payload = []): View
     {
         if ($cart['revision'] < 1) {
             throw new InvalidArgumentException('Unknown cart revision.');
         }
+        $itemCount = 0;
+        foreach ($cart['lines'] as $line) {
+            $itemCount += (int) $line['quantity'];
+        }
 
-        return view('default-theme::cart', ['cart' => $cart]);
+        return view('default-theme::cart', ['cart' => $cart, 'payload' => $payload, 'cartItemCount' => $itemCount]);
     }
 
     public function category(CategoryView $category): View

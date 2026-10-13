@@ -171,6 +171,7 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Cart.')
   await expect(page.getByText('Studio Lighting Guide')).toBeVisible()
   await expect(page.getByText('Studio Lamp')).toBeVisible()
+  await expect(page.getByRole('link', { name: /Cart \(/ })).toBeVisible()
   expect((await page.request.get('/')).status()).toBe(503)
   await page.goto('http://127.0.0.1:8011/search?q=Studio&sort=price')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Search.')
