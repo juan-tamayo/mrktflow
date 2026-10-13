@@ -518,7 +518,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T036: Verified durable webhook inbox
 
-- [ ] Complete T036.
+- [x] Complete T036 locally; live Stripe webhook delivery was not executed (no webhook endpoint credentials in this environment).
+- **Evidence October 13:** Failing `CheckoutOrdersWebhook` tests were written first, then `provider_events`, `AcceptProviderEvent`, CSRF-exempt `POST /webhooks/stripe`, and ID-only encrypted `ProcessPaymentEvent` on the payments queue. Raw Stripe-Signature HMAC, timestamp window, configured account, and livemode/environment are verified before insert. Replay of the same signed event returns 204 with one row; wrong signature/environment/account returns 400 and stores nothing. Persistence failure (missing table) returns 503 so the provider can retry. Inbox does not mark orders paid. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersWebhook` 6 tests / 46 assertions. Full PHP suite: 442 tests / 3760 assertions before the extra job/oversize case (now 6 webhook tests); Pint; PHPStan level 8; frontend type/lint/format/build; 62 Vue tests; Chromium `platform-smoke` 8 passed (closed storefront 503). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Local PCOV CheckoutOrders coverage was not collected (no coverage driver). Hosted Quality for this branch is pending. Merge only after a green Quality run.
 - **Module / requirements:** `checkout-orders` · ORDER-04.
 - **Depends on:** T035, T006.
 - **Acceptance:** Validate raw signature/account/environment; persist deduplicated event before 2xx; persistence failure remains retryable.

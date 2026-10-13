@@ -39,6 +39,7 @@ return [
         'secret' => env('STRIPE_SECRET'),
         'account' => env('STRIPE_ACCOUNT'),
         'live' => (bool) env('STRIPE_LIVE', false),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
 ];
