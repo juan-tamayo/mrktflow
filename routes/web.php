@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\InstallController;
+use App\Http\Controllers\Admin\PricingPreviewController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\ProductInventoryController;
@@ -102,6 +103,8 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/taxes', [TaxController::class, 'show']);
         Route::post('/admin/taxes', [TaxController::class, 'update'])->middleware('throttle:30,1,pricing-tax:');
         Route::post('/admin/taxes/preview', [TaxController::class, 'preview'])->middleware('throttle:30,1,pricing-tax-preview:');
+        Route::get('/admin/pricing-preview', [PricingPreviewController::class, 'show']);
+        Route::post('/admin/pricing-preview', [PricingPreviewController::class, 'preview'])->middleware('throttle:30,1,pricing-preview:');
         Route::get('/admin/categories', [CategoryController::class, 'index']);
         Route::get('/admin/categories/create', [CategoryController::class, 'create']);
         Route::post('/admin/categories', [CategoryController::class, 'store'])->middleware('throttle:30,1,catalog-category:');

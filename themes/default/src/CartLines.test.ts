@@ -36,6 +36,38 @@ describe('default theme cart lines', () => {
     expect(wrapper.text()).toContain('USD 124.95')
     expect(wrapper.text()).toContain('Totals are calculated at checkout')
     expect(wrapper.find('a[href="/checkout"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/search"]').exists()).toBe(true)
+  })
+
+  it('keeps empty and unavailable carts from trapping the shopper', () => {
+    const empty = mount(CartLines, {
+      props: {
+        cart: {
+          id: null,
+          revision: 1,
+          lines: [],
+          subtotal: { amount: 0, currency: 'USD', exponent: 2, formatted: 'USD 0.00' },
+          notices: [],
+        },
+      },
+    })
+    expect(empty.text()).toContain('Your cart is empty.')
+    expect(empty.find('a[href="/search"]').exists()).toBe(true)
+    expect(empty.find('a[href="/checkout"]').exists()).toBe(false)
+    const unavailableLine = cart.lines[0]
+    if (unavailableLine === undefined) {
+      throw new Error('Expected a cart line.')
+    }
+    const unavailable = mount(CartLines, {
+      props: {
+        cart: {
+          ...cart,
+          lines: [{ ...unavailableLine, available: false, availability: 'unavailable' }],
+        },
+      },
+    })
+    expect(unavailable.text()).toContain('Remove unavailable items to continue')
+    expect(unavailable.find('a[href="/checkout"]').exists()).toBe(false)
   })
 
   it('accepts only bounded public cart payloads', () => {

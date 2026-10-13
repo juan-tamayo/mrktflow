@@ -1,6 +1,6 @@
 # Continuous integration
 
-`.github/workflows/quality.yml` runs on pull requests, main pushes and codex branches. It has read-only repository permissions, disables persisted checkout credentials, pins action revisions and the MySQL image digest, installs lockfiles, and executes formatting, static analysis, PHP/MySQL tests, Vue tests, production build, browser/accessibility tests, vulnerability audits and registry-signature verification. It does not deploy or call live providers.
+`.github/workflows/quality.yml` runs on pull requests, main pushes and codex branches. The foundation job budget is 25 minutes so the PCOV PHP suite, frontend checks, and Chromium journeys can finish together. It has read-only repository permissions, disables persisted checkout credentials, pins action revisions and the MySQL image digest, installs lockfiles, and executes formatting, static analysis, PHP/MySQL tests, Vue tests, production build, browser/accessibility tests, vulnerability audits and registry-signature verification. It does not deploy or call live providers.
 
 PHP 8.4, MySQL 8.4, Node 22.23.3 and bundled npm 10.9.9 are the runtime matrix. PHP uses PCOV for coverage. The pinned MySQL image can carry a later 8.4 patch than local 8.4.5; the guard enforces the 8.4 series. Action updates must be reviewed rather than silently following mutable tags.
 
