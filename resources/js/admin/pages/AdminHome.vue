@@ -5,6 +5,7 @@ import { Head, useForm } from '@inertiajs/vue3'
 defineProps<{
   staff: { name: string; role: string }
   canManageStaff: boolean
+  canManageCatalog: boolean
   canPreviewTheme: boolean
 }>()
 const logout = useForm({})
@@ -53,8 +54,16 @@ const logout = useForm({})
         <section class="workspace-tools" aria-labelledby="workspace-tools-heading">
           <p class="panel-label">Make yourself at home</p>
           <h2 id="workspace-tools-heading">Your workspace</h2>
-          <div v-if="canManageStaff" class="workspace-tool">
+          <div v-if="canManageCatalog" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">01</span>
+            <div>
+              <a class="tool-link" href="/admin/products">Products</a>
+              <p>Create a simple physical product. Drafts stay private.</p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageStaff" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">02</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -62,7 +71,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">02</span>
+            <span class="tool-number" aria-hidden="true">03</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>

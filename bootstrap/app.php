@@ -34,7 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'source_line' => $exception->getLine(),
             ]);
         })->stop();
-        $exceptions->dontFlash(['setup_secret', 'settings', 'owner', 'invitation_token', 'customer', 'challenge_token', 'password_reset', 'profile', 'address', 'code']);
+        $exceptions->dontFlash(['setup_secret', 'settings', 'owner', 'invitation_token', 'customer', 'challenge_token', 'password_reset', 'profile', 'address', 'code', 'product']);
         $exceptions->respond(fn (Response $response) => SecurityHeaders::apply(request(), $response));
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),

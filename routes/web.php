@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\InstallController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
@@ -34,6 +35,11 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/staff', [StaffController::class, 'index']);
         Route::post('/admin/staff/invitations', [StaffInvitationController::class, 'create'])->middleware('throttle:10,1,staff-invite:');
         Route::patch('/admin/staff/{staffId}', [StaffController::class, 'update'])->whereUuid('staffId')->middleware('throttle:30,1,staff-access:');
+        Route::get('/admin/products', [ProductController::class, 'index']);
+        Route::get('/admin/products/create', [ProductController::class, 'create']);
+        Route::post('/admin/products', [ProductController::class, 'store'])->middleware('throttle:30,1,catalog-product:');
+        Route::get('/admin/products/{productId}', [ProductController::class, 'edit'])->whereUuid('productId');
+        Route::patch('/admin/products/{productId}', [ProductController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product:');
     });
     Route::get('/staff/invitation', [StaffInvitationController::class, 'show']);
     Route::post('/staff/invitation', [StaffInvitationController::class, 'accept'])->middleware('throttle:5,1,staff-invite-accept:');
