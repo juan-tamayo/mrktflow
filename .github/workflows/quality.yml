@@ -11,7 +11,7 @@ concurrency:
 jobs:
   foundation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       MRKTFLOW_CI_DATABASE: ephemeral
     steps:
