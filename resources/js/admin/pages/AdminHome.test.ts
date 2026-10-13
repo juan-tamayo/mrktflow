@@ -12,15 +12,18 @@ it('shows the closed launch status and only authorized workspace actions', async
     props: {
       staff: { name: 'Example Owner', role: 'owner' },
       canManageStaff: true,
+      canManageCatalog: true,
       canPreviewTheme: true,
     },
   })
   expect(wrapper.get('section[aria-labelledby="launch-heading"]').text()).toContain(
     'Storefront closed',
   )
+  expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
-  await wrapper.setProps({ canManageStaff: false, canPreviewTheme: false })
+  await wrapper.setProps({ canManageStaff: false, canManageCatalog: false, canPreviewTheme: false })
+  expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
   expect(
@@ -30,6 +33,7 @@ it('shows the closed launch status and only authorized workspace actions', async
         [
           '#workspace-main',
           '/admin',
+          '/admin/products',
           '/admin/staff',
           '/admin/two-factor',
           '/admin/theme-preview',
@@ -44,6 +48,7 @@ it('escapes staff names in the branded workspace', () => {
     props: {
       staff: { name: '<script>alert(1)</script>', role: 'content_editor' },
       canManageStaff: false,
+      canManageCatalog: false,
       canPreviewTheme: false,
     },
   })

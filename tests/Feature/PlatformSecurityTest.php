@@ -16,7 +16,7 @@ beforeEach(function (): void {
 it('PlatformSecurity keeps the unconfigured store and administration closed', function (): void {
     $this->get('/')->assertStatus(503)->assertSee('This store is getting ready');
     $this->get('/admin')->assertStatus(503);
-    $this->postJson('/admin/products', ['title' => 'Unauthorized'])->assertNotFound();
+    $this->postJson('/admin/products', ['title' => 'Unauthorized'])->assertStatus(503);
     $this->postJson('/register', ['role' => 'owner'])->assertNotFound();
 });
 

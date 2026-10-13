@@ -654,3 +654,28 @@ a {
   border: 1px solid var(--line);
   background: var(--surface);
 }
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0;
+}
+.product-list li + li {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.product-list p {
+  margin: 0.375rem 0 0;
+  color: var(--muted);
+}
+.product-edit-preview {
+  display: block;
+  margin-top: 1rem;
+  max-width: 10rem;
+  height: auto;
+}
+.setup-main a.primary-button {
+  display: inline-flex;
+  text-decoration: none;
+  margin-top: 0;
+}

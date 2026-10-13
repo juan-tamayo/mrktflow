@@ -230,7 +230,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T014: Create a simple physical product
 
-- [ ] Complete T014.
+- [x] Complete T014 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogProduct` tests were written first, then product tables, `SaveProduct`, `CatalogReader`, staff product admin, and public/draft isolation. Rebased onto `main` at `3d10e35` (T013). Privileged staff still must pass 2FA before catalog admin; product routes sit behind `RequireStaffSession` with no 2FA bypass. Hosted Quality for the rebased PR is pending. No cart/checkout. `GET /` remains 503.
 - **Module / requirements:** `catalog` · CAT-01, CAT-02.
 - **Depends on:** T007, T008.
 - **Acceptance:** Merchant saves/publishes a simple physical product with one variant/SKU, price and image; drafts remain private.

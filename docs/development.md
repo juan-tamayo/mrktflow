@@ -96,6 +96,10 @@ Staff with `content.read` can open `/admin/theme-preview` from the workspace. Th
 
 The ProductView factory accepts only explicit bounded public fields. Description/attribute strings are escaped plain text; arbitrary HTML remains text. Variant amounts are safe integers and display formatting uses the supplied currency/exponent with integer arithmetic. No stock or checkout authority is present in the example. Executable developer themes remain trusted application code. The informational theme manifest does not yet authorize imports or activation; T061 and later content tasks own registry, compatibility, complete themes and data-only packages.
 
+## Simple physical products
+
+Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Publishing does not open the storefront: `GET /` remains HTTP 503 until the later category/browse acceptance. Cart and checkout are not part of this slice.
+
 ## Payment/reservation contract spike
 
 No payment credentials are needed for the local spike. Run `bin/php artisan test --filter=CheckoutOrdersGateway` for bound payment/refund observation rules, and `bin/php artisan test --filter=CheckoutOrdersConcurrency` for separate MySQL worker connections competing for one synthetic stock unit and transactional rollback. The concurrency fixture verifies the restricted PHP test database, creates only temporary test tables and cleans them up; it does not add merchant migrations or permit testing against a store database. Provider SDK/hosted checkout/webhook mapping and live sandbox checks remain T035. See [commerce contracts and limitations](commerce-rules.md#paymentreservation-spike-t011).
