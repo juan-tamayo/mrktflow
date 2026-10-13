@@ -6,6 +6,7 @@ defineProps<{
   staff: { name: string; role: string }
   canManageStaff: boolean
   canManageCatalog: boolean
+  canManagePricing: boolean
   canPreviewTheme: boolean
 }>()
 const logout = useForm({})
@@ -78,8 +79,16 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canManageStaff" class="workspace-tool">
+          <div v-if="canManagePricing" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">04</span>
+            <div>
+              <a class="tool-link" href="/admin/coupons">Coupons</a>
+              <p>Configure one entered coupon and redemption limits.</p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageStaff" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">05</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -87,7 +96,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">05</span>
+            <span class="tool-number" aria-hidden="true">06</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>

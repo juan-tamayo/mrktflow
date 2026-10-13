@@ -416,7 +416,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T028: Coupon configuration and redemption holds
 
-- [ ] Complete T028.
+- [x] Complete T028 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `PricingCoupon` tests were written first, then coupon tables, `SaveCoupon`/`ApplyCoupon`/`HoldCoupon`, and admin `/admin/coupons` screens. Staff with `pricing.manage` save one-coupon rules (fixed/percentage/free-shipping, UTC windows, catalog scopes, total and per-customer caps). Apply selects eligible lines for `PriceCalculator`; hold/commit/release is idempotent under row locks; two MySQL workers racing the last redemption yield one hold and one exhausted. Privileged staff still must pass 2FA before coupon admin. Shoppers cannot enter a code at cart/checkout in this slice. `GET /` remains 503. `PricingCoupon` 6 tests / 89 assertions. Full PHP suite: 383 tests / 2961 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 52 Vue tests; 10 Chromium journeys including coupon create and `GET /` 503. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Pricing coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `pricing` · PRICE-02.
 - **Depends on:** T027, T019.
 - **Acceptance:** Merchant configures one-coupon rules; limits are held/committed/released atomically and reject over-redemption.
