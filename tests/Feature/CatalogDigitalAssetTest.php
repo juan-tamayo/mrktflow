@@ -91,7 +91,7 @@ it('CatalogDigitalAsset versions private files, pins them to digital variants, a
         ->assertSee('Digital download')
         ->assertSee('Lighting guide PDF')
         ->assertSee('Quantity one')
-        ->assertDontSee('Add to cart')
+        ->assertSee('Add to cart')
         ->assertDontSee($originalKey);
     $this->get('/storage/'.$originalKey)->assertNotFound();
 });
@@ -285,7 +285,8 @@ it('CatalogDigitalAsset demo seeder adds fictional physical and digital products
     expect(DB::table('products')->where('slug', 'studio-lamp')->value('type'))->toBe('physical')
         ->and(DB::table('products')->where('slug', 'studio-guide')->value('type'))->toBe('digital')
         ->and(DB::table('digital_asset_versions')->count())->toBeGreaterThan(0)
-        ->and(DB::table('customer_accounts')->count())->toBe(0);
+        ->and(DB::table('customer_accounts')->where('email', 'demo-shopper@example.test')->exists())->toBeTrue()
+        ->and(DB::table('cart_lines')->count())->toBe(2);
     $public = app(CatalogReader::class)->publicProduct('studio-guide');
     expect(json_encode($public, JSON_THROW_ON_ERROR))->not->toContain('original_key');
     (new DemoStoreSeeder)->run();

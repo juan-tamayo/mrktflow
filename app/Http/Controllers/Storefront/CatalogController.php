@@ -9,6 +9,8 @@ use App\Domain\Catalog\Exceptions\CatalogCategoryNotFound;
 use App\Domain\Catalog\Exceptions\CatalogCategoryUnpublished;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
+use App\Domain\CheckoutOrders\Actions\ReadCart;
+use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\ThemesContent\Data\CategoryView;
 use App\Domain\ThemesContent\Data\ProductView;
 use App\Domain\ThemesContent\Rendering\DefaultThemeRenderer;
@@ -91,7 +93,12 @@ final class CatalogController
             ) : [], $snapshot['typed_attributes']),
         ]);
 
-        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState);
+        $cartRevision = 1;
+        if (DB::table('installations')->where('id', 1)->value('status') === 'complete') {
+            $cartRevision = app(ReadCart::class)->snapshot(CartOwner::fromRequest($request))['revision'];
+        }
+
+        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision);
     }
 
     public function category(string $path, CatalogReader $catalog, DefaultThemeRenderer $renderer): View|RedirectResponse

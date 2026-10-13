@@ -55,7 +55,7 @@ it('CatalogVariant saves unique combinations and lets a shopper see the selected
     expect(json_encode($public))->not->toContain('original_key', $owner->password);
     $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
     $page = $this->get('/products/studio-lamp?variant='.$pine['id']);
-    $page->assertOk()->assertSee('Studio Lamp')->assertSee('USD 24.99')->assertSee('Pine / S')->assertDontSee('Add to cart');
+    $page->assertOk()->assertSee('Studio Lamp')->assertSee('USD 24.99')->assertSee('Pine / S')->assertSee('Add to cart');
     $unavailablePage = $this->get('/products/studio-lamp?variant='.$unavailable['id']);
     $unavailablePage->assertOk()->assertSee('This combination is unavailable')->assertDontSee('<strong>USD 25.99</strong>', false);
     $this->getJson('/products/studio-lamp?variant=not-a-variant')->assertUnprocessable();

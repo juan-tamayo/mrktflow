@@ -93,7 +93,7 @@ it('CatalogCategory lists published products with breadcrumbs and hides drafts',
     $category->assertSee('/products/studio-lamp', false);
     $product = $this->get('/products/studio-lamp');
     $product->assertOk()->assertSee('Studio Lamp')->assertSee('USD 24.99')->assertSee('Physical product');
-    $product->assertSee('Lighting')->assertSee('Lamps')->assertDontSee('Add to cart')->assertDontSee('Theme preview');
+    $product->assertSee('Lighting')->assertSee('Lamps')->assertSee('Add to cart')->assertDontSee('Theme preview');
     $product->assertSee('/categories/lighting/lamps', false);
     $this->get('/products/missing-lamp')->assertNotFound()->assertDontSee('Studio Lamp');
     $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');

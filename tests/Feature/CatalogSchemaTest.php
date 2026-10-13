@@ -59,7 +59,7 @@ it('CatalogSchema validates product values against the assigned schema', functio
     expect($labels)->toContain('Lens mount');
     expect(json_encode($public))->not->toContain('original_key', $owner->password);
     $page = $this->get('/products/studio-lamp');
-    $page->assertOk()->assertSee('24.2')->assertSee('rf')->assertSee('Megapixels')->assertDontSee('Add to cart');
+    $page->assertOk()->assertSee('24.2')->assertSee('rf')->assertSee('Megapixels')->assertSee('Add to cart');
     $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
 });
 

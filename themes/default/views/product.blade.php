@@ -14,7 +14,7 @@
             <header class="masthead"><a class="wordmark" href="/admin" aria-label="MRKTFlow workspace"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><a class="text-link" href="/admin">Back to workspace</a></header>
             <aside class="theme-preview-notice" aria-label="Preview status"><strong>Theme preview</strong><span>Example product · No purchases or live inventory</span></aside>
         @else
-            <header class="masthead"><a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><span class="status">Catalog</span></header>
+            <header class="masthead"><a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><a class="text-link" href="/cart">Cart</a></header>
             @if($breadcrumbs !== [])
                 <nav class="theme-breadcrumbs" aria-label="Breadcrumb">
                     <ol>@foreach($breadcrumbs as $crumb)<li><a href="{{ $crumb['url'] }}">{{ $crumb['title'] }}</a></li>@endforeach<li aria-current="page">{{ $product->title }}</li></ol>
@@ -57,7 +57,37 @@
                         @endif
                     </form>
                 </div>
-                <p class="theme-purchase-note">{{ $preview ? 'This preview does not create a catalog product or enable checkout.' : 'Checkout is not available yet. This page does not create a cart.' }}</p>
+                @if($preview)
+                    <p class="theme-purchase-note">This preview does not create a catalog product or enable checkout.</p>
+                @elseif(collect($product->variants)->contains(fn (array $variant): bool => $variant['available'] === true))
+                    <form method="post" action="/cart/lines" class="theme-cart-form">
+                        @csrf
+                        <input type="hidden" name="expected_revision" value="{{ $cartRevision }}">
+                        @if($selectionState === 'selected')
+                            <input type="hidden" name="variant_id" value="{{ $selected['id'] }}">
+                        @else
+                            <div class="setup-field">
+                                <label for="cart-variant">Variant</label>
+                                <select id="cart-variant" name="variant_id" required>
+                                    <option value="">Choose a combination</option>
+                                    @foreach($product->variants as $variant)
+                                        @if($variant['available'])
+                                            <option value="{{ $variant['id'] }}">{{ $variant['label'] }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                        <div class="setup-field">
+                            <label for="cart-quantity">Quantity</label>
+                            <input id="cart-quantity" name="quantity" type="number" min="1" max="99" value="1" required>
+                        </div>
+                        <button type="submit" class="primary-button">Add to cart</button>
+                    </form>
+                    <p class="theme-purchase-note">Checkout is not available yet. Prices are set by the store, not this form.</p>
+                @else
+                    <p class="theme-purchase-note">Checkout is not available yet.</p>
+                @endif
                 <section class="theme-specifications" aria-labelledby="specifications-heading"><h2 id="specifications-heading">The details</h2><dl>@foreach($product->attributes as $attribute)<dt>{{ $attribute['label'] }}</dt><dd>{{ $attribute['value'] }}</dd>@endforeach</dl></section>
             </section>
         </main>
