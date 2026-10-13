@@ -9,6 +9,8 @@ const laravelEntries = [
   'themes/default/src/theme.css',
   'themes/default/src/product.ts',
   'themes/default/src/search.ts',
+  'themes/default/src/cart.ts',
+  'themes/default/src/cartIndicator.ts',
 ] as const
 
 export default defineConfig({

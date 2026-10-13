@@ -5,7 +5,7 @@
     <meta name="robots" content="{{ $preview ? 'noindex, nofollow' : 'index, follow' }}">
     <title>{{ $product->title }} · {{ $preview ? 'Theme preview' : 'MRKTFlow' }}</title>
     <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
-    @vite(['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/product.ts'])
+    @vite(['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/product.ts', 'themes/default/src/cartIndicator.ts'])
 </head>
 <body>
     <a class="skip-link" href="#product-main">Skip to product</a>
@@ -14,7 +14,7 @@
             <header class="masthead"><a class="wordmark" href="/admin" aria-label="MRKTFlow workspace"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><a class="text-link" href="/admin">Back to workspace</a></header>
             <aside class="theme-preview-notice" aria-label="Preview status"><strong>Theme preview</strong><span>Example product · No purchases or live inventory</span></aside>
         @else
-            <header class="masthead"><a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><a class="text-link" href="/cart">Cart</a></header>
+            <header class="masthead"><a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><span id="cart-indicator" data-cart="{{ json_encode(['itemCount' => $cartItemCount, 'revision' => $cartRevision], JSON_THROW_ON_ERROR) }}"><a class="text-link" href="/cart">@if($cartItemCount > 0)Cart ({{ $cartItemCount }})@else Cart @endif</a></span></header>
             @if($breadcrumbs !== [])
                 <nav class="theme-breadcrumbs" aria-label="Breadcrumb">
                     <ol>@foreach($breadcrumbs as $crumb)<li><a href="{{ $crumb['url'] }}">{{ $crumb['title'] }}</a></li>@endforeach<li aria-current="page">{{ $product->title }}</li></ol>

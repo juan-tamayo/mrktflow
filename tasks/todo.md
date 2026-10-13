@@ -388,7 +388,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T026: Cart merge and shopper interaction
 
-- [ ] Complete T026.
+- [x] Complete T026 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CheckoutOrdersCartMerge` tests were written first, then `MergeCart`, login/register transfer via `CustomerSession`, cart adjustment notices, and default-theme `CartLines`/`CartIndicator` Vue enhancement. Login merges matching physical quantities clamped to allowed maximum and keeps digital quantity one; the shopper sees an adjustment notice; failed login leaves the guest cart; logout hides the account cart. Privileged staff still must pass 2FA before catalog admin. `GET /` remains 503. `CheckoutOrdersCartMerge` 2 tests; full PHP suite 370 tests / 2793 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 49 Vue tests; 10 Chromium journeys including cart indicator after add-to-cart. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `checkout-orders` · ORDER-01, ID-05.
 - **Depends on:** T025.
 - **Acceptance:** Login merges matching variants by summed physical quantity clamped to allowed maximum, digital quantity one; shopper sees adjustment notice.

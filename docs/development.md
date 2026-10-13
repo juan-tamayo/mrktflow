@@ -114,7 +114,7 @@ Authorized staff with `catalog.write` and `media.upload` create a digital produc
 
 ## Cart ownership
 
-Guests and signed-in customers keep separate carts. `GET /cart` and `GET /store-api/v1/cart` return the current revision and catalog-priced lines. `POST /store-api/v1/cart/lines` replaces a variant quantity absolutely (never increments); `PATCH` and `DELETE` of a line ID require the same expected revision. Stale revisions return 409. Invalid, unpublished, out-of-stock, and unavailable variants are rejected; digital quantity is one; posted prices are ignored. Adding to cart does not reserve stock. Login merge remains a later task. Privileged staff still must pass 2FA before catalog admin. `GET /` remains HTTP 503.
+Guests and signed-in customers keep separate carts until the shopper signs in or registers. Login merges the current guest cart into the account cart: matching physical variants sum and clamp to the allowed maximum, digital quantity stays one, and the shopper sees an adjustment notice. Logout invalidates the session so the account cart is no longer visible on that browser. `GET /cart` and `GET /store-api/v1/cart` return the current revision and catalog-priced lines. `POST /store-api/v1/cart/lines` replaces a variant quantity absolutely (never increments); `PATCH` and `DELETE` of a line ID require the same expected revision. Stale revisions return 409. Invalid, unpublished, out-of-stock, and unavailable variants are rejected; digital quantity is one; posted prices are ignored. Adding to cart does not reserve stock. Privileged staff still must pass 2FA before catalog admin. `GET /` remains HTTP 503.
 
 ## Payment/reservation contract spike
 

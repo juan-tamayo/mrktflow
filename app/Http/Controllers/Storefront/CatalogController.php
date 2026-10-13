@@ -94,11 +94,16 @@ final class CatalogController
         ]);
 
         $cartRevision = 1;
+        $cartItemCount = 0;
         if (DB::table('installations')->where('id', 1)->value('status') === 'complete') {
-            $cartRevision = app(ReadCart::class)->snapshot(CartOwner::fromRequest($request))['revision'];
+            $cart = app(ReadCart::class)->snapshot(CartOwner::fromRequest($request));
+            $cartRevision = $cart['revision'];
+            foreach ($cart['lines'] as $line) {
+                $cartItemCount += (int) $line['quantity'];
+            }
         }
 
-        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision);
+        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision, $cartItemCount);
     }
 
     public function category(string $path, CatalogReader $catalog, DefaultThemeRenderer $renderer): View|RedirectResponse
