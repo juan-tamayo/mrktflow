@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Domain\Catalog\Exceptions\CatalogInsufficientStock;
 use App\Domain\CheckoutOrders\Actions\AcceptQuote;
+use App\Domain\CheckoutOrders\Actions\CreateCheckoutIntent;
 use App\Domain\CheckoutOrders\Actions\CreateQuote;
 use App\Domain\CheckoutOrders\Actions\ReadCart;
 use App\Domain\CheckoutOrders\Exceptions\CartConflict;
+use App\Domain\CheckoutOrders\Exceptions\CheckoutIdempotencyConflict;
+use App\Domain\CheckoutOrders\Exceptions\CheckoutIntentConflict;
 use App\Domain\CheckoutOrders\Exceptions\CheckoutQuoteStale;
 use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Identity\Models\CustomerAccount;
@@ -20,6 +24,7 @@ use App\Domain\Shipping\Exceptions\ShippingMissingMeasurement;
 use App\Domain\Shipping\Exceptions\ShippingNoService;
 use App\Domain\ThemesContent\Rendering\DefaultThemeRenderer;
 use App\Http\Resources\CheckoutQuoteResource;
+use App\Http\Resources\CheckoutSessionResource;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -86,6 +91,41 @@ final class CheckoutController
         return $this->saved($request, $quote);
     }
 
+    public function startSession(Request $request, CreateCheckoutIntent $intents): JsonResponse|RedirectResponse
+    {
+        $this->installed();
+        $quoteId = $request->input('quoteId') ?? $request->input('quote_id');
+        $fingerprint = $request->input('fingerprint');
+        $key = $request->header('Idempotency-Key');
+        if (! is_string($quoteId) || $quoteId === '') {
+            return $this->failed($request, ValidationException::withMessages(['quoteId' => 'This quote is no longer current. Review the updated totals.']));
+        }
+        if (! is_string($fingerprint) || $fingerprint === '') {
+            return $this->failed($request, ValidationException::withMessages(['fingerprint' => 'This quote is no longer current. Review the updated totals.']));
+        }
+        if (! is_string($key) || $key === '') {
+            return $this->failed($request, ValidationException::withMessages(['idempotency' => 'Send an Idempotency-Key for this checkout.']));
+        }
+        try {
+            $owner = CartOwner::fromRequest($request);
+            app(AcceptQuote::class)->accept($owner, $quoteId, $fingerprint, true);
+            $session = $intents->create($owner, strtolower($quoteId), strtolower($key));
+        } catch (Throwable $exception) {
+            return $this->failed($request, $exception);
+        }
+
+        return $this->savedSession($request, $session);
+    }
+
+    public function showSession(Request $request, string $sessionId, CreateCheckoutIntent $intents): JsonResponse
+    {
+        $this->installed();
+
+        return (new CheckoutSessionResource($intents->snapshot(CartOwner::fromRequest($request), $sessionId)))
+            ->response()
+            ->header('Cache-Control', 'no-store, private');
+    }
+
     /**
      * @param  array<string, mixed>  $quote
      */
@@ -98,9 +138,24 @@ final class CheckoutController
         return redirect('/checkout/'.$quote['id']);
     }
 
+    /**
+     * @param  array<string, mixed>  $session
+     */
+    private function savedSession(Request $request, array $session): JsonResponse|RedirectResponse
+    {
+        if ($request->expectsJson() || $request->is('store-api/*')) {
+            return (new CheckoutSessionResource($session))->response()->header('Cache-Control', 'no-store, private');
+        }
+
+        return redirect('/store-api/v1/checkout-sessions/'.$session['id']);
+    }
+
     private function failed(Request $request, Throwable $exception): JsonResponse|RedirectResponse
     {
-        if ($exception instanceof CartConflict || $exception instanceof CheckoutQuoteStale) {
+        if ($exception instanceof CartConflict
+            || $exception instanceof CheckoutQuoteStale
+            || $exception instanceof CheckoutIdempotencyConflict
+            || $exception instanceof CheckoutIntentConflict) {
             throw $exception;
         }
         $message = match (true) {
@@ -110,7 +165,8 @@ final class CheckoutController
             $exception instanceof ShippingInvalidQuote,
             $exception instanceof PricingCouponRejected,
             $exception instanceof PricingCouponExhausted,
-            $exception instanceof PricingTaxCoverageMissing => $exception->getMessage(),
+            $exception instanceof PricingTaxCoverageMissing,
+            $exception instanceof CatalogInsufficientStock => $exception->getMessage(),
             default => throw $exception,
         };
         $errors = $exception instanceof ValidationException ? $exception->errors() : ['quote' => [$message]];

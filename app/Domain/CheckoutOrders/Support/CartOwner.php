@@ -53,4 +53,16 @@ final readonly class CartOwner
 
         return self::guest($token);
     }
+
+    public function principalScope(): string
+    {
+        if ($this->customerId !== null) {
+            return 'customer:'.$this->customerId;
+        }
+        if ($this->guestTokenHash === null) {
+            throw new InvalidArgumentException('Invalid cart owner.');
+        }
+
+        return 'guest:'.$this->guestTokenHash;
+    }
 }

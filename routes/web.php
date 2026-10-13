@@ -43,6 +43,8 @@ Route::get('/checkout/{quoteId}', [CheckoutController::class, 'showQuote'])->whe
 Route::post('/checkout/{quoteId}/accept', [CheckoutController::class, 'accept'])->whereUuid('quoteId')->middleware('throttle:30,1,checkout-accept:');
 Route::post('/store-api/v1/checkout-quotes', [CheckoutController::class, 'store'])->middleware('throttle:30,1,checkout-quote:');
 Route::post('/store-api/v1/checkout-quotes/{quoteId}/accept', [CheckoutController::class, 'accept'])->whereUuid('quoteId')->middleware('throttle:30,1,checkout-accept:');
+Route::post('/store-api/v1/checkout-sessions', [CheckoutController::class, 'startSession'])->middleware('throttle:30,1,checkout-session:');
+Route::get('/store-api/v1/checkout-sessions/{sessionId}', [CheckoutController::class, 'showSession'])->whereUuid('sessionId');
 Route::post('/cart/lines', [CartController::class, 'store'])->middleware('throttle:60,1,cart-lines:');
 Route::post('/cart/lines/{lineId}', [CartController::class, 'update'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');
 Route::post('/cart/lines/{lineId}/delete', [CartController::class, 'destroy'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');

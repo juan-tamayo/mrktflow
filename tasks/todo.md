@@ -496,7 +496,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T034: Immutable order and idempotency claim
 
-- [ ] Complete T034.
+- [x] Complete T034 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CheckoutOrdersIntent` tests were written first, then `CreateCheckoutIntent` plus `POST/GET /store-api/v1/checkout-sessions`. An accepted quote freezes order/line/address snapshots, holds tracked stock and coupon usage, and creates a `pending` order with a `created` payment attempt. Same idempotency key replays; a changed payload returns 422; a second key for the same cart revision returns the existing intent. A competing shopper cannot create a second payable order when the last unit is held (failed freeze rolls back). Parallel MySQL workers with different keys produced one order. Zero-total digital carts complete locally (`confirmed` / `succeeded`, provider `local`) without Stripe. Privileged staff still must pass 2FA. `GET /` remains 503. Hosted Quality on `fb01b0c` passed 425 PHP tests then failed the CheckoutOrders coverage gate at 89.88% (minimum 90%). Extra intent tests cover unaccepted/expired/stale/malformed claims, missing Idempotency-Key, and HTTP 422 payload mismatch (`CheckoutOrdersIntent` 9 tests / 99 assertions). Merge only after a green Quality run. Hosted payment remains T035.
 - **Module / requirements:** `checkout-orders` · ORDER-03.
 - **Depends on:** T011, T032.
 - **Acceptance:** Atomic intent freezes quote/line/address snapshots and holds stock/coupons. Enforce one payable order per cart revision even when competing clients use different idempotency keys; same key replays and changed payload conflicts.
