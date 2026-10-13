@@ -10,6 +10,7 @@ use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use App\Domain\Platform\Support\SetupChoices;
 use App\Http\Support\StaffSession;
+use App\Http\Support\StaffTwoFactor;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -44,7 +45,7 @@ final class InstallController
         }
         $session->establish($request, $owner);
 
-        return redirect('/admin');
+        return redirect(app(StaffTwoFactor::class)->destination($owner));
     }
 
     public function show(Request $request, SetupAccess $access, InstallationPrerequisites $prerequisites): Response

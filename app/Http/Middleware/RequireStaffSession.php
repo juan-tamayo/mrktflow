@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Domain\Identity\Models\StaffAccount;
 use App\Http\Support\StaffSession;
+use App\Http\Support\StaffTwoFactor;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,15 @@ final class RequireStaffSession
         }
         Auth::guard('staff')->setUser($staff);
         Gate::forUser($staff)->authorize('admin.access');
+        $pending = app(StaffTwoFactor::class)->pending($request, $staff);
+        if ($pending !== null && ! $request->is('admin/two-factor', 'admin/two-factor/*') && ! $request->is('admin/logout')) {
+            abort_if($request->expectsJson(), 403);
+            if ($request->isMethod('GET')) {
+                return redirect('/admin/two-factor');
+            }
+
+            return redirect('/admin/two-factor');
+        }
 
         return $next($request);
     }

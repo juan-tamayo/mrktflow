@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Identity\Models\StaffAccount;
 use App\Http\Support\StaffSession;
+use App\Http\Support\StaffTwoFactor;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ final class StaffSessionController
         abort_unless($staff instanceof StaffAccount, 403);
         $session->rotate($request, $staff);
 
-        return redirect('/admin');
+        return redirect(app(StaffTwoFactor::class)->destination($staff));
     }
 
     public function logout(Request $request, StaffSession $session): RedirectResponse

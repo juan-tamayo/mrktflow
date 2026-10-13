@@ -8,6 +8,7 @@ use App\Domain\Identity\Actions\AcceptStaffInvitation;
 use App\Domain\Identity\Actions\InviteStaff;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Http\Support\StaffSession;
+use App\Http\Support\StaffTwoFactor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,9 +21,13 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class StaffInvitationController
 {
-    public function create(Request $request, InviteStaff $invite): JsonResponse
+    public function create(Request $request, InviteStaff $invite, StaffTwoFactor $twoFactor): JsonResponse
     {
         Gate::authorize('staff.manage');
+        if ($twoFactor->requiresReauthentication($request)) {
+            $request->session()->put('staff_reauth_required', true);
+            abort(403);
+        }
         $actor = $request->user('staff');
         abort_unless($actor instanceof StaffAccount, 403);
         $input = $request->validate(['invitation' => ['required', 'array']]);
@@ -52,6 +57,6 @@ final class StaffInvitationController
         }
         $session->establish($request, $staff);
 
-        return redirect('/admin');
+        return redirect(app(StaffTwoFactor::class)->destination($staff));
     }
 }
