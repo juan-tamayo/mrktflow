@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Application\Setup\CreateInitialOwner;
+use App\Domain\Catalog\Actions\AdjustStock;
+use App\Domain\Catalog\Actions\SaveProduct;
 use App\Domain\Identity\Actions\ManageTwoFactor;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
@@ -13,6 +15,8 @@ use App\Domain\Platform\Actions\SetupAccess;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 function catalogOwnerInput(): array
 {
@@ -114,6 +118,27 @@ function catalogSchemaInput(array $overrides = []): array
         'default_template_key' => 'product.default',
         'attributes' => $attributes,
     ], $overrides);
+}
+
+/**
+ * @return array{product_id: string, variant_id: string, version: int}
+ */
+function catalogTrackedVariant(StaffAccount $owner, int $onHand, ?int $lowStockThreshold): array
+{
+    $saved = app(SaveProduct::class)->save(
+        $owner,
+        catalogProductInput(catalogReadyImage($owner->id), ['status' => 'published']),
+    );
+    $variantId = (string) DB::table('product_variants')->where('product_id', $saved['id'])->value('id');
+    app(AdjustStock::class)->adjust($owner, [
+        'variant_id' => $variantId,
+        'operation_key' => (string) Str::uuid(),
+        'tracks_inventory' => true,
+        'on_hand' => $onHand,
+        'low_stock_threshold' => $lowStockThreshold,
+    ]);
+
+    return ['product_id' => $saved['id'], 'variant_id' => $variantId, 'version' => $saved['version']];
 }
 
 /**

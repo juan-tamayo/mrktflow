@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Domain\Catalog\Actions\AllocateInventory;
 use App\Domain\Catalog\Actions\ReadCatalog;
 use App\Domain\Catalog\Contracts\CatalogReader;
+use App\Domain\Catalog\Contracts\InventoryAllocator;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Support\TestDatabaseGuard;
@@ -23,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(CatalogReader::class, ReadCatalog::class);
+        $this->app->singleton(InventoryAllocator::class, AllocateInventory::class);
     }
 
     /**

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
 import AttributeFields, { type SchemaField } from '../components/AttributeFields.vue'
+import StockEditor from '../components/StockEditor.vue'
 import VariantEditor from '../components/VariantEditor.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { computed, nextTick, ref } from 'vue'
@@ -25,6 +26,12 @@ const props = withDefaults(
         available: boolean
         options: { name: string; value: string }[]
         money: { amount: number }
+        tracks_inventory?: boolean
+        on_hand?: number | null
+        reserved?: number
+        available_quantity?: number | null
+        low_stock_threshold?: number | null
+        low_stock?: boolean
       }[]
       option_axes: { name: string; values: string[] }[]
       category_ids: string[]
@@ -209,6 +216,12 @@ function submit(status: 'draft' | 'published') {
           {{ form.processing && form.status === 'published' ? 'Publishing…' : 'Publish' }}
         </button>
       </form>
+      <StockEditor
+        v-if="product"
+        :key="product.version"
+        :product-id="product.id"
+        :variants="product.variants"
+      />
       <VariantEditor
         v-if="product"
         :product-id="product.id"
