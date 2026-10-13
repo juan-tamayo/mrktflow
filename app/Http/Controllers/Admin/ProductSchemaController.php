@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Catalog\Actions\ApplySchemaMigration;
+use App\Domain\Catalog\Actions\PreviewSchemaMigration;
 use App\Domain\Catalog\Actions\ReadCatalog;
 use App\Domain\Catalog\Actions\SaveProductSchema;
 use App\Domain\Identity\Models\StaffAccount;
@@ -36,6 +38,8 @@ final class ProductSchemaController
         return Inertia::render('ProductSchema', [
             'schema' => null,
             'saved' => session()->get('schema_saved', false),
+            'migrated' => false,
+            'migration' => null,
         ]);
     }
 
@@ -46,6 +50,8 @@ final class ProductSchemaController
         return Inertia::render('ProductSchema', [
             'schema' => $catalog->staffSchema($schemaId),
             'saved' => session()->get('schema_saved', false),
+            'migrated' => session()->get('schema_migrated', false),
+            'migration' => session()->get('schema_migration'),
         ]);
     }
 
@@ -69,10 +75,48 @@ final class ProductSchemaController
         return $this->persist($request, $save, $staff, $input, '/admin/schemas/'.$schemaId);
     }
 
+    public function previewMigration(Request $request, string $schemaId, PreviewSchemaMigration $preview): RedirectResponse
+    {
+        Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        $input = $this->validated($request, true);
+        $input['id'] = $schemaId;
+        try {
+            $report = $preview->preview($staff, $input);
+        } catch (HttpException $exception) {
+            if ($exception->getStatusCode() === 409 && ! $request->expectsJson()) {
+                throw ValidationException::withMessages(['schema' => $exception->getMessage()])->redirectTo('/admin/schemas/'.$schemaId);
+            }
+            throw $exception;
+        }
+
+        return redirect('/admin/schemas/'.$schemaId)->with('schema_migration', $report);
+    }
+
+    public function applyMigration(Request $request, string $schemaId, ApplySchemaMigration $apply): RedirectResponse
+    {
+        Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        $input = $this->validated($request, true);
+        $input['id'] = $schemaId;
+        try {
+            $apply->apply($staff, $input);
+        } catch (HttpException $exception) {
+            if ($exception->getStatusCode() === 409 && ! $request->expectsJson()) {
+                throw ValidationException::withMessages(['schema' => $exception->getMessage()])->redirectTo('/admin/schemas/'.$schemaId);
+            }
+            throw $exception;
+        }
+
+        return redirect('/admin/schemas/'.$schemaId)->with('schema_migrated', true);
+    }
+
     /** @return array<string, mixed> */
     private function validated(Request $request, bool $update): array
     {
-        $keys = 'key,label,comparison_group,default_template_key,attributes,version';
+        $keys = 'id,key,label,comparison_group,default_template_key,attributes,version';
         $data = $request->validate([
             'schema' => ['required', 'array:'.$keys],
             'schema.key' => ['required', 'string', 'max:40'],

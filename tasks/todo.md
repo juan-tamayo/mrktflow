@@ -280,7 +280,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T018: Schema migration preview
 
-- [ ] Complete T018.
+- [x] Complete T018 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogSchemaMigration` tests were written first, then `PreviewSchemaMigration`, `ApplySchemaMigration`, staff `SchemaMigration` preview/apply, and assigned-schema versioning. An additive optional field previews affected products and comparison/filter changes, then creates a new schema version while keeping prior values. Incompatible type changes and required fields that invalidate products are rejected; the prior version, pointer, and values stay intact. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 324 tests / 2026 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 39 Vue tests; 10 Chromium journeys including schema migration preview/apply. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-04.
 - **Depends on:** T017.
 - **Acceptance:** New schema version previews affected products and invalid values; failed conversion leaves prior values/version intact.

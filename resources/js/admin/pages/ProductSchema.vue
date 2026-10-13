@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
 import AttributeFields, { type SchemaField } from '../components/AttributeFields.vue'
+import SchemaMigration, { type MigrationPreview } from '../components/SchemaMigration.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { nextTick, ref } from 'vue'
 
@@ -14,9 +15,12 @@ const props = defineProps<{
     comparison_group: string
     default_template_key: string
     version: number
+    assigned_product_count: number
     attributes: SchemaField[]
   } | null
   saved: boolean
+  migrated: boolean
+  migration: MigrationPreview | null
 }>()
 const errors = ref<HTMLElement | null>(null)
 const form = useForm({
@@ -33,7 +37,7 @@ const form = useForm({
     })),
   },
 })
-function submit() {
+function schemaPayload() {
   form.transform((data) => ({
     schema: {
       ...data.schema,
@@ -54,6 +58,9 @@ function submit() {
       }),
     },
   }))
+}
+function submit() {
+  schemaPayload()
   const options = {
     preserveScroll: true,
     onError: async () => {
@@ -66,6 +73,29 @@ function submit() {
     return
   }
   form.patch(`/admin/schemas/${props.schema.id}`, options)
+}
+function migrationOptions() {
+  return {
+    preserveScroll: true,
+    onError: async () => {
+      await nextTick()
+      errors.value?.focus()
+    },
+  }
+}
+function previewMigration() {
+  if (props.schema === null) {
+    return
+  }
+  schemaPayload()
+  form.post(`/admin/schemas/${props.schema.id}/migration/preview`, migrationOptions())
+}
+function applyMigration() {
+  if (props.schema === null) {
+    return
+  }
+  schemaPayload()
+  form.post(`/admin/schemas/${props.schema.id}/migration`, migrationOptions())
 }
 </script>
 
@@ -84,9 +114,10 @@ function submit() {
       </h1>
       <p class="lede">
         Define typed fields, enum choices, and comparison flags. Assigned products validate against
-        the current version. Changing fields on products in use waits for a later migration preview.
+        the current version. Preview a new version before changing fields on assigned products.
       </p>
       <p v-if="saved" role="status" class="success-notice">Schema saved.</p>
+      <p v-if="migrated" role="status" class="success-notice">Schema migration applied.</p>
       <form class="setup-form" @submit.prevent="submit">
         <div
           v-if="Object.keys(form.errors).length"
@@ -129,6 +160,14 @@ function submit() {
           :value="form.schema.default_template_key"
         />
         <AttributeFields v-model:attributes="form.schema.attributes" mode="definition" />
+        <SchemaMigration
+          v-if="schema !== null && schema.assigned_product_count > 0"
+          :assigned-count="schema.assigned_product_count"
+          :preview="migration"
+          :processing="form.processing"
+          @preview="previewMigration"
+          @apply="applyMigration"
+        />
         <button type="submit" class="primary-button" :disabled="form.processing">
           {{ form.processing ? 'Saving…' : 'Save schema' }}
         </button>
