@@ -87,3 +87,35 @@ function catalogCategoryInput(array $overrides = []): array
         'parent_id' => null,
     ], $overrides);
 }
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function catalogVariantMatrix(string $productId, int $version, string $pineImageId, array $overrides = []): array
+{
+    return array_replace_recursive([
+        'id' => $productId,
+        'version' => $version,
+        'options' => [
+            ['name' => 'Color', 'values' => ['Pine', 'Chalk']],
+            ['name' => 'Size', 'values' => ['S', 'M']],
+        ],
+        'variants' => [
+            [
+                'sku' => 'LAMP-PINE-S', 'price_amount' => 2499, 'is_default' => true, 'available' => true,
+                'options' => ['Color' => 'Pine', 'Size' => 'S'],
+                'image_asset_id' => $pineImageId, 'image_alt' => 'Pine studio lamp',
+                'weight_grams' => 1200, 'length_mm' => 380, 'width_mm' => 180, 'height_mm' => 120,
+            ],
+            [
+                'sku' => 'LAMP-CHALK-S', 'price_amount' => 2699, 'is_default' => false, 'available' => true,
+                'options' => ['Color' => 'Chalk', 'Size' => 'S'],
+            ],
+            [
+                'sku' => 'LAMP-PINE-M', 'price_amount' => 2599, 'is_default' => false, 'available' => false,
+                'options' => ['Color' => 'Pine', 'Size' => 'M'],
+            ],
+        ],
+    ], $overrides);
+}

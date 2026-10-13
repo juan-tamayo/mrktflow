@@ -674,6 +674,16 @@ a {
   max-width: 10rem;
   height: auto;
 }
+.variant-editor {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+}
+.variant-value {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
 .category-option {
   display: flex;
   gap: 0.5rem;

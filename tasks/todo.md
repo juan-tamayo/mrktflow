@@ -258,7 +258,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T016: Variants and option combinations
 
-- [ ] Complete T016.
+- [x] Complete T016 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogVariant` tests were written first, then variant option tables, `SaveVariants`, staff `VariantEditor`, public `CatalogReader` variant snapshots, and live product selection. Unique SKUs and option combinations are rejected; shoppers select a variant and see current price/media, with missing selection and unavailable combinations prompted. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 304 tests / 1828 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 31 Vue tests; 10 Chromium journeys including variant save and public selection. Composer/npm audits and 237 registry signatures passed. Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-02, WEB-03.
 - **Depends on:** T014.
 - **Acceptance:** Unique SKU/option combinations validated; shopper selects variant and sees correct current price/media/availability.

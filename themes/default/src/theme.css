@@ -79,6 +79,11 @@
   font-weight: 650;
   overflow-wrap: anywhere;
 }
+.theme-variant-prompt {
+  color: var(--muted);
+  margin: 1.5rem 0;
+  line-height: 1.6;
+}
 .theme-purchase-note {
   color: var(--muted);
   font-size: 0.875rem;

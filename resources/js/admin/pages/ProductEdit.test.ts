@@ -39,6 +39,17 @@ it('does not execute untrusted product titles', () => {
           alt: 'Lamp',
         },
         variant: { sku: 'LAMP-001', money: { amount: 2499 } },
+        variants: [
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            sku: 'LAMP-001',
+            isDefault: true,
+            available: true,
+            options: [],
+            money: { amount: 2499 },
+          },
+        ],
+        option_axes: [],
         category_ids: [],
       },
       categories: [],
