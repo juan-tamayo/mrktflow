@@ -25,6 +25,7 @@ use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
 use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
 use App\Http\Controllers\Storefront\CustomerProfileController;
+use App\Http\Controllers\Storefront\PaymentController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\StoreApiProductController;
 use App\Http\Middleware\RequireCustomerGuest;
@@ -45,6 +46,10 @@ Route::post('/store-api/v1/checkout-quotes', [CheckoutController::class, 'store'
 Route::post('/store-api/v1/checkout-quotes/{quoteId}/accept', [CheckoutController::class, 'accept'])->whereUuid('quoteId')->middleware('throttle:30,1,checkout-accept:');
 Route::post('/store-api/v1/checkout-sessions', [CheckoutController::class, 'startSession'])->middleware('throttle:30,1,checkout-session:');
 Route::get('/store-api/v1/checkout-sessions/{sessionId}', [CheckoutController::class, 'showSession'])->whereUuid('sessionId');
+Route::post('/store-api/v1/checkout-sessions/{sessionId}/payment', [PaymentController::class, 'start'])->whereUuid('sessionId')->middleware('throttle:30,1,checkout-pay:');
+Route::post('/checkout/{quoteId}/pay', [PaymentController::class, 'payQuote'])->whereUuid('quoteId')->middleware('throttle:30,1,checkout-pay-html:');
+Route::get('/checkout/payment/{sessionId}/return', [PaymentController::class, 'returned'])->whereUuid('sessionId');
+Route::get('/checkout/payment/{sessionId}/cancel', [PaymentController::class, 'cancelled'])->whereUuid('sessionId');
 Route::post('/cart/lines', [CartController::class, 'store'])->middleware('throttle:60,1,cart-lines:');
 Route::post('/cart/lines/{lineId}', [CartController::class, 'update'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');
 Route::post('/cart/lines/{lineId}/delete', [CartController::class, 'destroy'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');

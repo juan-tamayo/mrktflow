@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\CheckoutOrders\Contracts;
 
+use App\Domain\CheckoutOrders\Data\HostedCheckoutCharge;
+use App\Domain\CheckoutOrders\Data\HostedCheckoutResult;
 use App\Domain\CheckoutOrders\Data\PaymentIntent;
 use App\Domain\CheckoutOrders\Data\PaymentSession;
 use App\Domain\CheckoutOrders\Data\RefundIntent;
@@ -17,10 +19,10 @@ use App\Domain\CheckoutOrders\Data\RefundResult;
 interface PaymentGateway
 {
     /** Stable key + identical frozen parameters. Caller persists intent before network I/O. */
-    public function createSession(PaymentIntent $intent, int $expiresAt): PaymentSession;
+    public function createSession(PaymentIntent $intent, HostedCheckoutCharge $charge): HostedCheckoutResult;
 
-    /** Null ID means resolve the persisted attempt reference; inability to locate is unknown. */
-    public function retrieveSession(PaymentIntent $intent, ?string $sessionId): PaymentSession;
+    /** Null ID means the caller should retry create with the same key; inability to locate is unknown. */
+    public function retrieveSession(PaymentIntent $intent, ?string $sessionId): HostedCheckoutResult;
 
     /** Cancellation means provider expiry then reconciliation; browser back/cancel is insufficient. */
     public function expireSession(PaymentIntent $intent, string $sessionId): PaymentSession;

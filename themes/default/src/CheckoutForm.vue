@@ -31,8 +31,8 @@ defineProps<{ quote: CheckoutQuote }>()
       <span>Total</span><strong>{{ quote.grandTotal.formatted }}</strong>
     </p>
     <p v-if="quote.acceptedAt" class="theme-purchase-note" role="status">
-      Totals confirmed. Payment is not available yet.
+      Totals confirmed. Continue to hosted payment.
     </p>
-    <p v-else class="theme-purchase-note">Payment is not available yet.</p>
+    <p v-else class="theme-purchase-note">Confirm these totals before payment.</p>
   </div>
 </template>

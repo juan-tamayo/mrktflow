@@ -507,11 +507,12 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T035: Hosted payment adapter
 
-- [ ] Complete T035.
+- [x] Complete T035 locally; live Stripe sandbox charges were not executed (no test credentials in this environment).
+- **Evidence October 13:** Failing `CheckoutOrdersGateway` adapter/payment tests were written first, then `StripeGateway`, `StartPayment`, and `POST /store-api/v1/checkout-sessions/{id}/payment`. Frozen exclusive/inclusive/odd-cent lines map to quantity-one Stripe amounts that sum to the quote; promotion codes, automatic tax, adjustable quantities, and shipping-address collection are disabled. Unsafe hosted URLs, amount mismatches, 400s, and delayed methods stay `unknown`. Timeouts persist `unknown` without releasing stock; a retry with the same idempotency key recovers the session. Return/cancel URLs only show status and cannot mark an order paid. Zero-total digital orders skip Stripe. Privileged staff still must pass 2FA. `GET /` remains 503. Live provider sandbox evidence remains pending. Merge only after a green Quality run.
 - **Module / requirements:** `checkout-orders` · ORDER-03.
 - **Depends on:** T034.
 - **Acceptance:** Stable attempt creates one immediate-method hosted session outside locks; unknown timeout is persisted. Frozen quote exactly equals provider total, including odd-cent allocations; provider tax/promo/quantity/delivery changes cannot bypass the accepted quote.
-- **Verify:** Run `php artisan test --filter=CheckoutOrdersGateway`; sandbox success/decline/authentication, expiry/reconciliation and physical/digital/mixed amount-mapping tests with actual test credentials. Validate provider currency/amount/line limits; fixtures alone do not complete this task.
+- **Verify:** Run `php artisan test --filter=CheckoutOrdersGateway`; sandbox success/decline/authentication, expiry/reconciliation and physical/digital/mixed amount-mapping tests with actual test credentials. Validate provider currency/amount/line limits; fixtures alone do not complete this task. Live sandbox remains pending.
 - **Likely files:** `app/Domain/CheckoutOrders/Adapters/StripeGateway.php`, `app/Domain/CheckoutOrders/Actions/StartPayment.php`, `app/Http/Controllers/Storefront/PaymentController.php`, `tests/Contract/CheckoutOrdersGatewayTest.php`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
 
