@@ -111,6 +111,7 @@ final class ReadCatalog implements CatalogReader
                 ],
             ],
         ];
+
         return $product;
     }
 }
