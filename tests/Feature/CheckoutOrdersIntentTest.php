@@ -10,11 +10,13 @@ use App\Domain\CheckoutOrders\Actions\CreateCheckoutIntent;
 use App\Domain\CheckoutOrders\Actions\CreateQuote;
 use App\Domain\CheckoutOrders\Actions\UpdateCart;
 use App\Domain\CheckoutOrders\Exceptions\CheckoutIdempotencyConflict;
+use App\Domain\CheckoutOrders\Exceptions\CheckoutIntentConflict;
 use App\Domain\CheckoutOrders\Exceptions\CheckoutQuoteStale;
 use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Models\StaffAccount;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -310,6 +312,93 @@ it('CheckoutOrdersIntent HTTP creates a session, replays the same key, and rejec
         'fingerprint' => $quote['fingerprint'],
     ], ['Idempotency-Key' => (string) Str::uuid()])->assertStatus(419);
     $this->app->instance('env', 'testing');
+});
+
+it('CheckoutOrdersIntent refuses unaccepted expired stale and malformed intents', function (): void {
+    $catalog = intentCatalog();
+    $guest = CartOwner::guest('guest-intent-token');
+    $cart = app(UpdateCart::class)->replaceLine($guest, [
+        'variant_id' => $catalog['physical_variant'], 'quantity' => 1, 'expected_revision' => 1,
+    ]);
+    $unaccepted = app(CreateQuote::class)->create($guest, checkoutQuoteInput($cart['revision'], ['coupon' => 'SAVE10']));
+    expect(fn () => app(CreateCheckoutIntent::class)->create($guest, $unaccepted['id'], (string) Str::uuid()))
+        ->toThrow(CheckoutQuoteStale::class);
+    $accepted = app(AcceptQuote::class)->accept($guest, $unaccepted['id'], $unaccepted['fingerprint'], true);
+    Carbon::setTestNow(Carbon::parse('2026-10-13T18:16:00Z')->utc());
+    expect(fn () => app(CreateCheckoutIntent::class)->create($guest, $accepted['id'], (string) Str::uuid()))
+        ->toThrow(CheckoutQuoteStale::class);
+    Carbon::setTestNow(Carbon::parse('2026-10-13T18:00:00Z')->utc());
+    $staleCart = acceptedIntentQuote($catalog, CartOwner::guest('stale-intent-token'));
+    app(UpdateCart::class)->replaceLine(CartOwner::guest('stale-intent-token'), [
+        'variant_id' => $catalog['physical_variant'],
+        'quantity' => 2,
+        'expected_revision' => $staleCart['cart_revision'],
+    ]);
+    expect(fn () => app(CreateCheckoutIntent::class)->create(
+        CartOwner::guest('stale-intent-token'),
+        $staleCart['id'],
+        (string) Str::uuid(),
+    ))->toThrow(CheckoutQuoteStale::class);
+    expect(fn () => app(CreateCheckoutIntent::class)->create($guest, 'not-a-uuid', (string) Str::uuid()))
+        ->toThrow(InvalidArgumentException::class);
+    expect(fn () => app(CreateCheckoutIntent::class)->create($guest, $accepted['id'], strtoupper((string) Str::uuid())))
+        ->toThrow(InvalidArgumentException::class);
+    expect(fn () => app(CreateCheckoutIntent::class)->snapshot($guest, 'not-a-uuid'))
+        ->toThrow(CheckoutQuoteStale::class);
+    expect(fn () => app(CreateCheckoutIntent::class)->snapshot($guest, (string) Str::uuid()))
+        ->toThrow(CheckoutQuoteStale::class);
+    $json = Request::create('/store-api/v1/checkout-sessions', 'POST', server: ['HTTP_ACCEPT' => 'application/json']);
+    expect((new CheckoutIdempotencyConflict)->render($json)->getStatusCode())->toBe(422)
+        ->and((new CheckoutIntentConflict)->render($json)->getStatusCode())->toBe(409);
+    $html = Request::create('/checkout', 'POST');
+    expect((new CheckoutIdempotencyConflict)->render($html)->isRedirect())->toBeTrue()
+        ->and((new CheckoutIntentConflict)->render($html)->isRedirect())->toBeTrue();
+});
+
+it('CheckoutOrdersIntent HTTP rejects a missing key and a changed idempotent payload', function (): void {
+    $catalog = intentCatalog();
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['physical_variant'], 'quantity' => 1, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => 'guest@example.test',
+        'coupon' => 'SAVE10',
+        'billing' => checkoutAddress(),
+        'shipping' => checkoutAddress(),
+    ])->assertOk()->json('data');
+    $this->postJson('/store-api/v1/checkout-quotes/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policyAcknowledged' => true,
+    ])->assertOk();
+    $this->postJson('/store-api/v1/checkout-sessions', [
+        'quoteId' => $quote['id'],
+        'fingerprint' => $quote['fingerprint'],
+    ])->assertStatus(422);
+    $key = (string) Str::uuid();
+    $this->postJson('/store-api/v1/checkout-sessions', [
+        'quoteId' => $quote['id'],
+        'fingerprint' => $quote['fingerprint'],
+    ], ['Idempotency-Key' => $key])->assertOk();
+    $corrected = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => 'guest@example.test',
+        'coupon' => 'SAVE10',
+        'billing' => checkoutAddress(),
+        'shipping' => checkoutAddress(['postal_code' => '94107', 'city' => 'San Francisco']),
+    ])->assertOk()->json('data');
+    $this->postJson('/store-api/v1/checkout-quotes/'.$corrected['id'].'/accept', [
+        'fingerprint' => $corrected['fingerprint'],
+        'policyAcknowledged' => true,
+    ])->assertOk();
+    $conflict = $this->postJson('/store-api/v1/checkout-sessions', [
+        'quoteId' => $corrected['id'],
+        'fingerprint' => $corrected['fingerprint'],
+    ], ['Idempotency-Key' => $key]);
+    expect($conflict->status())->toBe(422)
+        ->and($conflict->json('error.code'))->toBe('IDEMPOTENCY');
+    $this->get('/')->assertStatus(503);
 });
 
 it('CheckoutOrdersIntent HTTP keeps privileged staff behind two-factor and leaves the storefront closed', function (): void {
