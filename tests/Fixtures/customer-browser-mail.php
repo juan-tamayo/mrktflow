@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Identity\Actions\DeliverCustomerChallengeMail;
+use App\Domain\Platform\Support\TestDatabaseGuard;
 use Dotenv\Dotenv;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
@@ -21,8 +22,20 @@ foreach ($environment as $key => $value) {
 $app = require $root.'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 $identity = DB::selectOne('SELECT DATABASE() AS db, CURRENT_USER() AS account');
-if (! $app->environment('testing') || $identity->db !== 'mrktflow_browser' || $identity->account !== 'mrktflow_browser@localhost' || config('mail.default') !== 'array') {
-    throw new RuntimeException('Only the guarded browser fixture runtime may read in-memory mail.');
+if ($identity === null) {
+    fwrite(STDERR, "The guarded browser fixture could not identify its database account.\n");
+    exit(1);
+}
+try {
+    TestDatabaseGuard::assertBrowserMailFixture(
+        $app->environment(),
+        (string) $identity->db,
+        (string) $identity->account,
+        (string) config('mail.default'),
+    );
+} catch (RuntimeException $exception) {
+    fwrite(STDERR, $exception->getMessage().PHP_EOL);
+    exit(1);
 }
 $purpose = trim(stream_get_contents(STDIN));
 if (! in_array($purpose, ['verify_email', 'reset_password'], true)) {

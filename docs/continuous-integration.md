@@ -12,8 +12,14 @@ The specification requires at least 90% line coverage for money, inventory, paym
 
 Only public-page failure screenshots are uploaded, retained seven days. CI disables browser traces; reports/cookies/environment/log files are not uploaded. Revisit screenshot publication before browser tests contain personal information.
 
-## Verification status — October 10, 2026
+## Verification status — October 13, 2026
 
 Workflow YAML parses and contains all ten intended steps. The same application quality commands passed locally; the provisioning helper's non-CI rejection was verified. PHP tests and Vue tests reject zero selected cases, an intentionally failing PHP assertion was detected, an incompatible PHP return type was detected by PHPStan, and the browser suite reported its initial failure before the launcher/heading fixes.
 
-No remote repository is configured. The hosted runner, container provisioning, PCOV report and hosted signature verification have **not run**. A successful hosted Quality job and required branch checks remain mandatory once a repository host is connected. Branch protection cannot be configured locally. The local PHP runtime has no coverage extension; coverage percentages are not claimed from that runtime.
+Hosted Quality on `main` ran on 2026-10-12: [run 38194214664](https://github.com/juan-tamayo/mrktflow/actions/runs/38194214664). Disposable MySQL provisioning, lockfile installs, Pint/PHPStan/type/lint/format, PHP tests (272 passed, 1450 assertions) and the coverage gate succeeded. `bin/npm run test:unit -- --run` then failed at Vitest startup: laravel-vite-plugin aborts Vite’s `serve` command when `CI` is set, and Vitest resolves `vite.config.ts` with that command. Production build, Playwright, Composer/npm audit and registry signatures did not run on that job.
+
+Local follow-up: omit `laravel-vite-plugin` when `VITEST` is set so unit tests do not start an HMR server; keep the plugin for `vite build`/`npm run dev`. A Vitest check reproduces the CI abort for a real serve and requires config resolve to succeed under `CI=true`. `CI=true bin/npm run test:unit -- --run` passed 21 tests; typecheck, lint, format and `CI=true` production build passed. `LARAVEL_BYPASS_ENV_CHECK` is not used.
+
+PR Quality ([run 38348173653](https://github.com/juan-tamayo/mrktflow/actions/runs/38348173653), [run 38348190167](https://github.com/juan-tamayo/mrktflow/actions/runs/38348190167)): Vitest passed; Playwright failed in `owner can unlock, save and reload interrupted store setup` when filling `/account/verify`. Expected credential was the Laravel exception `Only the guarded browser fixture runtime may read in-memory mail.` The fixture compared `CURRENT_USER()` to `mrktflow_browser@localhost`; CI creates `'mrktflow_browser'@'%'`. Guard now accepts that isolated account for any MySQL host. PHP/Pint/PHPStan were not re-run in this workspace (no PHP 8.4 runtime here).
+
+A successful hosted Quality job on the default branch and required branch checks remain mandatory. Branch protection cannot be configured from this workspace. The local PHP runtime has no coverage extension; coverage percentages are not claimed from that runtime.

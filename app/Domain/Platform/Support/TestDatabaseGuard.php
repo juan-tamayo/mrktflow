@@ -72,4 +72,14 @@ final class TestDatabaseGuard
             throw new RuntimeException('Tests require array mail and synchronous jobs to prevent external side effects.');
         }
     }
+
+    public static function assertBrowserMailFixture(string $environment, string $database, string $account, string $mailer): void
+    {
+        if ($environment !== 'testing'
+            || $database !== 'mrktflow_browser'
+            || preg_match('/^mrktflow_browser@[^@\s]+$/', $account) !== 1
+            || $mailer !== 'array') {
+            throw new RuntimeException('Only the guarded browser fixture runtime may read in-memory mail.');
+        }
+    }
 }
