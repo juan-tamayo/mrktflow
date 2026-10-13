@@ -84,7 +84,8 @@ const logout = useForm({})
             <span class="tool-number" aria-hidden="true">04</span>
             <div>
               <a class="tool-link" href="/admin/coupons">Coupons</a>
-              <p>Configure one entered coupon and redemption limits.</p>
+              <a class="tool-link" href="/admin/taxes">Taxes</a>
+              <p>Configure coupons, tax classes, destination rates, and price mode.</p>
             </div>
             <span aria-hidden="true">↗</span>
           </div>

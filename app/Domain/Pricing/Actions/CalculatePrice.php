@@ -10,6 +10,7 @@ use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Data\PricedLine;
 use App\Domain\Pricing\Data\PriceQuote;
 use App\Domain\Pricing\Data\PriceRequest;
+use App\Domain\Pricing\Data\TaxAllocation;
 use App\Domain\Pricing\Exceptions\PricingInvalidQuote;
 use App\Domain\Pricing\Rules\AllocateDiscount;
 
@@ -107,6 +108,9 @@ final class CalculatePrice implements PriceCalculator
             $request->quotedAt,
             '',
         );
+        if ($request->tax !== null) {
+            $quote = app(CalculateTax::class)->apply($quote, $request->tax);
+        }
 
         return new PriceQuote(
             $quote->lines,
@@ -118,6 +122,8 @@ final class CalculatePrice implements PriceCalculator
             $quote->grandTotal,
             $quote->quotedAt,
             hash('sha256', $this->fingerprintPayload($request, $quote)),
+            $quote->priceMode,
+            $quote->taxLines,
         );
     }
 
@@ -133,6 +139,8 @@ final class CalculatePrice implements PriceCalculator
                 'eligibleLineIds' => $request->discount()->eligibleLineIds,
             ],
             'shipping' => $request->shipping === null ? 0 : $request->shipping->amount,
+            'priceMode' => $quote->priceMode,
+            'taxLines' => array_map(fn (TaxAllocation $line): array => $line->toArray(), $quote->taxLines),
             'lines' => array_map(fn (LineAllocation $line): array => [
                 'lineId' => $line->lineId,
                 'variantId' => $line->variantId,

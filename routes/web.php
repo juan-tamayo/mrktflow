@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
+use App\Http\Controllers\Admin\TaxController;
 use App\Http\Controllers\Admin\ThemePreviewController;
 use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Storefront\CartController;
@@ -91,6 +92,9 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/shipping', [ShippingController::class, 'show']);
         Route::post('/admin/shipping', [ShippingController::class, 'update'])->middleware('throttle:30,1,shipping-rules:');
         Route::post('/admin/shipping/preview', [ShippingController::class, 'preview'])->middleware('throttle:30,1,shipping-preview:');
+        Route::get('/admin/taxes', [TaxController::class, 'show']);
+        Route::post('/admin/taxes', [TaxController::class, 'update'])->middleware('throttle:30,1,pricing-tax:');
+        Route::post('/admin/taxes/preview', [TaxController::class, 'preview'])->middleware('throttle:30,1,pricing-tax-preview:');
         Route::get('/admin/categories', [CategoryController::class, 'index']);
         Route::get('/admin/categories/create', [CategoryController::class, 'create']);
         Route::post('/admin/categories', [CategoryController::class, 'store'])->middleware('throttle:30,1,catalog-category:');
