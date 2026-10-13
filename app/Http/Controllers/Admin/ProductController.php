@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Catalog\Actions\ArchiveProduct;
+use App\Domain\Catalog\Actions\ExportProducts;
 use App\Domain\Catalog\Actions\ReadCatalog;
 use App\Domain\Catalog\Actions\SaveProduct;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
@@ -11,6 +13,7 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffMediaUploadAuthorization;
 use App\Domain\Platform\Actions\ProcessMedia;
 use App\Domain\Platform\Actions\StoreMedia;
+use App\Http\Requests\ArchiveProductRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +21,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class ProductController
@@ -181,5 +185,37 @@ final class ProductController
         }
 
         return redirect('/admin/products/'.$saved['id'])->with('product_saved', true);
+    }
+
+    public function export(Request $request, ExportProducts $export): StreamedResponse
+    {
+        Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        $csv = $export->export($staff);
+
+        return response()->streamDownload(function () use ($csv): void {
+            echo $csv;
+        }, 'catalog-products.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
+    public function archive(ArchiveProductRequest $request, string $productId, ArchiveProduct $archive): RedirectResponse
+    {
+        Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        try {
+            $archive->archive($staff, ['id' => $productId, 'version' => $request->validated('version')]);
+        } catch (HttpException $exception) {
+            if ($exception->getStatusCode() === 409 && ! $request->expectsJson()) {
+                throw ValidationException::withMessages(['product' => $exception->getMessage()])->redirectTo('/admin/products/'.$productId);
+            }
+            throw $exception;
+        }
+
+        return redirect('/admin/products/'.$productId)->with('product_saved', true);
     }
 }

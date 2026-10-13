@@ -13,10 +13,11 @@ vi.mock('@inertiajs/vue3', () => ({
   }),
 }))
 
-it('shows sample columns and a mixed-validity dry-run without an apply action', () => {
+it('shows sample columns, a mixed-validity dry-run, and an apply action', () => {
   const wrapper = mount(ProductImport, {
     props: {
       sampleColumns: ['sku', 'title', 'slug'],
+      applied: null,
       preview: {
         import_id: '11111111-1111-4111-8111-111111111111',
         headers: ['SKU', 'Title'],
@@ -58,6 +59,6 @@ it('shows sample columns and a mixed-validity dry-run without an apply action', 
       .find('a[href="/admin/products/import/11111111-1111-4111-8111-111111111111/errors.csv"]')
       .exists(),
   ).toBe(true)
-  expect(wrapper.text().toLowerCase()).not.toContain('apply import')
+  expect(wrapper.text()).toContain('Apply validated rows')
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(true)
 })

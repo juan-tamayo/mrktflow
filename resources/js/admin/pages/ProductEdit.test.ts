@@ -57,4 +57,5 @@ it('does not execute untrusted product titles', () => {
   })
   expect(wrapper.find('script').exists()).toBe(false)
   expect(wrapper.get('#product-title').element).toHaveProperty('value', '<script>alert(1)</script>')
+  expect(wrapper.text()).toContain('Archive product')
 })

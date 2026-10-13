@@ -347,7 +347,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T023: CSV apply, export and archive
 
-- [ ] Complete T023.
+- [x] Complete T023 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogImportApply` tests were written first, then `ApplyProductImport`, `ExportProducts`, `ArchiveProduct`, apply/export/archive routes, and staff import/index/edit UI. Valid CSV rows apply with a stable `catalog:import:apply:{importId}` intent and per-row created/updated/skipped results; replaying the same import does not duplicate variants. Formula-safe catalog export includes archived SKUs. Archive keeps variants/SKUs and hides the product from public pages and search. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 359 tests / 2549 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 44 Vue tests; 10 Chromium journeys including apply, export, and archive. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-01, CAT-07.
 - **Depends on:** T022.
 - **Acceptance:** Apply validated rows with stable import intent and per-row results; replay creates no duplicates; archive preserves order references.

@@ -14,6 +14,8 @@ type PreviewRow = {
   product_id: string | null
 }
 
+type AppliedRow = PreviewRow & { result: string }
+
 const props = defineProps<{
   sampleColumns: string[]
   preview: {
@@ -27,6 +29,16 @@ const props = defineProps<{
     create_count: number
     update_count: number
   } | null
+  applied: {
+    import_id: string
+    applied: boolean
+    replayed: boolean
+    rows: AppliedRow[]
+    valid_count: number
+    error_count: number
+    create_count: number
+    update_count: number
+  } | null
 }>()
 const errors = ref<HTMLElement | null>(null)
 const form = useForm({
@@ -34,6 +46,7 @@ const form = useForm({
   mapping: { ...(props.preview?.mapping ?? {}) } as Record<string, string>,
   file: null as File | null,
 })
+const applyForm = useForm({})
 function submit() {
   form.post('/admin/products/import', {
     forceFormData: true,
@@ -42,6 +55,14 @@ function submit() {
       await nextTick()
       errors.value?.focus()
     },
+  })
+}
+function apply() {
+  if (props.preview === null) {
+    return
+  }
+  applyForm.post(`/admin/products/import/${props.preview.import_id}/apply`, {
+    preserveScroll: true,
   })
 }
 </script>
@@ -57,9 +78,9 @@ function submit() {
       <p class="eyebrow">Catalog</p>
       <h1>Import CSV<span class="accent">.</span></h1>
       <p class="lede">
-        Upload a CSV, map columns, and review row-specific errors. Nothing is written to the catalog
-        until a later apply step. Spreadsheet formulas are rejected. The store homepage stays
-        closed.
+        Upload a CSV, map columns, and review row-specific errors. Apply writes only valid rows.
+        Replaying the same import does not duplicate SKUs. Spreadsheet formulas are rejected. The
+        store homepage stays closed.
       </p>
       <p class="workspace-note">
         Sample columns: {{ sampleColumns.join(', ') }}. Extra headers named like sensor.megapixels
@@ -124,6 +145,16 @@ function submit() {
           <a class="text-link" :href="`/admin/products/import/${preview.import_id}/errors.csv`"
             >Download row errors</a
           >
+        </p>
+        <form v-if="applied === null" class="setup-form" @submit.prevent="apply">
+          <button type="submit" class="primary-button" :disabled="applyForm.processing">
+            {{ applyForm.processing ? 'Applying…' : 'Apply validated rows' }}
+          </button>
+        </form>
+        <p v-if="applied" role="status">
+          Applied {{ applied.create_count }} created, {{ applied.update_count }} updated,
+          {{ applied.error_count }} skipped. Replay of this import will not create duplicate
+          variants.
         </p>
         <table class="import-table">
           <caption>

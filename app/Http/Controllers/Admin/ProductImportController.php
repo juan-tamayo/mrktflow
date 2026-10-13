@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Catalog\Actions\ApplyProductImport;
 use App\Domain\Catalog\Actions\PreviewProductImport;
 use App\Domain\Catalog\Support\ProductImportCsv;
 use App\Domain\Identity\Models\StaffAccount;
@@ -27,6 +28,7 @@ final class ProductImportController
         return Inertia::render('ProductImport', [
             'sampleColumns' => ProductImportCsv::sampleColumns(),
             'preview' => null,
+            'applied' => null,
         ]);
     }
 
@@ -65,7 +67,19 @@ final class ProductImportController
         return Inertia::render('ProductImport', [
             'sampleColumns' => ProductImportCsv::sampleColumns(),
             'preview' => $report,
+            'applied' => $this->appliedResult($importId),
         ]);
+    }
+
+    public function apply(string $importId, Request $request, ApplyProductImport $apply): RedirectResponse
+    {
+        Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        abort_unless(DB::table('product_import_files')->where('id', $importId)->exists(), 404);
+        $apply->apply($staff, ['import_id' => $importId]);
+
+        return redirect('/admin/products/import/'.$importId);
     }
 
     public function errors(string $importId, Request $request, PreviewProductImport $preview): StreamedResponse
@@ -83,5 +97,23 @@ final class ProductImportController
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Cache-Control' => 'no-store',
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function appliedResult(string $importId): ?array
+    {
+        $raw = DB::table('product_import_files')->where('id', $importId)->value('apply_result');
+        if (is_array($raw)) {
+            return $raw;
+        }
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 }
