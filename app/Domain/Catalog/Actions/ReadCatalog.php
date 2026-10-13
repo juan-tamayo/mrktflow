@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Catalog\Actions;
 
 use App\Domain\Catalog\Contracts\CatalogReader;
+use App\Domain\Catalog\Exceptions\CatalogCategoryNotFound;
+use App\Domain\Catalog\Exceptions\CatalogCategoryUnpublished;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
 use Illuminate\Support\Facades\DB;
@@ -14,29 +16,136 @@ final class ReadCatalog implements CatalogReader
 {
     public function publicProduct(string $idOrSlug): array
     {
-        $row = $this->load($idOrSlug);
+        $row = $this->loadProduct($idOrSlug);
         if ($row === null) {
             throw new CatalogProductNotFound;
         }
         if ($row['status'] !== 'published') {
             throw new CatalogProductUnpublished;
         }
+        $product = $this->productSnapshot($row, false);
+        $product['breadcrumbs'] = $this->productBreadcrumbs($product['id']);
 
-        return $this->snapshot($row, false);
+        return $product;
     }
 
     public function staffProduct(string $idOrSlug): array
     {
-        $row = $this->load($idOrSlug);
+        $row = $this->loadProduct($idOrSlug);
         if ($row === null) {
             throw new CatalogProductNotFound;
         }
 
-        $product = $this->snapshot($row, true);
+        $product = $this->productSnapshot($row, true);
         $product['version'] = (int) $row['version'];
         $product['image']['assetId'] = is_string($row['media_asset_id'] ?? null) ? $row['media_asset_id'] : '';
+        $categoryIds = [];
+        foreach (DB::table('product_categories')->where('product_id', $product['id'])->orderBy('category_id')->pluck('category_id') as $categoryId) {
+            if (is_string($categoryId)) {
+                $categoryIds[] = $categoryId;
+            }
+        }
+        $product['category_ids'] = $categoryIds;
 
         return $product;
+    }
+
+    public function publicCategory(string $path): array
+    {
+        $row = DB::table('categories')->where('path', $path)->first();
+        if ($row === null) {
+            throw new CatalogCategoryNotFound;
+        }
+        if (! $this->lineageIsPublished((string) $row->path)) {
+            throw new CatalogCategoryUnpublished;
+        }
+        $products = [];
+        $records = DB::table('products')
+            ->join('product_categories', 'products.id', '=', 'product_categories.product_id')
+            ->join('product_variants', function ($join): void {
+                $join->on('products.id', '=', 'product_variants.product_id')->where('product_variants.is_default', '=', true);
+            })
+            ->join('product_media', function ($join): void {
+                $join->on('products.id', '=', 'product_media.product_id')->where('product_media.sort_order', '=', 0);
+            })
+            ->join('media_assets', 'product_media.media_asset_id', '=', 'media_assets.id')
+            ->where('product_categories.category_id', $row->id)
+            ->where('products.status', 'published')
+            ->where('media_assets.kind', 'public_image')
+            ->where('media_assets.status', 'ready')
+            ->orderBy('products.title')
+            ->orderBy('products.id')
+            ->limit(24)
+            ->select([
+                'products.id', 'products.slug', 'products.title', 'product_variants.price_amount',
+                'product_variants.currency', 'product_variants.exponent', 'product_media.alt', 'media_assets.public_key',
+            ])
+            ->get();
+        foreach ($records as $product) {
+            $publicKey = (string) $product->public_key;
+            if (! preg_match('#^media/[0-9a-f-]{36}/[a-f0-9]{64}\.png$#D', $publicKey)) {
+                continue;
+            }
+            $products[] = [
+                'id' => (string) $product->id,
+                'slug' => (string) $product->slug,
+                'title' => (string) $product->title,
+                'image' => ['url' => '/storage/'.$publicKey, 'alt' => (string) $product->alt],
+                'money' => [
+                    'amount' => (int) $product->price_amount,
+                    'currency' => (string) $product->currency,
+                    'exponent' => (int) $product->exponent,
+                ],
+            ];
+        }
+
+        return [
+            'id' => (string) $row->id,
+            'path' => (string) $row->path,
+            'title' => (string) $row->title,
+            'description' => (string) $row->description,
+            'status' => (string) $row->status,
+            'breadcrumbs' => $this->categoryBreadcrumbs((string) $row->path),
+            'products' => $products,
+        ];
+    }
+
+    public function staffCategory(string $idOrPath): array
+    {
+        $query = DB::table('categories');
+        $row = Str::isUuid($idOrPath) ? $query->where('id', $idOrPath)->first() : $query->where('path', $idOrPath)->first();
+        if ($row === null) {
+            throw new CatalogCategoryNotFound;
+        }
+
+        return [
+            'id' => (string) $row->id,
+            'parent_id' => is_string($row->parent_id) ? $row->parent_id : null,
+            'title' => (string) $row->title,
+            'slug' => (string) $row->slug,
+            'path' => (string) $row->path,
+            'description' => (string) $row->description,
+            'status' => (string) $row->status,
+            'version' => (int) $row->version,
+        ];
+    }
+
+    public function staffCategories(): array
+    {
+        $categories = [];
+        foreach (DB::table('categories')->orderBy('path')->get() as $row) {
+            $categories[] = [
+                'id' => (string) $row->id,
+                'parent_id' => is_string($row->parent_id) ? $row->parent_id : null,
+                'title' => (string) $row->title,
+                'slug' => (string) $row->slug,
+                'path' => (string) $row->path,
+                'status' => (string) $row->status,
+                'version' => (int) $row->version,
+            ];
+        }
+
+        return $categories;
     }
 
     public function publishedCount(): int
@@ -45,7 +154,7 @@ final class ReadCatalog implements CatalogReader
     }
 
     /** @return array<string, mixed>|null */
-    private function load(string $idOrSlug): ?array
+    private function loadProduct(string $idOrSlug): ?array
     {
         $query = DB::table('products')
             ->join('product_variants', function ($join): void {
@@ -71,9 +180,9 @@ final class ReadCatalog implements CatalogReader
 
     /**
      * @param  array<string, mixed>  $row
-     * @return array{id: string, slug: string, title: string, description: string, type: string, status: string, version?: int, image: array{url: string, alt: string, assetId?: string}, variant: array{id: string, sku: string, isDefault: bool, money: array{amount: int, currency: string, exponent: int}}}
+     * @return array{id: string, slug: string, title: string, description: string, type: string, status: string, version?: int, image: array{url: string, alt: string, assetId?: string}, variant: array{id: string, sku: string, isDefault: bool, money: array{amount: int, currency: string, exponent: int}}, breadcrumbs?: list<array{title: string, url: string}>, category_ids?: list<string>}
      */
-    private function snapshot(array $row, bool $staff): array
+    private function productSnapshot(array $row, bool $staff): array
     {
         $publicKey = is_string($row['public_key'] ?? null) ? $row['public_key'] : '';
         $id = is_string($row['id'] ?? null) ? $row['id'] : '';
@@ -92,7 +201,8 @@ final class ReadCatalog implements CatalogReader
             || ! preg_match('#^media/[0-9a-f-]{36}/[a-f0-9]{64}\.png$#D', $publicKey)) {
             throw $staff ? new CatalogProductNotFound : new CatalogProductUnpublished;
         }
-        $product = [
+
+        return [
             'id' => $id,
             'slug' => $slug,
             'title' => $title,
@@ -111,7 +221,60 @@ final class ReadCatalog implements CatalogReader
                 ],
             ],
         ];
+    }
 
-        return $product;
+    /** @return list<array{title: string, url: string}> */
+    private function productBreadcrumbs(string $productId): array
+    {
+        $membership = DB::table('product_categories')
+            ->join('categories', 'product_categories.category_id', '=', 'categories.id')
+            ->where('product_categories.product_id', $productId)
+            ->where('categories.status', 'published')
+            ->orderByDesc(DB::raw('CHAR_LENGTH(categories.path)'))
+            ->orderBy('categories.path')
+            ->select('categories.path')
+            ->first();
+        if ($membership === null) {
+            return [];
+        }
+
+        return $this->categoryBreadcrumbs((string) $membership->path);
+    }
+
+    /** @return list<array{title: string, url: string}> */
+    private function categoryBreadcrumbs(string $path): array
+    {
+        $crumbs = [];
+        foreach ($this->lineagePaths($path) as $ancestorPath) {
+            $ancestor = DB::table('categories')->where('path', $ancestorPath)->where('status', 'published')->first();
+            if ($ancestor === null) {
+                return [];
+            }
+            $crumbs[] = ['title' => (string) $ancestor->title, 'url' => '/categories/'.$ancestorPath];
+        }
+
+        return $crumbs;
+    }
+
+    private function lineageIsPublished(string $path): bool
+    {
+        $paths = $this->lineagePaths($path);
+        $count = DB::table('categories')->whereIn('path', $paths)->where('status', 'published')->count();
+
+        return $count === count($paths);
+    }
+
+    /** @return list<string> */
+    private function lineagePaths(string $path): array
+    {
+        $segments = explode('/', $path);
+        $paths = [];
+        $prefix = '';
+        foreach ($segments as $segment) {
+            $prefix = $prefix === '' ? $segment : $prefix.'/'.$segment;
+            $paths[] = $prefix;
+        }
+
+        return $paths;
     }
 }

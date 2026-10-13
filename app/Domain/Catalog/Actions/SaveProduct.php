@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalog\Actions;
 
+use App\Domain\Catalog\Support\ReservedCatalogSlugs;
 use App\Domain\Catalog\Support\StoreCurrency;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
@@ -18,8 +19,6 @@ use InvalidArgumentException;
 
 final class SaveProduct
 {
-    private const RESERVED_SLUGS = ['admin', 'account', 'setup', 'staff', 'storage', 'up', 'brand', 'build', 'login', 'register', 'downloads', 'webhooks', 'store-api', 'livewire'];
-
     /**
      * @param  array<string, mixed>  $input
      * @return array{id: string, slug: string, version: int, status: string, type: string}
@@ -31,17 +30,19 @@ final class SaveProduct
         }
         $money = app(StoreCurrency::class)->current();
         $data = Validator::make(['product' => $input], [
-            'product' => ['required', 'array:id,version,title,slug,description,status,sku,price_amount,image_asset_id,image_alt'],
+            'product' => ['required', 'array:id,version,title,slug,description,status,sku,price_amount,image_asset_id,image_alt,category_ids'],
             'product.id' => ['nullable', 'uuid'],
             'product.version' => ['required_with:product.id', 'integer', 'min:1', 'max:4294967295'],
             'product.title' => ['required', 'string', 'max:200'],
-            'product.slug' => ['required', 'string', 'max:80', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::notIn(self::RESERVED_SLUGS)],
+            'product.slug' => ['required', 'string', 'max:80', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::notIn(ReservedCatalogSlugs::all())],
             'product.description' => ['required', 'string', 'max:5000'],
             'product.status' => ['required', Rule::in(['draft', 'published'])],
             'product.sku' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/'],
             'product.price_amount' => ['required', 'integer', 'min:0', 'max:9007199254740991'],
             'product.image_asset_id' => ['required', 'uuid'],
             'product.image_alt' => ['required', 'string', 'max:200'],
+            'product.category_ids' => ['sometimes', 'array', 'max:20'],
+            'product.category_ids.*' => ['uuid', 'distinct:strict'],
         ])->validate()['product'];
         try {
             return DB::transaction(function () use ($actor, $data, $money): array {
@@ -96,6 +97,9 @@ final class SaveProduct
                         'media_asset_id' => $data['image_asset_id'], 'alt' => $data['image_alt'], 'updated_at' => $now,
                     ]);
                 }
+                if (array_key_exists('category_ids', $data)) {
+                    $this->syncCategories($id, $data['category_ids'], $now);
+                }
                 $action = $data['status'] === 'published' ? 'catalog.product.published' : 'catalog.product.saved';
                 app(RecordEvent::class)->record('platform.audit.recorded', 'catalog:product:'.$id.':'.$version, [
                     'action' => $action, 'subject_type' => 'product', 'subject_id' => $id,
@@ -114,6 +118,28 @@ final class SaveProduct
                 throw ValidationException::withMessages(['product.sku' => 'This SKU is already used.']);
             }
             throw $exception;
+        }
+    }
+
+    /** @param list<string> $categoryIds */
+    private function syncCategories(string $productId, array $categoryIds, mixed $now): void
+    {
+        $unique = array_values(array_unique($categoryIds));
+        if ($unique !== []) {
+            $found = DB::table('categories')->whereIn('id', $unique)->lockForUpdate()->pluck('id')->all();
+            if (count($found) !== count($unique)) {
+                throw ValidationException::withMessages(['product.category_ids' => 'Choose categories that exist.']);
+            }
+        }
+        DB::table('product_categories')->where('product_id', $productId)->delete();
+        foreach ($unique as $categoryId) {
+            DB::table('product_categories')->insert([
+                'id' => (string) Str::uuid(),
+                'product_id' => $productId,
+                'category_id' => $categoryId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         }
     }
 }

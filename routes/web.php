@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StaffController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
 use App\Http\Controllers\Admin\ThemePreviewController;
 use App\Http\Controllers\Admin\TwoFactorController;
+use App\Http\Controllers\Storefront\CatalogController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
@@ -20,6 +22,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 
 Route::get('/', fn () => response()->view('storefront.closed', [], 503)->header('Retry-After', '3600'));
+Route::get('/products/{slug}', [CatalogController::class, 'product'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+Route::get('/categories/{path}', [CatalogController::class, 'category'])->where('path', '[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*');
 Route::get('/admin/theme-preview', [ThemePreviewController::class, 'show'])->middleware(RequireStaffSession::class);
 
 Route::middleware(Middleware::class)->group(function (): void {
@@ -40,6 +44,11 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/products', [ProductController::class, 'store'])->middleware('throttle:30,1,catalog-product:');
         Route::get('/admin/products/{productId}', [ProductController::class, 'edit'])->whereUuid('productId');
         Route::patch('/admin/products/{productId}', [ProductController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product:');
+        Route::get('/admin/categories', [CategoryController::class, 'index']);
+        Route::get('/admin/categories/create', [CategoryController::class, 'create']);
+        Route::post('/admin/categories', [CategoryController::class, 'store'])->middleware('throttle:30,1,catalog-category:');
+        Route::get('/admin/categories/{categoryId}', [CategoryController::class, 'edit'])->whereUuid('categoryId');
+        Route::patch('/admin/categories/{categoryId}', [CategoryController::class, 'update'])->whereUuid('categoryId')->middleware('throttle:30,1,catalog-category:');
     });
     Route::get('/staff/invitation', [StaffInvitationController::class, 'show']);
     Route::post('/staff/invitation', [StaffInvitationController::class, 'accept'])->middleware('throttle:5,1,staff-invite-accept:');

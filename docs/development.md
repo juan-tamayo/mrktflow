@@ -1,6 +1,6 @@
 # Development
 
-The secure foundation is runnable. The unopened storefront returns HTTP 503; unconfigured administration stays closed until protected setup finishes. A private CLI installation secret unlocks store settings and first-owner creation. After permanent installation completion, the staff workspace/invitations and separate customer signup/sign-in/account screens are available. Commerce management and storefront launch remain in the ordered backlog; customer verification/recovery screens are available; editable profiles and encrypted saved addresses are available; guest-resource transfer remains in progress. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
+The secure foundation is runnable. The unopened storefront homepage returns HTTP 503; unconfigured administration stays closed until protected setup finishes. A private CLI installation secret unlocks store settings and first-owner creation. After permanent installation completion, the staff workspace/invitations and separate customer signup/sign-in/account screens are available. Staff with catalog permission can save nested categories and simple physical products; published category and product pages render server-side while drafts stay private. Checkout and storefront launch remain in the ordered backlog; customer verification/recovery screens are available; editable profiles and encrypted saved addresses are available; guest-resource transfer remains in progress. Framework scaffolding comes from laravel/laravel v13.11.0; installed framework is 13.35.0.
 
 ## Runtime and installation
 
@@ -98,7 +98,11 @@ The ProductView factory accepts only explicit bounded public fields. Description
 
 ## Simple physical products
 
-Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Publishing does not open the storefront: `GET /` remains HTTP 503 until the later category/browse acceptance. Cart and checkout are not part of this slice.
+Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Cart and checkout are not part of this slice.
+
+## Categories and public browse
+
+Authorized staff manage nested categories at `/admin/categories`. Saves reject cycles, duplicate paths, and reserved route slugs. Changing a slug records a validated redirect for the old path and descendant paths. Published category pages render at `/categories/{path}` and published products at `/products/{slug}` using the default theme, including breadcrumbs and an empty-category state. Unpublished categories, draft products, and unknown slugs return 404 without leaking titles. The store homepage `GET /` remains HTTP 503. Variant matrices, typed schemas, search facets, and checkout remain later tasks.
 
 ## Payment/reservation contract spike
 

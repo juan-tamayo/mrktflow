@@ -1,0 +1,56 @@
+import { expect, type Page } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+
+export async function exerciseCatalogBrowse(page: Page): Promise<void> {
+  await page.goto('http://127.0.0.1:8011/admin')
+  await page.getByRole('link', { name: 'Categories', exact: true }).click()
+  await page.getByRole('link', { name: 'Create a category' }).click()
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Lighting')
+  await page.getByRole('textbox', { name: 'Slug', exact: true }).fill('lighting')
+  await page
+    .getByRole('textbox', { name: 'Description', exact: true })
+    .fill('Lamps and fixtures for the studio.')
+  await page.getByRole('button', { name: 'Publish' }).click()
+  await expect(page.getByRole('status')).toContainText('Category saved')
+  const empty = await page.request.get('/categories/lighting')
+  expect(empty.status()).toBe(200)
+  expect(await empty.text()).toContain('No products in this category yet')
+  await page.goto('http://127.0.0.1:8011/admin/products/create')
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Studio Lamp')
+  await page.getByRole('textbox', { name: 'Slug', exact: true }).fill('studio-lamp')
+  await page.getByRole('textbox', { name: 'SKU', exact: true }).fill('LAMP-001')
+  await page
+    .getByRole('textbox', { name: 'Description', exact: true })
+    .fill('A simple physical lamp for the workbench.')
+  await page.getByLabel('Price in the smallest currency unit').fill('2499')
+  await page
+    .getByRole('textbox', { name: 'Image description', exact: true })
+    .fill('Brushed steel studio lamp')
+  const image = page.getByLabel('Image', { exact: true })
+  await image.setInputFiles({
+    name: 'lamp.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  })
+  await page.getByText('lighting', { exact: true }).click()
+  await page.getByRole('button', { name: 'Publish' }).click()
+  await expect(page.getByRole('status')).toContainText('Product saved')
+  await page.goto('http://127.0.0.1:8011/categories/lighting')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Lighting.')
+  await expect(page.getByRole('link', { name: 'Studio Lamp' })).toBeVisible()
+  await page.getByRole('link', { name: 'Studio Lamp' }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Studio Lamp.')
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Lighting')
+  expect((await page.request.get('/products/missing-lamp')).status()).toBe(404)
+  expect((await page.request.get('/')).status()).toBe(503)
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([])
+}

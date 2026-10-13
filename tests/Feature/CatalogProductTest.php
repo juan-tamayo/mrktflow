@@ -2,19 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Application\Setup\CreateInitialOwner;
 use App\Domain\Catalog\Actions\SaveProduct;
 use App\Domain\Catalog\Contracts\CatalogReader;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
-use App\Domain\Identity\Actions\ManageTwoFactor;
 use App\Domain\Identity\Models\CustomerAccount;
-use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
-use App\Domain\Identity\Support\StaffTotp;
-use App\Domain\Platform\Actions\InstallStore;
-use App\Domain\Platform\Actions\ProcessMedia;
-use App\Domain\Platform\Actions\SetupAccess;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -31,67 +24,6 @@ beforeEach(function (): void {
     Storage::fake('local', ['throw' => true]);
     Storage::fake('public', ['throw' => true]);
 });
-
-function catalogOwnerInput(): array
-{
-    return ['name' => 'Example Owner', 'email' => 'owner@example.test', 'password' => 'Fictional owner passphrase 471!', 'password_confirmation' => 'Fictional owner passphrase 471!'];
-}
-
-/** @return array<string, mixed> */
-function catalogStaffSession(StaffAccount $staff): array
-{
-    $session = ['staff_session_version' => $staff->session_version];
-    if (! StaffPermissions::requiresTwoFactor($staff)) {
-        return $session;
-    }
-    if (! app(ManageTwoFactor::class)->confirmed($staff)) {
-        $enrollment = app(ManageTwoFactor::class)->start($staff);
-        app(ManageTwoFactor::class)->confirm($staff, StaffTotp::code($enrollment->secret));
-    }
-    $session['staff_two_factor_verified'] = true;
-    $session['staff_reauthenticated_at'] = now()->getTimestamp();
-
-    return $session;
-}
-
-function catalogInstalledOwner(): StaffAccount
-{
-    $access = app(SetupAccess::class);
-    $grant = $access->unlock($access->issueSecret());
-    app(InstallStore::class)->save($grant, json_decode(file_get_contents(base_path('tests/Fixtures/store-settings.json')), true, flags: JSON_THROW_ON_ERROR), 0);
-
-    return app(CreateInitialOwner::class)->create($grant, catalogOwnerInput());
-}
-
-function catalogReadyImage(string $staffId): string
-{
-    $id = app(StoreMedia::class)->store(UploadedFile::fake()->image('photo.png', 32, 24), 'public_image', new class($staffId) implements MediaUploadAuthorization
-    {
-        public function __construct(private readonly string $ownerId) {}
-
-        public function authorizeUpload(): string
-        {
-            return $this->ownerId;
-        }
-    });
-    app(ProcessMedia::class)->process($id);
-
-    return $id;
-}
-
-function catalogProductInput(string $imageId, array $overrides = []): array
-{
-    return array_replace([
-        'title' => 'Studio Lamp',
-        'slug' => 'studio-lamp',
-        'description' => 'A simple physical lamp for the workbench.',
-        'status' => 'draft',
-        'sku' => 'LAMP-001',
-        'price_amount' => 2499,
-        'image_asset_id' => $imageId,
-        'image_alt' => 'Brushed steel studio lamp',
-    ], $overrides);
-}
 
 it('CatalogProduct keeps drafts out of the public catalog while staff can save them', function (): void {
     $owner = catalogInstalledOwner();
@@ -131,7 +63,7 @@ it('CatalogProduct publishes a simple physical product with one SKU price and im
     expect(json_encode($public))->not->toContain('original_key', 'media/'.$image.'/original', 'supplier');
     expect(app(CatalogReader::class)->publishedCount())->toBe(1);
     $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
-    $this->get('/products/studio-lamp')->assertNotFound();
+    $this->get('/products/studio-lamp')->assertOk()->assertSee('Studio Lamp')->assertDontSee('Add to cart');
 });
 
 it('CatalogProduct HTTP keeps privileged staff behind two-factor before catalog admin', function (): void {
@@ -169,6 +101,13 @@ it('CatalogProduct HTTP lets authorized staff create a draft and publish it', fu
     expect(app(CatalogReader::class)->publicProduct('oak-desk')['title'])->toBe('Oak Desk');
     $this->get('/admin/products')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->component('ProductIndex')->where('products.data.0.title', 'Oak Desk')->where('products.data.0.status', 'published'));
+    $this->from('/admin/products/create')->post('/admin/products', [
+        'title' => 'Walnut Stool', 'slug' => 'walnut-stool', 'description' => 'A stool.',
+        'status' => 'published', 'sku' => 'STOOL-01', 'price_amount' => 4500,
+        'image_alt' => 'Walnut stool',
+        'image' => UploadedFile::fake()->image('stool.png', 40, 40),
+    ])->assertRedirect();
+    expect(app(CatalogReader::class)->publicProduct('walnut-stool')['title'])->toBe('Walnut Stool');
 });
 
 it('CatalogProduct HTTP denies guests customers and staff without catalog write', function (): void {
