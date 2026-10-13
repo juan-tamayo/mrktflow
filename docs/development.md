@@ -98,7 +98,7 @@ The ProductView factory accepts only explicit bounded public fields. Description
 
 ## Simple physical products
 
-Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. After the product exists, staff can save option axes and unique SKU combinations at the same edit screen (`PUT /admin/products/{id}/variants`). Duplicate SKUs or option combinations are rejected. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Cart and checkout are not part of this slice.
+Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. After the product exists, staff can save option axes and unique SKU combinations at the same edit screen (`PUT /admin/products/{id}/variants`). Duplicate SKUs or option combinations are rejected. Staff can dry-run a CSV at `/admin/products/import`: columns are mapped, create vs update-by-SKU is reported, and invalid rows including spreadsheet formulas stay in a per-row report without writing catalog records. Applying a validated import remains a later task. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Cart and checkout are not part of this slice.
 
 ## Categories and public browse
 

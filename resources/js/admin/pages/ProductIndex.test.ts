@@ -26,6 +26,7 @@ it('lists products and only offers create when catalog write is allowed', async 
     },
   })
   expect(wrapper.find('a[href="/admin/products/create"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/products/import"]').exists()).toBe(true)
   expect(wrapper.text()).toContain('Studio Lamp')
   expect(wrapper.text()).toContain('draft')
   expect(wrapper.text()).toContain('homepage remains closed')
@@ -34,5 +35,6 @@ it('lists products and only offers create when catalog write is allowed', async 
     products: { data: [], next_page_url: null, prev_page_url: null },
   })
   expect(wrapper.find('a[href="/admin/products/create"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/products/import"]').exists()).toBe(false)
   expect(wrapper.text()).toContain('No products yet.')
 })

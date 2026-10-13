@@ -100,6 +100,31 @@ function catalogPrivateTextFile(string $name = 'studio-guide.txt', string $conte
     return UploadedFile::fake()->createWithContent($name, $contents);
 }
 
+/**
+ * @param  list<string>  $headers
+ * @param  list<list<string>>  $rows
+ */
+function catalogImportCsv(array $headers, array $rows): string
+{
+    $lines = [catalogImportCsvLine($headers)];
+    foreach ($rows as $row) {
+        $lines[] = catalogImportCsvLine($row);
+    }
+
+    return implode("\n", $lines)."\n";
+}
+
+/** @param list<string> $fields */
+function catalogImportCsvLine(array $fields): string
+{
+    $escaped = [];
+    foreach ($fields as $field) {
+        $escaped[] = '"'.str_replace('"', '""', $field).'"';
+    }
+
+    return implode(',', $escaped);
+}
+
 /** @param array<string, mixed> $overrides */
 function catalogCategoryInput(array $overrides = []): array
 {

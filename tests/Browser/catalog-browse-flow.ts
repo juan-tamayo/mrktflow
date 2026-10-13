@@ -161,6 +161,26 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/search\?/)
   await expect(page).toHaveURL(/q=Studio/)
   await expect(page.getByLabel('Find a product')).toHaveValue('Studio')
+  await page.goto('http://127.0.0.1:8011/admin/products')
+  await page.getByRole('link', { name: 'Import CSV' }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Import CSV.')
+  await expect(page.getByText('Sample columns')).toBeVisible()
+  await page.getByLabel('CSV file').setInputFiles({
+    name: 'catalog.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(
+      [
+        'sku,title,slug,description,status,type,price_amount,image_alt',
+        'GUIDE-001,Studio Lighting Guide,studio-guide,A fictional downloadable lighting guide.,published,digital,899,Cover of the studio lighting guide',
+        '=CMD,Evil,evil-lamp,Formula sku.,draft,physical,100,Evil image',
+      ].join('\n'),
+    ),
+  })
+  await page.getByRole('button', { name: 'Dry-run validation' }).click()
+  await expect(page.getByRole('status')).toContainText('1 valid')
+  await expect(page.getByRole('status')).toContainText('No catalog rows were written')
+  await expect(page.getByText('sku contains a spreadsheet formula.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Download row errors' })).toBeVisible()
   expect((await page.request.get('/')).status()).toBe(503)
   expect(
     (

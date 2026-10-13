@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\ProductInventoryController;
 use App\Http\Controllers\Admin\ProductSchemaController;
 use App\Http\Controllers\Admin\ProductVariantController;
@@ -47,6 +48,10 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::patch('/admin/staff/{staffId}', [StaffController::class, 'update'])->whereUuid('staffId')->middleware('throttle:30,1,staff-access:');
         Route::get('/admin/products', [ProductController::class, 'index']);
         Route::get('/admin/products/create', [ProductController::class, 'create']);
+        Route::get('/admin/products/import', [ProductImportController::class, 'create']);
+        Route::post('/admin/products/import', [ProductImportController::class, 'store'])->middleware('throttle:10,1,catalog-import:');
+        Route::get('/admin/products/import/{importId}', [ProductImportController::class, 'show'])->whereUuid('importId');
+        Route::get('/admin/products/import/{importId}/errors.csv', [ProductImportController::class, 'errors'])->whereUuid('importId');
         Route::post('/admin/products', [ProductController::class, 'store'])->middleware('throttle:30,1,catalog-product:');
         Route::get('/admin/products/{productId}', [ProductController::class, 'edit'])->whereUuid('productId');
         Route::patch('/admin/products/{productId}', [ProductController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product:');
