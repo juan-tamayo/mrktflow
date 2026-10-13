@@ -12,7 +12,10 @@ if (outlet?.dataset.variants) {
   }
   const input = parseVariantPicker(payload)
   if (input)
-    createApp(VariantPicker, { variants: input.variants, selectedId: input.selectedId }).mount(
-      outlet,
-    )
+    createApp(VariantPicker, {
+      variants: input.variants,
+      selectedId: input.selectedId,
+      optionAxes: input.optionAxes,
+      selectionState: input.selectionState,
+    }).mount(outlet)
 }

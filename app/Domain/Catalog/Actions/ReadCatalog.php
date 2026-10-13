@@ -9,6 +9,7 @@ use App\Domain\Catalog\Exceptions\CatalogCategoryNotFound;
 use App\Domain\Catalog\Exceptions\CatalogCategoryUnpublished;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
+use App\Domain\Catalog\Support\VariantOptions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -25,6 +26,8 @@ final class ReadCatalog implements CatalogReader
         }
         $product = $this->productSnapshot($row, false);
         $product['breadcrumbs'] = $this->productBreadcrumbs($product['id']);
+        $product['option_axes'] = $this->optionAxes($product['id']);
+        $product['variants'] = $this->variants($product['id'], $product['image'], false);
 
         return $product;
     }
@@ -46,6 +49,8 @@ final class ReadCatalog implements CatalogReader
             }
         }
         $product['category_ids'] = $categoryIds;
+        $product['option_axes'] = $this->optionAxes($product['id']);
+        $product['variants'] = $this->variants($product['id'], $product['image'], true);
 
         return $product;
     }
@@ -180,7 +185,7 @@ final class ReadCatalog implements CatalogReader
 
     /**
      * @param  array<string, mixed>  $row
-     * @return array{id: string, slug: string, title: string, description: string, type: string, status: string, version?: int, image: array{url: string, alt: string, assetId?: string}, variant: array{id: string, sku: string, isDefault: bool, money: array{amount: int, currency: string, exponent: int}}, breadcrumbs?: list<array{title: string, url: string}>, category_ids?: list<string>}
+     * @return array{id: string, slug: string, title: string, description: string, type: string, status: string, version?: int, image: array{url: string, alt: string, assetId?: string}, variant: array{id: string, sku: string, isDefault: bool, money: array{amount: int, currency: string, exponent: int}}}
      */
     private function productSnapshot(array $row, bool $staff): array
     {
@@ -276,5 +281,81 @@ final class ReadCatalog implements CatalogReader
         }
 
         return $paths;
+    }
+
+    /**
+     * @return list<array{name: string, values: list<string>}>
+     */
+    private function optionAxes(string $productId): array
+    {
+        $axes = [];
+        foreach (DB::table('product_option_axes')->where('product_id', $productId)->orderBy('sort_order')->orderBy('name')->get() as $axis) {
+            $values = [];
+            foreach (DB::table('product_option_values')->where('axis_id', $axis->id)->orderBy('sort_order')->orderBy('value')->pluck('value') as $value) {
+                if (is_string($value)) {
+                    $values[] = $value;
+                }
+            }
+            $axes[] = ['name' => (string) $axis->name, 'values' => $values];
+        }
+
+        return $axes;
+    }
+
+    /**
+     * @param  array{url: string, alt: string, assetId?: string}  $fallbackImage
+     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null}>
+     */
+    private function variants(string $productId, array $fallbackImage, bool $staff): array
+    {
+        $variants = [];
+        $rows = DB::table('product_variants')->where('product_id', $productId)->orderByDesc('is_default')->orderBy('sku')->orderBy('id')->get();
+        foreach ($rows as $row) {
+            $decoded = is_array($row->options) ? $row->options : json_decode(is_string($row->options) ? $row->options : '[]', true);
+            $options = [];
+            if (is_array($decoded)) {
+                foreach ($decoded as $option) {
+                    if (is_array($option) && is_string($option['name'] ?? null) && is_string($option['value'] ?? null)) {
+                        $options[] = ['name' => $option['name'], 'value' => $option['value']];
+                    }
+                }
+            }
+            $image = $fallbackImage;
+            $mediaId = is_string($row->media_asset_id) ? $row->media_asset_id : null;
+            if ($mediaId !== null) {
+                $asset = DB::table('media_assets')->where('id', $mediaId)->first();
+                $publicKey = is_object($asset) && is_string($asset->public_key) ? $asset->public_key : '';
+                $kind = is_object($asset) && is_string($asset->kind) ? $asset->kind : '';
+                $status = is_object($asset) && is_string($asset->status) ? $asset->status : '';
+                if ($kind === 'public_image' && $status === 'ready' && preg_match('#^media/[0-9a-f-]{36}/[a-f0-9]{64}\.png$#D', $publicKey) === 1) {
+                    $alt = is_string($row->image_alt) && $row->image_alt !== '' ? $row->image_alt : $fallbackImage['alt'];
+                    $image = ['url' => '/storage/'.$publicKey, 'alt' => $alt];
+                    if ($staff) {
+                        $image['assetId'] = $mediaId;
+                    }
+                }
+            }
+            $variant = [
+                'id' => (string) $row->id,
+                'sku' => (string) $row->sku,
+                'label' => VariantOptions::label($options),
+                'isDefault' => (bool) $row->is_default,
+                'available' => (bool) $row->available,
+                'options' => $options,
+                'money' => [
+                    'amount' => (int) $row->price_amount,
+                    'currency' => (string) $row->currency,
+                    'exponent' => (int) $row->exponent,
+                ],
+                'image' => $image,
+                'weight_grams' => $staff && $row->weight_grams !== null ? (int) $row->weight_grams : null,
+                'length_mm' => $staff && $row->length_mm !== null ? (int) $row->length_mm : null,
+                'width_mm' => $staff && $row->width_mm !== null ? (int) $row->width_mm : null,
+                'height_mm' => $staff && $row->height_mm !== null ? (int) $row->height_mm : null,
+            ];
+            $variants[] = $variant;
+        }
+
+        return $variants;
     }
 }

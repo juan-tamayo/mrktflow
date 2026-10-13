@@ -12,7 +12,7 @@ use InvalidArgumentException;
 final class DefaultThemeRenderer
 {
     /** @param list<array{title: string, url: string}> $breadcrumbs */
-    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = []): View
+    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected'): View
     {
         $selected = null;
         foreach ($product->variants as $variant) {
@@ -24,12 +24,16 @@ final class DefaultThemeRenderer
         if ($selected === null) {
             throw new InvalidArgumentException('Select a supplied product variant.');
         }
+        if (! in_array($selectionState, ['selected', 'missing', 'unavailable'], true)) {
+            throw new InvalidArgumentException('Unknown variant selection state.');
+        }
 
         return view('default-theme::product', [
             'product' => $product,
             'selected' => $selected,
             'preview' => $preview,
             'breadcrumbs' => $breadcrumbs,
+            'selectionState' => $selectionState,
         ]);
     }
 

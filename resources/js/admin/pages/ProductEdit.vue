@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import VariantEditor from '../components/VariantEditor.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { nextTick, ref } from 'vue'
 
@@ -15,6 +16,15 @@ const props = defineProps<{
     version: number
     image: { url: string; alt: string }
     variant: { sku: string; money: { amount: number } }
+    variants: {
+      id: string
+      sku: string
+      isDefault: boolean
+      available: boolean
+      options: { name: string; value: string }[]
+      money: { amount: number }
+    }[]
+    option_axes: { name: string; values: string[] }[]
     category_ids: string[]
   } | null
   categories: { id: string; title: string; path: string }[]
@@ -62,9 +72,8 @@ function submit(status: 'draft' | 'published') {
       <p class="eyebrow">Simple physical product</p>
       <h1>{{ product ? 'Edit product' : 'Create a product' }}<span class="accent">.</span></h1>
       <p class="lede">
-        One variant, one SKU, one price, and one image. Save a draft for staff only, or publish when
-        you are ready. The store homepage stays closed; published products and categories can be
-        browsed.
+        Save the product, then add option combinations with unique SKUs. Drafts stay private. The
+        store homepage stays closed; published products and categories can be browsed.
       </p>
       <p v-if="saved" role="status" class="success-notice">Product saved.</p>
       <form class="setup-form" @submit.prevent="submit('draft')">
@@ -168,6 +177,14 @@ function submit(status: 'draft' | 'published') {
           {{ form.processing && form.status === 'published' ? 'Publishing…' : 'Publish' }}
         </button>
       </form>
+      <VariantEditor
+        v-if="product"
+        :product-id="product.id"
+        :version="product.version"
+        :option-axes="product.option_axes"
+        :variants="product.variants"
+        :slug="product.slug"
+      />
     </main>
     <footer class="footer">
       <span>MRKTFlow</span><a href="/admin/products">Return to products</a>

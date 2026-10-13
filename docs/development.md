@@ -98,11 +98,11 @@ The ProductView factory accepts only explicit bounded public fields. Description
 
 ## Simple physical products
 
-Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Cart and checkout are not part of this slice.
+Authorized staff with `catalog.write` create a simple physical product at `/admin/products/create` and edit saved products at `/admin/products/{id}`. The list is at `/admin/products`. Each product has one default variant/SKU, a store-currency minor-unit price, and one processed public image. After the product exists, staff can save option axes and unique SKU combinations at the same edit screen (`PUT /admin/products/{id}/variants`). Duplicate SKUs or option combinations are rejected. Drafts are visible only in administration; `CatalogReader` public lookups treat them as unpublished. Cart and checkout are not part of this slice.
 
 ## Categories and public browse
 
-Authorized staff manage nested categories at `/admin/categories`. Saves reject cycles, duplicate paths, and reserved route slugs. Changing a slug records a validated redirect for the old path and descendant paths. Published category pages render at `/categories/{path}` and published products at `/products/{slug}` using the default theme, including breadcrumbs and an empty-category state. Unpublished categories, draft products, and unknown slugs return 404 without leaking titles. The store homepage `GET /` remains HTTP 503. Variant matrices, typed schemas, search facets, and checkout remain later tasks.
+Authorized staff manage nested categories at `/admin/categories`. Saves reject cycles, duplicate paths, and reserved route slugs. Changing a slug records a validated redirect for the old path and descendant paths. Published category pages render at `/categories/{path}` and published products at `/products/{slug}` using the default theme, including breadcrumbs and an empty-category state. Shoppers select a published variant with `?variant={id}`; missing selection prompts them to choose, and unavailable combinations show that they cannot be bought. Unpublished categories, draft products, and unknown slugs return 404 without leaking titles. The store homepage `GET /` remains HTTP 503. Typed schemas, search facets, and checkout remain later tasks.
 
 ## Payment/reservation contract spike
 

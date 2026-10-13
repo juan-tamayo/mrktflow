@@ -14,39 +14,79 @@ use App\Domain\ThemesContent\Data\ProductView;
 use App\Domain\ThemesContent\Rendering\DefaultThemeRenderer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 final class CatalogController
 {
-    public function product(string $slug, CatalogReader $catalog, DefaultThemeRenderer $renderer): View
+    public function product(Request $request, string $slug, CatalogReader $catalog, DefaultThemeRenderer $renderer): View
     {
         try {
             $snapshot = $catalog->publicProduct($slug);
         } catch (CatalogProductNotFound|CatalogProductUnpublished) {
             abort(404);
         }
+        $variants = [];
+        foreach ($snapshot['variants'] as $variant) {
+            $variants[] = [
+                'id' => $variant['id'],
+                'label' => $variant['label'],
+                'available' => $variant['available'],
+                'options' => $variant['options'],
+                'image' => $variant['image'],
+                'money' => [
+                    'amountMinor' => $variant['money']['amount'],
+                    'currency' => $variant['money']['currency'],
+                    'exponent' => $variant['money']['exponent'],
+                ],
+            ];
+        }
+        $default = $snapshot['variants'][0];
+        foreach ($snapshot['variants'] as $variant) {
+            if ($variant['isDefault']) {
+                $default = $variant;
+                break;
+            }
+        }
+        $requested = $request->query('variant');
+        $selectionState = 'selected';
+        $selectedId = $default['id'];
+        if (! is_string($requested) || $requested === '') {
+            $selectionState = $snapshot['option_axes'] === [] ? 'selected' : 'missing';
+        } else {
+            $match = null;
+            foreach ($snapshot['variants'] as $variant) {
+                if ($variant['id'] === $requested) {
+                    $match = $variant;
+                    break;
+                }
+            }
+            abort_if($match === null, 422);
+            $selectedId = $match['id'];
+            $selectionState = $match['available'] ? 'selected' : 'unavailable';
+        }
+        $selected = $default;
+        foreach ($snapshot['variants'] as $variant) {
+            if ($variant['id'] === $selectedId) {
+                $selected = $variant;
+                break;
+            }
+        }
         $product = ProductView::from([
             'id' => $snapshot['id'],
             'url' => '/products/'.$snapshot['slug'],
             'title' => $snapshot['title'],
             'description' => $snapshot['description'],
-            'image' => $snapshot['image'],
-            'variants' => [[
-                'id' => $snapshot['variant']['id'],
-                'label' => 'Standard',
-                'money' => [
-                    'amountMinor' => $snapshot['variant']['money']['amount'],
-                    'currency' => $snapshot['variant']['money']['currency'],
-                    'exponent' => $snapshot['variant']['money']['exponent'],
-                ],
-            ]],
+            'image' => $selectionState === 'selected' ? $selected['image'] : $snapshot['image'],
+            'variants' => $variants,
+            'optionAxes' => $snapshot['option_axes'],
             'attributes' => [
-                ['label' => 'SKU', 'value' => $snapshot['variant']['sku']],
+                ['label' => 'SKU', 'value' => $selected['sku']],
                 ['label' => 'Delivery', 'value' => 'Physical product'],
             ],
         ]);
 
-        return $renderer->product($product, $snapshot['variant']['id'], false, $snapshot['breadcrumbs']);
+        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState);
     }
 
     public function category(string $path, CatalogReader $catalog, DefaultThemeRenderer $renderer): View|RedirectResponse

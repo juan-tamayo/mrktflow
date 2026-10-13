@@ -8,11 +8,48 @@ const variants = [
     id: '10000000-0000-4000-8000-000000000002',
     label: 'Pine',
     money: { amountMinor: 8900, currency: 'USD', exponent: 2, formatted: 'USD 89.00' },
+    available: true,
+    options: [],
+    image: { url: '/themes/default/preview-lamp.svg', alt: 'Pine lamp' },
   },
   {
     id: '10000000-0000-4000-8000-000000000003',
     label: '<img src=x onerror=alert(1)>',
     money: { amountMinor: 9500, currency: 'USD', exponent: 2, formatted: 'USD 95.00' },
+    available: true,
+    options: [],
+    image: { url: '/themes/default/preview-lamp.svg', alt: 'Chalk lamp' },
+  },
+]
+
+const matrix = [
+  {
+    id: '10000000-0000-4000-8000-000000000002',
+    label: 'Pine / S',
+    money: { amountMinor: 2499, currency: 'USD', exponent: 2, formatted: 'USD 24.99' },
+    available: true,
+    options: [
+      { name: 'Color', value: 'Pine' },
+      { name: 'Size', value: 'S' },
+    ],
+    image: {
+      url: '/storage/media/11111111-1111-4111-8111-111111111111/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png',
+      alt: 'Pine',
+    },
+  },
+  {
+    id: '10000000-0000-4000-8000-000000000003',
+    label: 'Pine / M',
+    money: { amountMinor: 2599, currency: 'USD', exponent: 2, formatted: 'USD 25.99' },
+    available: false,
+    options: [
+      { name: 'Color', value: 'Pine' },
+      { name: 'Size', value: 'M' },
+    ],
+    image: {
+      url: '/storage/media/11111111-1111-4111-8111-111111111111/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.png',
+      alt: 'Pine M',
+    },
   },
 ]
 
@@ -50,5 +87,24 @@ describe('default theme variant selection', () => {
       parseVariantPicker({ variants: Array(51).fill(variants[0]), selectedId: variants[0]!.id }),
     ).toBeNull()
     expect(parseVariantPicker(null)).toBeNull()
+  })
+
+  it('shows unavailable combinations without revealing a buyable price', async () => {
+    const wrapper = mount(VariantPicker, {
+      props: {
+        variants: matrix,
+        selectedId: matrix[0]!.id,
+        optionAxes: [
+          { name: 'Color', values: ['Pine'] },
+          { name: 'Size', values: ['S', 'M'] },
+        ],
+        selectionState: 'selected',
+      },
+    })
+    expect(wrapper.get('[role="status"]').text()).toContain('USD 24.99')
+    await wrapper.get('#enhanced-Size').setValue('M')
+    expect(wrapper.get('[role="status"]').text()).toContain('This combination is unavailable')
+    expect(wrapper.get('[role="status"]').text()).not.toContain('USD 25.99')
+    expect(wrapper.find('button').exists()).toBe(false)
   })
 })
