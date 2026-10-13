@@ -33,6 +33,7 @@ defineProps<{
       </p>
       <p v-if="canWrite">
         <a class="primary-button" href="/admin/products/create">Create a product</a>
+        <a class="text-link" href="/admin/products/import">Import CSV</a>
       </p>
       <p v-if="products.data.length === 0" class="workspace-note">No products yet.</p>
       <ul v-else class="product-list">

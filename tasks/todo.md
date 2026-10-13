@@ -336,7 +336,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T022: CSV dry-run import
 
-- [ ] Complete T022.
+- [x] Complete T022 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogImportPreview` tests were written first, then `product_import_files`, `PreviewProductImport`, `ValidateProductImport`, staff `ProductImport`, and formula-safe error CSV download. Uploaded CSVs map columns, classify create vs update-by-SKU, and report mixed-validity rows without writing products. Duplicate SKUs, spreadsheet formulas, invalid schema/category values, and unsafe files are rejected. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 352 tests / 2432 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 44 Vue tests; 10 Chromium journeys including CSV dry-run. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-07.
 - **Depends on:** T016, T017.
 - **Acceptance:** Uploaded CSV maps columns and reports row-specific errors without writes; duplicate SKU/update intent and formula risks handled.
