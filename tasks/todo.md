@@ -416,7 +416,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T028: Coupon configuration and redemption holds
 
-- [ ] Complete T028.
+- [x] Complete T028 locally; hosted Quality failed on 3fcfad0 at Pricing 86.67% coverage (need 90%). Extra coupon tests added; re-run Quality pending.
+- **Evidence October 13:** Failing `PricingCoupon` tests were written first, then coupon tables, `SaveCoupon`/`ApplyCoupon`/`HoldCoupon`, and admin `/admin/coupons` screens. Staff with `pricing.manage` save one-coupon rules (fixed/percentage/free-shipping, UTC windows, catalog scopes, total and per-customer caps). Apply selects eligible lines for `PriceCalculator`; hold/commit/release is idempotent under row locks; two MySQL workers racing the last redemption yield one hold and one exhausted. Privileged staff still must pass 2FA before coupon admin. Shoppers cannot enter a code at cart/checkout in this slice. `GET /` remains 503. Hosted Quality on 3fcfad0 (`38430192250`) failed `coverage-gate.php`: Pricing 86.67%. Additional `PricingCoupon` cases now cover paused/exhausted/min-spend/free-shipping/product scopes, stale edits, hold conflicts, and admin list/PATCH. `PricingCoupon` 8 tests / 166 assertions locally after the coverage tests. Pint and PHPStan passed on the follow-up. Local PCOV still unavailable. Privileged 2FA and `GET /` 503 unchanged. Hosted Quality after this push is pending; merge only on green.
 - **Module / requirements:** `pricing` · PRICE-02.
 - **Depends on:** T027, T019.
 - **Acceptance:** Merchant configures one-coupon rules; limits are held/committed/released atomically and reject over-redemption.

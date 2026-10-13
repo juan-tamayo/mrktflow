@@ -3,6 +3,13 @@ import AxeBuilder from '@axe-core/playwright'
 
 export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await page.goto('http://127.0.0.1:8011/admin')
+  await page.getByRole('link', { name: 'Coupons', exact: true }).click()
+  await page.getByRole('link', { name: 'Create a coupon' }).click()
+  await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Studio welcome')
+  await page.getByRole('textbox', { name: 'Code', exact: true }).fill('SAVE10')
+  await page.getByRole('button', { name: 'Save coupon' }).click()
+  await expect(page.getByRole('status')).toContainText('Coupon saved')
+  await page.goto('http://127.0.0.1:8011/admin')
   await page.getByRole('link', { name: 'Product schemas', exact: true }).click()
   await page.getByRole('link', { name: 'Create a schema' }).click()
   await page.getByRole('textbox', { name: 'Label', exact: true }).fill('Camera')

@@ -63,6 +63,7 @@ final class StaffSessionController
             'staff' => ['name' => $staff->name, 'role' => $staff->role],
             'canManageStaff' => $staff->hasPermission('staff.manage'),
             'canManageCatalog' => $staff->hasPermission('catalog.read'),
+            'canManagePricing' => $staff->hasPermission('pricing.manage'),
             'canPreviewTheme' => $staff->hasPermission('content.read'),
         ]);
     }

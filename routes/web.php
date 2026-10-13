@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\ProductController;
@@ -81,6 +82,11 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::patch('/admin/schemas/{schemaId}', [ProductSchemaController::class, 'update'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema:');
         Route::post('/admin/schemas/{schemaId}/migration/preview', [ProductSchemaController::class, 'previewMigration'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema-migration:');
         Route::post('/admin/schemas/{schemaId}/migration', [ProductSchemaController::class, 'applyMigration'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema-migration:');
+        Route::get('/admin/coupons', [CouponController::class, 'index']);
+        Route::get('/admin/coupons/create', [CouponController::class, 'create']);
+        Route::post('/admin/coupons', [CouponController::class, 'store'])->middleware('throttle:30,1,pricing-coupon:');
+        Route::get('/admin/coupons/{couponId}', [CouponController::class, 'edit'])->whereUuid('couponId');
+        Route::patch('/admin/coupons/{couponId}', [CouponController::class, 'update'])->whereUuid('couponId')->middleware('throttle:30,1,pricing-coupon:');
         Route::get('/admin/categories', [CategoryController::class, 'index']);
         Route::get('/admin/categories/create', [CategoryController::class, 'create']);
         Route::post('/admin/categories', [CategoryController::class, 'store'])->middleware('throttle:30,1,catalog-category:');
