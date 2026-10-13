@@ -85,6 +85,51 @@ it('CheckoutOrdersCartMerge sums matching physical lines, clamps to the allowed 
         ->and(app(ReadCart::class)->snapshot($account)['revision'])->toBe($merged['revision']);
 });
 
+it('CheckoutOrdersCartMerge assigns a guest-only cart, moves unique lines, and ignores empty guests', function (): void {
+    $catalog = mergeCatalog();
+    $guest = CartOwner::guest('guest-only-token');
+    $customer = cartCustomer();
+    $account = CartOwner::customer($customer->id);
+    expect(fn () => app(MergeCart::class)->merge($account, $guest))->toThrow(InvalidArgumentException::class);
+    expect(app(MergeCart::class)->merge($guest, $account)['lines'])->toBe([]);
+
+    $assigned = app(UpdateCart::class)->replaceLine($guest, [
+        'variant_id' => $catalog['physical_variant'],
+        'quantity' => 2,
+        'expected_revision' => 1,
+    ]);
+    $converted = app(MergeCart::class)->merge($guest, $account);
+    expect($converted['lines'])->toHaveCount(1)
+        ->and($converted['lines'][0]['quantity'])->toBe(2)
+        ->and($converted['notices'])->not->toContain('Some quantities were adjusted to the allowed maximum.')
+        ->and($converted['revision'])->toBe($assigned['revision'] + 1);
+    expect(app(ReadCart::class)->snapshot($account)['lines'][0]['variant_id'])->toBe($catalog['physical_variant']);
+
+    $secondGuest = CartOwner::guest('unique-line-token');
+    app(UpdateCart::class)->replaceLine($secondGuest, [
+        'variant_id' => $catalog['digital_variant'],
+        'quantity' => 1,
+        'expected_revision' => 1,
+    ]);
+    $moved = app(MergeCart::class)->merge($secondGuest, $account);
+    expect($moved['lines'])->toHaveCount(2)
+        ->and(collect($moved['lines'])->firstWhere('variant_id', $catalog['digital_variant'])['quantity'])->toBe(1)
+        ->and($moved['notices'])->not->toContain('Some quantities were adjusted to the allowed maximum.');
+
+    $emptyGuest = CartOwner::guest('empty-guest-token');
+    $now = now();
+    DB::table('carts')->insert([
+        'id' => (string) Str::uuid(),
+        'customer_id' => null,
+        'guest_token_hash' => $emptyGuest->guestTokenHash,
+        'revision' => 1,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    expect(app(MergeCart::class)->merge($emptyGuest, $account)['notices'])->toBe([]);
+    expect(DB::table('carts')->where('guest_token_hash', $emptyGuest->guestTokenHash)->exists())->toBeFalse();
+});
+
 it('CheckoutOrdersCartMerge login transfers the current guest cart and logout hides the account cart', function (): void {
     $catalog = mergeCatalog();
     $this->get('/')->assertStatus(503);

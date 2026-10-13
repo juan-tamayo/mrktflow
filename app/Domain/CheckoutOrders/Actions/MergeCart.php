@@ -36,9 +36,6 @@ final class MergeCart
             $customerCart = null;
             foreach ($rows as $row) {
                 $record = $this->cart($row);
-                if ($record === null) {
-                    continue;
-                }
                 if (($row->guest_token_hash ?? null) === $guest->guestTokenHash) {
                     $guestCart = $record;
                 }
@@ -131,18 +128,15 @@ final class MergeCart
     }
 
     /**
-     * @return array{id: string, revision: int}|null
+     * @return array{id: string, revision: int}
      */
-    private function cart(mixed $row): ?array
+    private function cart(object $row): array
     {
-        if (! is_object($row)) {
-            return null;
-        }
         $data = get_object_vars($row);
         $id = $data['id'] ?? null;
         $revision = $data['revision'] ?? null;
         if (! is_string($id) || (! is_int($revision) && ! is_numeric($revision))) {
-            return null;
+            throw new InvalidArgumentException('Cart merge requires a locked cart.');
         }
 
         return ['id' => $id, 'revision' => (int) $revision];
@@ -154,19 +148,15 @@ final class MergeCart
     private function quantity(string $variantId, int $guestQty, int $accountQty): array
     {
         $variant = app(CartCatalog::class)->variant($variantId);
-        $type = is_array($variant) ? $variant['type'] : 'physical';
-        if ($type === 'digital') {
+        if (! is_array($variant)) {
+            throw new InvalidArgumentException('Cart merge requires a catalog variant.');
+        }
+        if ($variant['type'] === 'digital') {
             return [1, $accountQty > 0 || $guestQty !== 1];
         }
         $sum = $guestQty + $accountQty;
-        $max = CartMoney::MAX_QUANTITY;
-        if (is_array($variant) && $variant['max_quantity'] > 0) {
-            $max = min($max, $variant['max_quantity']);
-        }
+        $max = $variant['max_quantity'] > 0 ? min(CartMoney::MAX_QUANTITY, $variant['max_quantity']) : CartMoney::MAX_QUANTITY;
         $quantity = min($sum, $max);
-        if ($quantity < 1) {
-            $quantity = min(max($sum, 1), CartMoney::MAX_QUANTITY);
-        }
 
         return [$quantity, $quantity !== $sum];
     }
