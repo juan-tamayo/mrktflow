@@ -20,6 +20,7 @@ use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
 use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
 use App\Http\Controllers\Storefront\CustomerProfileController;
 use App\Http\Controllers\Storefront\SearchController;
+use App\Http\Controllers\Storefront\StoreApiProductController;
 use App\Http\Middleware\RequireCustomerGuest;
 use App\Http\Middleware\RequireCustomerSession;
 use App\Http\Middleware\RequireInstalledStore;
@@ -29,6 +30,8 @@ use Inertia\Middleware;
 
 Route::get('/', fn () => response()->view('storefront.closed', [], 503)->header('Retry-After', '3600'));
 Route::get('/search', [SearchController::class, 'show']);
+Route::get('/store-api/v1/products', [StoreApiProductController::class, 'index']);
+Route::get('/store-api/v1/products/{id}', [StoreApiProductController::class, 'show'])->where('id', '[0-9a-fA-F-]{36}|[a-z0-9]+(?:-[a-z0-9]+)*');
 Route::get('/products/{slug}', [CatalogController::class, 'product'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
 Route::get('/categories/{path}', [CatalogController::class, 'category'])->where('path', '[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*');
 Route::get('/admin/theme-preview', [ThemePreviewController::class, 'show'])->middleware(RequireStaffSession::class);

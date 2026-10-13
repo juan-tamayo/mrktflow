@@ -358,7 +358,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T024: Catalog availability and public contracts
 
-- [ ] Complete T024.
+- [x] Complete T024 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CatalogReadModel` tests were written first, then `VariantAvailability`, catalog `ProductView`, `ProductResource`, and `GET /store-api/v1/products`. Public HTML/JSON/search/category cards share sellability: tracked remaining stock, digital ready files, and the merchant availability flag. Staff snapshots keep on-hand/reserved/low-stock; public responses omit those quantities. Archived and missing products return 404 without leaking titles. Privileged staff still must pass 2FA before catalog admin. No cart/checkout. `GET /` remains 503. Full PHP suite: 363 tests / 2662 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 45 Vue tests; 10 Chromium journeys including public JSON, mobile product viewport, and archive 404. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV Catalog coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `catalog` · CAT-05, CAT-08, WEB-07.
 - **Depends on:** T019, T020, T021.
 - **Acceptance:** Public DTOs consistently expose physical/digital availability and low-stock admin state; archived/missing products degrade cleanly.
@@ -368,9 +369,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 #### Checkpoint after T022, T023, T024
 
-- [ ] Acceptance and focused verification recorded; no zero-test pass.
-- [ ] Relevant build/browser flow passes, including failure, permission and replay cases.
-- [ ] Changes documented; pending external-provider evidence remains explicit.
+- [x] Acceptance and focused verification recorded; no zero-test pass. T022/T023/T024 each have failing-first tests and local evidence; hosted Quality for this branch is pending.
+- [x] Relevant build/browser flow passes, including failure, permission and replay cases. Chromium catalog journey covers import apply/export/archive, public JSON, mobile product viewport, missing/archived 404, and `GET /` 503.
+- [x] Changes documented in `docs/development.md`; pending external-provider evidence remains explicit. Live payment/AI replay remain T035/T074.
 
 ## M2: Cart, price, shipping and tax quotes
 

@@ -10,6 +10,7 @@ use App\Domain\Catalog\Exceptions\CatalogCategoryUnpublished;
 use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
 use App\Domain\Catalog\Support\ProductAttributes;
+use App\Domain\Catalog\Support\VariantAvailability;
 use App\Domain\Catalog\Support\VariantOptions;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,13 @@ final class ReadCatalog implements CatalogReader
         $product['variants'] = $this->variants($product['id'], $product['image'], false, $product['type'] === 'digital');
         $product['schema'] = $this->publicSchema($row);
         $product['typed_attributes'] = app(ProductAttributes::class)->publicAttributes($product['id']);
+        $states = [];
+        foreach ($product['variants'] as $index => $variant) {
+            $states[] = $variant['availability'];
+            $product['variants'][$index]['available'] = VariantAvailability::sellable($variant['availability']);
+        }
+        $product['availability'] = VariantAvailability::productState($states);
+        $product['available'] = VariantAvailability::sellable($product['availability']);
 
         return $product;
     }
@@ -112,6 +120,12 @@ final class ReadCatalog implements CatalogReader
                     'exponent' => (int) $product->exponent,
                 ],
             ];
+        }
+        $availability = app(VariantAvailability::class)->forProducts(array_column($products, 'id'));
+        foreach ($products as $index => $product) {
+            $summary = $availability[$product['id']] ?? ['available' => false, 'availability' => VariantAvailability::UNAVAILABLE];
+            $products[$index]['available'] = $summary['available'];
+            $products[$index]['availability'] = $summary['availability'];
         }
 
         return [
@@ -334,7 +348,7 @@ final class ReadCatalog implements CatalogReader
 
     /**
      * @param  array{url: string, alt: string, assetId?: string}  $fallbackImage
-     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, tracks_inventory?: bool, on_hand?: int|null, reserved?: int, available_quantity?: int|null, low_stock_threshold?: int|null, low_stock?: bool, max_quantity?: int, digital_files?: list<array{label: string, version: int, bytes: int, content_type: string, id?: string, asset_id?: string, status?: string, checksum?: string}>}>
+     * @return list<array{id: string, sku: string, label: string, isDefault: bool, available: bool, availability: string, options: list<array{name: string, value: string}>, money: array{amount: int, currency: string, exponent: int}, image: array{url: string, alt: string, assetId?: string}, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, tracks_inventory?: bool, on_hand?: int|null, reserved?: int, available_quantity?: int|null, low_stock_threshold?: int|null, low_stock?: bool, max_quantity?: int, digital_files?: list<array{label: string, version: int, bytes: int, content_type: string, id?: string, asset_id?: string, status?: string, checksum?: string}>}>
      */
     private function variants(string $productId, array $fallbackImage, bool $staff, bool $digital): array
     {
@@ -372,12 +386,22 @@ final class ReadCatalog implements CatalogReader
                     }
                 }
             }
+            $listed = (bool) $row->available;
+            $tracks = (bool) $row->tracks_inventory;
+            $onHand = $row->balance_on_hand !== null ? (int) $row->balance_on_hand : null;
+            $reserved = $row->balance_reserved !== null ? (int) $row->balance_reserved : 0;
+            $digitalFiles = $digital
+                ? ($staff ? $this->staffDigitalFiles((string) $row->id) : $this->publicDigitalFiles((string) $row->id))
+                : [];
+            $hasReadyDigital = $digital && $this->hasReadyDigitalFile((string) $row->id);
+            $availability = VariantAvailability::state($listed, $tracks, $onHand, $reserved, $digital, $hasReadyDigital);
             $variant = [
                 'id' => (string) $row->id,
                 'sku' => (string) $row->sku,
                 'label' => VariantOptions::label($options),
                 'isDefault' => (bool) $row->is_default,
-                'available' => (bool) $row->available,
+                'available' => $listed,
+                'availability' => $availability,
                 'options' => $options,
                 'money' => [
                     'amount' => (int) $row->price_amount,
@@ -391,28 +415,32 @@ final class ReadCatalog implements CatalogReader
                 'height_mm' => $staff && $row->height_mm !== null ? (int) $row->height_mm : null,
             ];
             if ($staff) {
-                $tracks = (bool) $row->tracks_inventory;
-                $onHand = $row->balance_on_hand !== null ? (int) $row->balance_on_hand : null;
-                $reserved = $row->balance_reserved !== null ? (int) $row->balance_reserved : 0;
-                $available = $tracks && $onHand !== null ? $onHand - $reserved : null;
+                $remaining = $tracks && $onHand !== null ? $onHand - $reserved : null;
                 $threshold = $row->balance_threshold !== null ? (int) $row->balance_threshold : null;
                 $variant['tracks_inventory'] = $tracks;
                 $variant['on_hand'] = $onHand;
                 $variant['reserved'] = $reserved;
-                $variant['available_quantity'] = $available;
+                $variant['available_quantity'] = $remaining;
                 $variant['low_stock_threshold'] = $threshold;
-                $variant['low_stock'] = $tracks && $threshold !== null && $available !== null && $available <= $threshold;
+                $variant['low_stock'] = $tracks && $threshold !== null && $remaining !== null && $remaining <= $threshold;
             }
             if ($digital) {
                 $variant['max_quantity'] = 1;
-                $variant['digital_files'] = $staff
-                    ? $this->staffDigitalFiles((string) $row->id)
-                    : $this->publicDigitalFiles((string) $row->id);
+                $variant['digital_files'] = $digitalFiles;
             }
             $variants[] = $variant;
         }
 
         return $variants;
+    }
+
+    private function hasReadyDigitalFile(string $variantId): bool
+    {
+        return DB::table('variant_digital_assets')
+            ->join('digital_asset_versions', 'variant_digital_assets.digital_asset_version_id', '=', 'digital_asset_versions.id')
+            ->where('variant_digital_assets.variant_id', $variantId)
+            ->where('digital_asset_versions.status', 'ready')
+            ->exists();
     }
 
     /**

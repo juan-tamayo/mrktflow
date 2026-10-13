@@ -72,6 +72,11 @@
                                 <img src="{{ $product['image']['url'] }}" alt="{{ $product['image']['alt'] }}" width="320" height="320">
                                 <span>{{ $product['title'] }}</span>
                                 <strong>{{ $product['money']['formatted'] }}</strong>
+                                @if($product['availability'] === 'out_of_stock')
+                                    <span class="theme-availability">Out of stock</span>
+                                @elseif($product['availability'] === 'unavailable')
+                                    <span class="theme-availability">Unavailable</span>
+                                @endif
                             </a>
                         </li>
                     @endforeach

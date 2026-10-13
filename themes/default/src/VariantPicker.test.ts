@@ -9,6 +9,7 @@ const variants = [
     label: 'Pine',
     money: { amountMinor: 8900, currency: 'USD', exponent: 2, formatted: 'USD 89.00' },
     available: true,
+    availability: 'in_stock' as const,
     options: [],
     image: { url: '/themes/default/preview-lamp.svg', alt: 'Pine lamp' },
   },
@@ -17,6 +18,7 @@ const variants = [
     label: '<img src=x onerror=alert(1)>',
     money: { amountMinor: 9500, currency: 'USD', exponent: 2, formatted: 'USD 95.00' },
     available: true,
+    availability: 'in_stock' as const,
     options: [],
     image: { url: '/themes/default/preview-lamp.svg', alt: 'Chalk lamp' },
   },
@@ -28,6 +30,7 @@ const matrix = [
     label: 'Pine / S',
     money: { amountMinor: 2499, currency: 'USD', exponent: 2, formatted: 'USD 24.99' },
     available: true,
+    availability: 'in_stock' as const,
     options: [
       { name: 'Color', value: 'Pine' },
       { name: 'Size', value: 'S' },
@@ -42,6 +45,7 @@ const matrix = [
     label: 'Pine / M',
     money: { amountMinor: 2599, currency: 'USD', exponent: 2, formatted: 'USD 25.99' },
     available: false,
+    availability: 'unavailable' as const,
     options: [
       { name: 'Color', value: 'Pine' },
       { name: 'Size', value: 'M' },
@@ -106,5 +110,26 @@ describe('default theme variant selection', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('This combination is unavailable')
     expect(wrapper.get('[role="status"]').text()).not.toContain('USD 25.99')
     expect(wrapper.find('button').exists()).toBe(false)
+  })
+
+  it('shows out of stock without revealing a buyable price', async () => {
+    const soldOut = {
+      ...matrix[1]!,
+      availability: 'out_of_stock' as const,
+    }
+    const wrapper = mount(VariantPicker, {
+      props: {
+        variants: [matrix[0]!, soldOut],
+        selectedId: matrix[0]!.id,
+        optionAxes: [
+          { name: 'Color', values: ['Pine'] },
+          { name: 'Size', values: ['S', 'M'] },
+        ],
+        selectionState: 'selected',
+      },
+    })
+    await wrapper.get('#enhanced-Size').setValue('M')
+    expect(wrapper.get('[role="status"]').text()).toContain('This combination is out of stock')
+    expect(wrapper.get('[role="status"]').text()).not.toContain('USD 25.99')
   })
 })

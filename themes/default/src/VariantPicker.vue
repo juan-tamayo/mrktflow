@@ -5,7 +5,7 @@ const props = defineProps<{
   variants: PublicVariant[]
   selectedId: string
   optionAxes?: OptionAxis[]
-  selectionState?: 'selected' | 'missing' | 'unavailable'
+  selectionState?: 'selected' | 'missing' | 'unavailable' | 'out_of_stock'
 }>()
 const selectedId = ref(props.selectionState === 'missing' ? '' : props.selectedId)
 const selections = ref<Record<string, string>>({})
@@ -30,11 +30,20 @@ const status = computed(() => {
     const complete = axes.value.every((axis) => (selections.value[axis.name] ?? '') !== '')
     if (!complete) return 'missing' as const
     const match = matchCombination(selections.value)
-    if (match === undefined || match.available === false) return 'unavailable' as const
+    if (match === undefined) return 'unavailable' as const
+    if (match.available === false) {
+      return match.availability === 'out_of_stock'
+        ? ('out_of_stock' as const)
+        : ('unavailable' as const)
+    }
     return 'selected' as const
   }
   if (selectedId.value === '') return 'missing' as const
-  if (selected.value?.available === false) return 'unavailable' as const
+  if (selected.value?.available === false) {
+    return selected.value.availability === 'out_of_stock'
+      ? ('out_of_stock' as const)
+      : ('unavailable' as const)
+  }
   return 'selected' as const
 })
 watch(
@@ -100,6 +109,9 @@ function chooseAxis(name: string, value: string) {
     </p>
     <p v-else-if="status === 'unavailable'" class="theme-variant-prompt" role="status">
       This combination is unavailable.
+    </p>
+    <p v-else-if="status === 'out_of_stock'" class="theme-variant-prompt" role="status">
+      {{ axes.length ? 'This combination is out of stock.' : 'This product is out of stock.' }}
     </p>
     <p v-else class="theme-price" role="status" aria-live="polite" aria-atomic="true">
       <span>{{ optionAxes?.length ? 'Price' : 'Illustrative price' }}</span

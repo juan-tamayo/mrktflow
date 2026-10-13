@@ -14,7 +14,7 @@ final readonly class SearchView implements JsonSerializable
 {
     /**
      * @param  array{q: string, category: string, price_min: int|null, price_max: int|null, available: string, sort: string, page: int, page_size: int, facets: array<string, mixed>}  $query
-     * @param  list<array{id: string, url: string, title: string, image: array{url: string, alt: string}, money: array{amountMinor: int, currency: string, exponent: int, formatted: string}}>  $products
+     * @param  list<array{id: string, url: string, title: string, available: bool, availability: string, image: array{url: string, alt: string}, money: array{amountMinor: int, currency: string, exponent: int, formatted: string}}>  $products
      * @param  array{page: int, pageSize: int, totalItems: int, totalPages: int}  $meta
      * @param  list<array{key: string, label: string, type: string, unit: string|null, values: list<array{value: string, count: int}>}>  $facets
      * @param  list<array{path: string, title: string}>  $categories
@@ -50,10 +50,12 @@ final readonly class SearchView implements JsonSerializable
             'search.query.page_size' => ['required', 'integer', 'min:1', 'max:100'],
             'search.query.facets' => ['present', 'array', 'max:30'],
             'search.products' => ['present', 'array', 'list', 'max:100'],
-            'search.products.*' => ['required', 'array:id,url,title,image,money'],
+            'search.products.*' => ['required', 'array:id,url,title,image,money,available,availability'],
             'search.products.*.id' => ['required', 'uuid', 'distinct:strict'],
             'search.products.*.url' => ['required', 'string', 'max:500', $path],
             'search.products.*.title' => ['required', 'string', 'max:200'],
+            'search.products.*.available' => ['required', 'boolean'],
+            'search.products.*.availability' => ['required', 'string', Rule::in(['in_stock', 'out_of_stock', 'unavailable'])],
             'search.products.*.image' => ['required', 'array:url,alt'],
             'search.products.*.image.url' => ['required', 'string', 'max:500', $path],
             'search.products.*.image.alt' => ['required', 'string', 'max:200'],
@@ -95,6 +97,8 @@ final readonly class SearchView implements JsonSerializable
                 'id' => $product['id'],
                 'url' => $product['url'],
                 'title' => $product['title'],
+                'available' => (bool) $product['available'],
+                'availability' => $product['availability'],
                 'image' => $product['image'],
                 'money' => [
                     'amountMinor' => $amount,
