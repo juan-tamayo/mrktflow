@@ -466,7 +466,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T032: Quote revision and checkout form
 
-- [ ] Complete T032.
+- [x] Complete T032 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CheckoutOrdersQuote` tests were written first, then `CreateQuote`/`AcceptQuote`, encrypted `checkout_quotes` persistence, `POST /store-api/v1/checkout-quotes`, and HTML `/checkout`. Guests and accounts enter email, billing, only necessary shipping, an optional coupon, and policy acknowledgement; digital-only carts skip delivery. Quotes expire in 15 minutes and freeze PriceCalculator + ShippingQuoter + tax itemization (exclusive fixture 2500 merchandise − 250 coupon + 300 shipping + 255 tax = 2805). Accepting does not create an order or payment (T034). Cart revision, catalog price, tax/shipping rule, destination, fingerprint, ownership, CSRF, and TTL mismatches invalidate acceptance and require a new quote. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersQuote` 5 tests / 75 assertions. Full PHP suite: 412 tests / 3405 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 57 Vue tests; 10 Chromium journeys including checkout address correction, stale totals after a cart-line remove, and `GET /` 503. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `checkout-orders` · ORDER-02, PRICE-04.
 - **Depends on:** T025, T028, T030, T031.
 - **Acceptance:** Contact/billing/necessary delivery details create expiring quote; changes to cart/rules/destination invalidate acceptance.

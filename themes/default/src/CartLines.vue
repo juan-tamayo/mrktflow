@@ -91,6 +91,9 @@ async function removeLine(lineId: string): Promise<void> {
     <p v-if="cart.lines.length > 0" class="theme-price">
       <span>Merchandise</span><strong>{{ cart.subtotal.formatted }}</strong>
     </p>
-    <p class="theme-purchase-note">Checkout is not available yet. Posted prices are ignored.</p>
+    <p v-if="cart.lines.length > 0">
+      <a class="primary-button" href="/checkout">Checkout</a>
+    </p>
+    <p class="theme-purchase-note">Posted prices are ignored. Totals are calculated at checkout.</p>
   </div>
 </template>

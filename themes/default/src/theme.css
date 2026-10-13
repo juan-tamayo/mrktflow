@@ -224,6 +224,28 @@
   color: var(--muted);
   line-height: 1.6;
 }
+.theme-checkout-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 32rem;
+  margin: 1.5rem 0 2.5rem;
+}
+.theme-checkout-form input,
+.theme-checkout-form select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.875rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid #88998e;
+  border-radius: 6px;
+  font: inherit;
+}
+.theme-checkout-form input[type='checkbox'] {
+  width: auto;
+  min-height: 1.25rem;
+  margin-right: 0.5rem;
+}
 @media (max-width: 760px) {
   .theme-product {
     grid-template-columns: 1fr;

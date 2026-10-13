@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 final class CartCatalog
 {
     /**
-     * @return array{variant_id: string, product_id: string, title: string, sku: string, type: string, status: string, price_amount: int, currency: string, exponent: int, available: bool, availability: string, max_quantity: int}|null
+     * @return array{variant_id: string, product_id: string, title: string, sku: string, type: string, status: string, price_amount: int, currency: string, exponent: int, available: bool, availability: string, max_quantity: int, tax_class_key: string, shipping_class_key: string, weight_grams: int|null, length_mm: int|null, width_mm: int|null, height_mm: int|null, category_ids: list<string>}|null
      */
     public function variant(string $variantId): ?array
     {
@@ -27,6 +27,12 @@ final class CartCatalog
                 'product_variants.exponent',
                 'product_variants.available',
                 'product_variants.tracks_inventory',
+                'product_variants.tax_class_key',
+                'product_variants.shipping_class_key',
+                'product_variants.weight_grams',
+                'product_variants.length_mm',
+                'product_variants.width_mm',
+                'product_variants.height_mm',
                 'products.title',
                 'products.type',
                 'products.status',
@@ -64,6 +70,12 @@ final class CartCatalog
             $max = 0;
         }
 
+        $categories = DB::table('product_categories')
+            ->where('product_id', (string) $row->product_id)
+            ->orderBy('category_id')
+            ->pluck('category_id')
+            ->all();
+
         return [
             'variant_id' => (string) $row->id,
             'product_id' => (string) $row->product_id,
@@ -77,6 +89,13 @@ final class CartCatalog
             'available' => $sellable,
             'availability' => $availability,
             'max_quantity' => $max,
+            'tax_class_key' => (string) $row->tax_class_key,
+            'shipping_class_key' => (string) $row->shipping_class_key,
+            'weight_grams' => $row->weight_grams === null ? null : (int) $row->weight_grams,
+            'length_mm' => $row->length_mm === null ? null : (int) $row->length_mm,
+            'width_mm' => $row->width_mm === null ? null : (int) $row->width_mm,
+            'height_mm' => $row->height_mm === null ? null : (int) $row->height_mm,
+            'category_ids' => array_values(array_filter($categories, fn (mixed $id): bool => is_string($id))),
         ];
     }
 }
