@@ -218,8 +218,9 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T013: Privileged staff two-factor authentication
 
-- [ ] Complete T013.
-- **Implementation slices:** T013a verifies a maintained OTP library, bounded authenticator profile and standard vectors; T013b adds encrypted, account-bound enrollment and transactionally single-use TOTP/recovery state; T013c connects enrollment/challenge/login enforcement and scoped fresh reauthentication to native/admin flows. T013 remains incomplete until all slices and real browser/lost-device/expiry checks pass.
+- [x] Complete T013 locally; QR provisioning, optional 2FA for non-privileged roles, and refund/credential reauth screens remain later work.
+- **Evidence October 13:** Owners and staff with settings, integrations, refunds, or publish permission must enroll a SHA-1/6-digit/30s TOTP before the workspace. Secrets and recovery hashes are encrypted and bound to the staff UUID; recovery codes are single-use and wipe the authenticator so a lost device must re-enroll. Staff invitation and access mutations require a 15-minute password+code reauthentication. RFC 6238 vectors, replay, ciphertext swap, expired pending enrollment, expired reauth, CSRF, and customer isolation are covered. Full PHP suite: 278 tests / 1581 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 21 Vue tests; 10 Chromium journeys including enrollment, login challenge, and lost-device recovery. Vitest CI skip and browser-mail `mrktflow_browser@%` account check landed on main via #2 (`ff1c93c`); this branch is rebased on that. Hosted Quality for the rebased 2FA PR is pending. [Identity evidence](../docs/identity-progress.md).
+- **Implementation slices:** T013a verifies a maintained OTP library, bounded authenticator profile and standard vectors; T013b adds encrypted, account-bound enrollment and transactionally single-use TOTP/recovery state; T013c connects enrollment/challenge/login enforcement and scoped fresh reauthentication to native/admin flows. Local slices and browser/lost-device/expiry checks passed; QR codes and later refund/credential screens are remaining gaps.
 - **Module / requirements:** `identity` · ID-03.
 - **Depends on:** T008.
 - **Acceptance:** Privileged staff require 2FA; recovery codes are single-use; sensitive actions require reauthentication.

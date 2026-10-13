@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Application\Setup\CreateInitialOwner;
 use App\Domain\Identity\Actions\InviteStaff;
+use App\Domain\Identity\Actions\ManageTwoFactor;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
+use App\Domain\Identity\Support\StaffTotp;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use Illuminate\Foundation\Auth\User;
@@ -23,6 +25,18 @@ function staffHttpInput(): array
     return ['name' => 'Example Owner', 'email' => 'owner@example.test', 'password' => 'Fictional owner passphrase 471!', 'password_confirmation' => 'Fictional owner passphrase 471!'];
 }
 
+function privilegedHttpSession(StaffAccount $staff): array
+{
+    $enrollment = app(ManageTwoFactor::class)->start($staff);
+    app(ManageTwoFactor::class)->confirm($staff, StaffTotp::code($enrollment->secret));
+
+    return [
+        'staff_session_version' => $staff->session_version,
+        'staff_two_factor_verified' => true,
+        'staff_reauthenticated_at' => now()->getTimestamp(),
+    ];
+}
+
 function staffHttpGrant(): array
 {
     $access = app(SetupAccess::class);
@@ -37,13 +51,14 @@ it('IdentityStaff HTTP permits first owner creation only with a protected setup 
     $grant = staffHttpGrant();
     $this->withSession(['setup_access' => $grant])->get('/setup');
     $oldId = session()->getId();
-    $this->post('/setup/owner', ['owner' => staffHttpInput()])->assertRedirect('/admin')->assertSessionMissing('setup_access');
+    $this->post('/setup/owner', ['owner' => staffHttpInput()])->assertRedirect('/admin/two-factor')->assertSessionMissing('setup_access');
     expect(session()->getId())->not->toBe($oldId);
     $this->assertAuthenticated('staff');
     $this->get('/setup')->assertNotFound();
     $this->postJson('/setup/owner', ['owner' => staffHttpInput()])->assertForbidden();
-    $this->get('/admin')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('AdminHome')->where('staff.name', 'Example Owner')->missing('staff.password')->missing('staff.permissions'));
+    $this->get('/admin')->assertRedirect('/admin/two-factor');
+    $this->get('/admin/two-factor')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('TwoFactor')->where('mode', 'enroll')->missing('staff.password'));
 });
 
 it('IdentityStaff HTTP does not flash nested credentials on failed setup', function (): void {
@@ -60,9 +75,10 @@ it('IdentityStaff HTTP signs in with canonical email and signs out with a fresh 
     $this->get('/admin')->assertRedirect('/admin/login');
     $this->get('/admin/login')->assertOk();
     $oldId = session()->getId();
-    $this->post('/admin/login', ['email' => 'OWNER@example.test', 'password' => staffHttpInput()['password']])->assertRedirect('/admin');
+    $this->post('/admin/login', ['email' => 'OWNER@example.test', 'password' => staffHttpInput()['password']])->assertRedirect('/admin/two-factor');
     expect(session()->getId())->not->toBe($oldId);
-    $this->get('/admin')->assertOk();
+    $this->get('/admin')->assertRedirect('/admin/two-factor');
+    $this->get('/admin/two-factor')->assertOk();
     $oldId = session()->getId();
     $this->post('/admin/logout')->assertRedirect('/admin/login');
     expect(session()->getId())->not->toBe($oldId);
@@ -112,9 +128,9 @@ it('IdentityStaff HTTP denies account injection and administrative access withou
 
 it('IdentityStaff HTTP preserves password bytes from owner setup through sign-in', function (): void {
     $input = array_replace(staffHttpInput(), ['password' => '  Fictional whitespace passphrase  ', 'password_confirmation' => '  Fictional whitespace passphrase  ']);
-    $this->withSession(['setup_access' => staffHttpGrant()])->post('/setup/owner', ['owner' => $input])->assertRedirect('/admin');
+    $this->withSession(['setup_access' => staffHttpGrant()])->post('/setup/owner', ['owner' => $input])->assertRedirect('/admin/two-factor');
     $this->post('/admin/logout');
-    $this->post('/admin/login', ['email' => $input['email'], 'password' => $input['password']])->assertRedirect('/admin');
+    $this->post('/admin/login', ['email' => $input['email'], 'password' => $input['password']])->assertRedirect('/admin/two-factor');
     $this->assertAuthenticated('staff');
 });
 
@@ -131,7 +147,7 @@ it('IdentityStaff HTTP isolates owner setup rate limits from settings saves', fu
     for ($attempt = 0; $attempt < 6; $attempt++) {
         $this->post('/setup/settings', ['settings' => $settings, 'version' => 0])->assertRedirect('/setup');
     }
-    $this->post('/setup/owner', ['owner' => staffHttpInput()])->assertRedirect('/admin');
+    $this->post('/setup/owner', ['owner' => staffHttpInput()])->assertRedirect('/admin/two-factor');
 });
 
 it('IdentityStaff HTTP rejects forged owner, sign-in and sign-out requests', function (): void {
@@ -145,7 +161,7 @@ it('IdentityStaff HTTP rejects forged owner, sign-in and sign-out requests', fun
 it('IdentityStaff HTTP protects staff management before lookup and exposes only safe account fields', function (): void {
     $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
     $this->get('/admin/staff')->assertRedirect('/admin/login');
-    $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1])->get('/admin/staff')->assertOk()
+    $this->actingAs($owner, 'staff')->withSession(privilegedHttpSession($owner))->get('/admin/staff')->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->component('Staff')->where('accounts.data.0.email', $owner->email)
             ->missing('accounts.data.0.password')->missing('accounts.data.0.remember_token')->missing('accounts.data.0.permissions'));
     foreach (['manager', 'content_editor', 'fulfillment'] as $role) {
@@ -159,7 +175,7 @@ it('IdentityStaff HTTP protects staff management before lookup and exposes only 
 
 it('IdentityStaff HTTP preserves the final owner and rejects outdated management edits', function (): void {
     $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
-    $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1]);
+    $this->actingAs($owner, 'staff')->withSession(privilegedHttpSession($owner));
     $this->patchJson('/admin/staff/'.$owner->id, ['access' => ['role' => 'manager', 'is_active' => true, 'version' => 1]])->assertConflict();
     $this->from('/admin/staff')->patch('/admin/staff/'.$owner->id, ['access' => ['role' => 'owner', 'is_active' => false, 'version' => 1]])
         ->assertRedirect('/admin/staff')->assertSessionHasErrors('access');
@@ -176,7 +192,7 @@ it('IdentityStaff HTTP preserves the final owner and rejects outdated management
 it('IdentityStaff HTTP returns invitation secrets only to an authorized creator without page history props', function (): void {
     $owner = app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
     $this->postJson('/admin/staff/invitations', ['invitation' => ['email' => 'editor@example.test', 'role' => 'content_editor']])->assertUnauthorized();
-    $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1]);
+    $this->actingAs($owner, 'staff')->withSession(privilegedHttpSession($owner));
     $response = $this->postJson('/admin/staff/invitations', ['invitation' => ['email' => 'editor@example.test', 'role' => 'content_editor']])->assertCreated();
     $path = $response->json('path');
     expect($path)->toMatch('/^\/staff\/invitation#[a-f0-9]{64}$/D');
@@ -208,8 +224,8 @@ it('IdentityStaff HTTP accepts a bound invitation once and hides secrets on vali
 
 it('IdentityStaff HTTP retires encrypted browser-history keys after sign-out', function (): void {
     app(CreateInitialOwner::class)->create(staffHttpGrant(), staffHttpInput());
-    $this->post('/admin/login', ['email' => 'owner@example.test', 'password' => staffHttpInput()['password']])->assertRedirect('/admin');
-    $this->get('/admin');
+    $this->post('/admin/login', ['email' => 'owner@example.test', 'password' => staffHttpInput()['password']])->assertRedirect('/admin/two-factor');
+    $this->get('/admin/two-factor');
     $this->post('/admin/logout')->assertRedirect('/admin/login');
     $this->get('/admin/login')->assertViewHas('page', fn (array $page): bool => ($page['clearHistory'] ?? false) === true);
 });

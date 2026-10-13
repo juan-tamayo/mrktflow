@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import settings from '../Fixtures/store-settings.json' with { type: 'json' }
 import { exerciseCustomerAccount } from './customer-account-flow'
 import { exerciseThemePreview } from './theme-preview-flow'
+import { totpCode } from './totp'
 
 test('setup stays locked and rejects a mutation without origin or CSRF proof', async ({
   page,
@@ -17,6 +18,9 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
   expect(mutation.status()).toBe(419)
   for (const path of [
     '/admin/staff/invitations',
+    '/admin/two-factor',
+    '/admin/two-factor/challenge',
+    '/admin/two-factor/reauthenticate',
     '/staff/invitation',
     '/account/register',
     '/account/login',
@@ -45,6 +49,7 @@ test('setup stays locked and rejects a mutation without origin or CSRF proof', a
 })
 
 test('owner can unlock, save and reload interrupted store setup', async ({ page, browser }) => {
+  test.setTimeout(180_000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.setViewportSize({ width: 390, height: 844 })
@@ -125,6 +130,15 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
   await page.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
   await page.getByLabel('Confirm password').fill('Fictional owner passphrase 471!')
   await page.getByRole('button', { name: 'Create owner account' }).click()
+  await expect(page).toHaveURL(/\/admin\/two-factor$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Protect this account.')
+  const authenticatorSecret = await page.getByLabel('Authenticator secret').inputValue()
+  await page.getByLabel('Authentication code').fill(totpCode(authenticatorSecret))
+  await page.getByRole('button', { name: 'Confirm authenticator' }).click()
+  await expect(page.getByRole('status')).toContainText('Recovery codes are shown once')
+  const recoveryCode = (await page.locator('.recovery-code').first().textContent()) ?? ''
+  expect(recoveryCode).toMatch(/^[a-f0-9]{4}-[a-f0-9]{4}$/)
+  await page.getByRole('link', { name: 'Continue to workspace' }).click()
   await expect(page).toHaveURL(/\/admin$/)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your store starts here.')
   await page.reload()
@@ -157,6 +171,9 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
   await page.getByLabel('Email', { exact: true }).fill('OWNER@example.test')
   await page.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page).toHaveURL(/\/admin\/two-factor$/)
+  await page.getByLabel('Authentication code').fill(totpCode(authenticatorSecret))
+  await page.getByRole('button', { name: 'Verify' }).click()
   await expect(page).toHaveURL(/\/admin$/)
   await page.reload()
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
@@ -267,5 +284,16 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
   ).toEqual([])
   await replay.close()
   await Promise.all([exerciseCustomerAccount(browser), exerciseThemePreview(page, browser)])
+  const lostDevice = await browser.newContext()
+  const lostPage = await lostDevice.newPage()
+  await lostPage.goto('/admin/login')
+  await lostPage.getByLabel('Email', { exact: true }).fill('owner@example.test')
+  await lostPage.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
+  await lostPage.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await lostPage.getByLabel('Authentication code').fill(recoveryCode)
+  await lostPage.getByRole('button', { name: 'Verify' }).click()
+  await expect(lostPage).toHaveURL(/\/admin\/two-factor$/)
+  await expect(lostPage.getByRole('heading', { level: 1 })).toHaveText('Protect this account.')
+  await lostDevice.close()
   expect(errors).toEqual([])
 })

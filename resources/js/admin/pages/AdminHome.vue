@@ -61,6 +61,14 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
+          <div class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">02</span>
+            <div>
+              <a class="tool-link" href="/admin/two-factor">Authenticator</a>
+              <p>Confirm a sensitive change with a fresh authenticator code.</p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
           <div class="workspace-note">
             <p v-if="canPreviewTheme">
               <a class="text-link" href="/admin/theme-preview">Preview the default theme</a>

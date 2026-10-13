@@ -27,9 +27,14 @@ it('shows the closed launch status and only authorized workspace actions', async
     wrapper
       .findAll('a')
       .every((link) =>
-        ['#workspace-main', '/admin', '/admin/staff', '/admin/theme-preview', '/'].includes(
-          link.attributes('href') ?? '',
-        ),
+        [
+          '#workspace-main',
+          '/admin',
+          '/admin/staff',
+          '/admin/two-factor',
+          '/admin/theme-preview',
+          '/',
+        ].includes(link.attributes('href') ?? ''),
       ),
   ).toBe(true)
 })

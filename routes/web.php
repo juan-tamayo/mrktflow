@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
 use App\Http\Controllers\Admin\ThemePreviewController;
+use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
@@ -26,6 +27,10 @@ Route::middleware(Middleware::class)->group(function (): void {
     Route::middleware(RequireStaffSession::class)->group(function (): void {
         Route::get('/admin', [StaffSessionController::class, 'home']);
         Route::post('/admin/logout', [StaffSessionController::class, 'logout']);
+        Route::get('/admin/two-factor', [TwoFactorController::class, 'show']);
+        Route::post('/admin/two-factor', [TwoFactorController::class, 'confirm'])->middleware('throttle:5,1,staff-two-factor:');
+        Route::post('/admin/two-factor/challenge', [TwoFactorController::class, 'challenge'])->middleware('throttle:5,1,staff-two-factor:');
+        Route::post('/admin/two-factor/reauthenticate', [TwoFactorController::class, 'reauthenticate'])->middleware('throttle:5,1,staff-two-factor:');
         Route::get('/admin/staff', [StaffController::class, 'index']);
         Route::post('/admin/staff/invitations', [StaffInvitationController::class, 'create'])->middleware('throttle:10,1,staff-invite:');
         Route::patch('/admin/staff/{staffId}', [StaffController::class, 'update'])->whereUuid('staffId')->middleware('throttle:30,1,staff-access:');
