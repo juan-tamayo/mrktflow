@@ -32,6 +32,7 @@ final class CatalogController
                 'id' => $variant['id'],
                 'label' => $variant['label'],
                 'available' => $variant['available'],
+                'availability' => $variant['availability'],
                 'options' => $variant['options'],
                 'image' => $variant['image'],
                 'money' => [
@@ -49,10 +50,11 @@ final class CatalogController
             }
         }
         $requested = $request->query('variant');
-        $selectionState = 'selected';
         $selectedId = $default['id'];
         if (! is_string($requested) || $requested === '') {
-            $selectionState = $snapshot['option_axes'] === [] ? 'selected' : 'missing';
+            $selectionState = $snapshot['option_axes'] === []
+                ? $this->selectionState($default['availability'])
+                : 'missing';
         } else {
             $match = null;
             foreach ($snapshot['variants'] as $variant) {
@@ -63,7 +65,7 @@ final class CatalogController
             }
             abort_if($match === null, 422);
             $selectedId = $match['id'];
-            $selectionState = $match['available'] ? 'selected' : 'unavailable';
+            $selectionState = $this->selectionState($match['availability']);
         }
         $selected = $default;
         foreach ($snapshot['variants'] as $variant) {
@@ -118,6 +120,8 @@ final class CatalogController
                 'id' => $product['id'],
                 'url' => '/products/'.$product['slug'],
                 'title' => $product['title'],
+                'available' => $product['available'],
+                'availability' => $product['availability'],
                 'image' => $product['image'],
                 'money' => [
                     'amountMinor' => $product['money']['amount'],
@@ -135,5 +139,14 @@ final class CatalogController
             'breadcrumbs' => $snapshot['breadcrumbs'],
             'products' => $products,
         ]));
+    }
+
+    private function selectionState(string $availability): string
+    {
+        return match ($availability) {
+            'out_of_stock' => 'out_of_stock',
+            'unavailable' => 'unavailable',
+            default => 'selected',
+        };
     }
 }

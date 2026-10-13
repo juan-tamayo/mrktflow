@@ -14,7 +14,7 @@ final readonly class CategoryView implements JsonSerializable
 {
     /**
      * @param  list<array{title: string, url: string}>  $breadcrumbs
-     * @param  list<array{id: string, url: string, title: string, image: array{url: string, alt: string}, money: array{amountMinor: int, currency: string, exponent: int, formatted: string}}>  $products
+     * @param  list<array{id: string, url: string, title: string, available: bool, availability: string, image: array{url: string, alt: string}, money: array{amountMinor: int, currency: string, exponent: int, formatted: string}}>  $products
      */
     private function __construct(
         public string $id,
@@ -44,10 +44,12 @@ final readonly class CategoryView implements JsonSerializable
             'category.breadcrumbs.*.title' => ['required', 'string', 'max:200'],
             'category.breadcrumbs.*.url' => ['required', 'string', 'max:500', $path],
             'category.products' => ['present', 'array', 'list', 'max:24'],
-            'category.products.*' => ['required', 'array:id,url,title,image,money'],
+            'category.products.*' => ['required', 'array:id,url,title,image,money,available,availability'],
             'category.products.*.id' => ['required', 'uuid', 'distinct:strict'],
             'category.products.*.url' => ['required', 'string', 'max:500', $path],
             'category.products.*.title' => ['required', 'string', 'max:200'],
+            'category.products.*.available' => ['required', 'boolean'],
+            'category.products.*.availability' => ['required', 'string', Rule::in(['in_stock', 'out_of_stock', 'unavailable'])],
             'category.products.*.image' => ['required', 'array:url,alt'],
             'category.products.*.image.url' => ['required', 'string', 'max:500', $path],
             'category.products.*.image.alt' => ['required', 'string', 'max:200'],
@@ -66,6 +68,8 @@ final readonly class CategoryView implements JsonSerializable
                 'id' => $product['id'],
                 'url' => $product['url'],
                 'title' => $product['title'],
+                'available' => (bool) $product['available'],
+                'availability' => $product['availability'],
                 'image' => $product['image'],
                 'money' => [
                     'amountMinor' => $amount,

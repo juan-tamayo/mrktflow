@@ -47,6 +47,8 @@
                             <p class="theme-variant-prompt" role="status">Choose a finish and size to see the current price.</p>
                         @elseif($selectionState === 'unavailable')
                             <p class="theme-variant-prompt" role="status">This combination is unavailable.</p>
+                        @elseif($selectionState === 'out_of_stock')
+                            <p class="theme-variant-prompt" role="status">{{ $product->optionAxes === [] ? 'This product is out of stock.' : 'This combination is out of stock.' }}</p>
                         @else
                             <p class="theme-price"><span>{{ $preview ? 'Illustrative price' : 'Price' }}</span><strong>{{ $selected['money']['formatted'] }}</strong></p>
                         @endif

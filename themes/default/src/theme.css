@@ -153,6 +153,10 @@
   color: var(--muted);
   font-weight: 600;
 }
+.theme-availability {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
 .theme-search-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));

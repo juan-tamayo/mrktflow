@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalog\Actions;
 
+use App\Domain\Catalog\Support\VariantAvailability;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +20,7 @@ final class SearchCatalog
      * @param  array<string, mixed>  $input
      * @return array{
      *     query: array{q: string, category: string, price_min: int|null, price_max: int|null, available: string, sort: string, page: int, page_size: int, facets: array<string, mixed>},
-     *     products: list<array{id: string, slug: string, title: string, image: array{url: string, alt: string}, money: array{amount: int, currency: string, exponent: int}}>,
+     *     products: list<array{id: string, slug: string, title: string, available: bool, availability: string, image: array{url: string, alt: string}, money: array{amount: int, currency: string, exponent: int}}>,
      *     meta: array{page: int, pageSize: int, totalItems: int, totalPages: int},
      *     facets: list<array{key: string, label: string, type: string, unit: string|null, values: list<array{value: string, count: int}>}>,
      *     categories: list<array{path: string, title: string}>,
@@ -277,12 +278,26 @@ final class SearchCatalog
             ->whereColumn('sale_variants.product_id', 'products.id')
             ->where('sale_variants.available', '=', true)
             ->where(function (Builder $group): void {
-                $group->where('sale_variants.tracks_inventory', '=', false)
-                    ->orWhere(function (Builder $tracked): void {
-                        $tracked->where('sale_variants.tracks_inventory', '=', true)
-                            ->whereNotNull('inventory_balances.on_hand')
-                            ->whereRaw('inventory_balances.on_hand > inventory_balances.reserved');
-                    });
+                $group->where(function (Builder $physical): void {
+                    $physical->where('products.type', '=', 'physical')
+                        ->where(function (Builder $stock): void {
+                            $stock->where('sale_variants.tracks_inventory', '=', false)
+                                ->orWhere(function (Builder $tracked): void {
+                                    $tracked->where('sale_variants.tracks_inventory', '=', true)
+                                        ->whereNotNull('inventory_balances.on_hand')
+                                        ->whereRaw('inventory_balances.on_hand > inventory_balances.reserved');
+                                });
+                        });
+                })->orWhere(function (Builder $digital): void {
+                    $digital->where('products.type', '=', 'digital')
+                        ->whereExists(function (Builder $files): void {
+                            $files->selectRaw('1')
+                                ->from('variant_digital_assets')
+                                ->join('digital_asset_versions', 'variant_digital_assets.digital_asset_version_id', '=', 'digital_asset_versions.id')
+                                ->whereColumn('variant_digital_assets.variant_id', 'sale_variants.id')
+                                ->where('digital_asset_versions.status', '=', 'ready');
+                        });
+                });
             });
     }
 
@@ -357,7 +372,7 @@ final class SearchCatalog
 
     /**
      * @param  list<string>  $ids
-     * @return list<array{id: string, slug: string, title: string, image: array{url: string, alt: string}, money: array{amount: int, currency: string, exponent: int}}>
+     * @return list<array{id: string, slug: string, title: string, available: bool, availability: string, image: array{url: string, alt: string}, money: array{amount: int, currency: string, exponent: int}}>
      */
     private function hydrate(array $ids): array
     {
@@ -393,6 +408,12 @@ final class SearchCatalog
                     'exponent' => (int) $product->exponent,
                 ],
             ];
+        }
+        $availability = app(VariantAvailability::class)->forProducts(array_column($products, 'id'));
+        foreach ($products as $index => $product) {
+            $summary = $availability[$product['id']] ?? ['available' => false, 'availability' => VariantAvailability::UNAVAILABLE];
+            $products[$index]['available'] = $summary['available'];
+            $products[$index]['availability'] = $summary['availability'];
         }
 
         return $products;

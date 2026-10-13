@@ -14,7 +14,7 @@ final readonly class ProductView implements JsonSerializable
 {
     /**
      * @param  array{url: string, alt: string}  $image
-     * @param  list<array{id: string, label: string, available: bool, options: list<array{name: string, value: string}>, image: array{url: string, alt: string}, money: array{amountMinor: int, currency: string, exponent: int, formatted: string}}>  $variants
+     * @param  list<array{id: string, label: string, available: bool, availability: string, options: list<array{name: string, value: string}>, image: array{url: string, alt: string}, money: array{amountMinor: int, currency: string, exponent: int, formatted: string}}>  $variants
      * @param  list<array{label: string, value: string}>  $attributes
      * @param  list<array{name: string, values: list<string>}>  $optionAxes
      */
@@ -47,7 +47,7 @@ final readonly class ProductView implements JsonSerializable
             'product.image.url' => ['required', 'string', 'max:500', $path],
             'product.image.alt' => ['required', 'string', 'max:200'],
             'product.variants' => ['required', 'array', 'list', 'min:1', 'max:50'],
-            'product.variants.*' => ['required', 'array:id,label,money,options,available,image'],
+            'product.variants.*' => ['required', 'array:id,label,money,options,available,image,availability'],
             'product.variants.*.id' => ['required', 'uuid', 'distinct:strict'],
             'product.variants.*.label' => ['required', 'string', 'max:120'],
             'product.variants.*.money' => ['required', 'array:amountMinor,currency,exponent'],
@@ -59,6 +59,7 @@ final readonly class ProductView implements JsonSerializable
             'product.variants.*.options.*.name' => ['required', 'string', 'max:40'],
             'product.variants.*.options.*.value' => ['required', 'string', 'max:40'],
             'product.variants.*.available' => ['sometimes', 'boolean'],
+            'product.variants.*.availability' => ['sometimes', 'string', Rule::in(['in_stock', 'out_of_stock', 'unavailable'])],
             'product.variants.*.image' => ['sometimes', 'array:url,alt'],
             'product.variants.*.image.url' => ['required_with:product.variants.*.image', 'string', 'max:500', $path],
             'product.variants.*.image.alt' => ['required_with:product.variants.*.image', 'string', 'max:200'],
@@ -82,6 +83,7 @@ final readonly class ProductView implements JsonSerializable
                 'id' => $variant['id'],
                 'label' => $variant['label'],
                 'available' => array_key_exists('available', $variant) ? (bool) $variant['available'] : true,
+                'availability' => is_string($variant['availability'] ?? null) ? $variant['availability'] : ((array_key_exists('available', $variant) && ! $variant['available']) ? 'unavailable' : 'in_stock'),
                 'options' => $variant['options'] ?? [],
                 'image' => $variant['image'] ?? $data['image'],
                 'money' => [

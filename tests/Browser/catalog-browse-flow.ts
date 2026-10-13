@@ -79,6 +79,9 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await expect(page.getByRole('link', { name: 'Studio Lamp' })).toBeVisible()
   await page.getByRole('link', { name: 'Studio Lamp' }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Studio Lamp.')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.setViewportSize({ width: 1280, height: 720 })
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Lighting')
   await expect(page.getByText('Megapixels')).toBeVisible()
   await expect(page.getByText('24.2', { exact: true })).toBeVisible()
@@ -110,6 +113,13 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await page.getByLabel('Finish').selectOption({ label: 'Chalk' })
   await expect(page.getByRole('status')).toContainText('USD 26.99')
   expect((await page.request.get('/products/missing-lamp')).status()).toBe(404)
+  const publicJson = await page.request.get('/store-api/v1/products/studio-lamp')
+  expect(publicJson.status()).toBe(200)
+  const publicBody = (await publicJson.json()) as {
+    data: { available: boolean; availability: string }
+  }
+  expect(publicBody.data.available).toBe(true)
+  expect(publicBody.data.availability).toBe('in_stock')
   await page.goto('http://127.0.0.1:8011/admin/products/create')
   await page.getByLabel('Product type').selectOption('digital')
   await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Studio Lighting Guide')
@@ -196,6 +206,7 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Archive product' }).click()
   await expect(page.getByText('This product is archived')).toBeVisible()
   expect((await page.request.get('/products/studio-lamp')).status()).toBe(404)
+  expect((await page.request.get('/store-api/v1/products/studio-lamp')).status()).toBe(404)
   expect((await page.request.get('/')).status()).toBe(503)
   expect(
     (

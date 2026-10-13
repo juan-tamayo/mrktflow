@@ -25,7 +25,7 @@ final class DefaultThemeRenderer
         if ($selected === null) {
             throw new InvalidArgumentException('Select a supplied product variant.');
         }
-        if (! in_array($selectionState, ['selected', 'missing', 'unavailable'], true)) {
+        if (! in_array($selectionState, ['selected', 'missing', 'unavailable', 'out_of_stock'], true)) {
             throw new InvalidArgumentException('Unknown variant selection state.');
         }
 

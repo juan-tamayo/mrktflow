@@ -3,6 +3,7 @@ export interface PublicVariant {
   label: string
   money: { amountMinor: number; currency: string; exponent: number; formatted: string }
   available: boolean
+  availability: 'in_stock' | 'out_of_stock' | 'unavailable'
   options: { name: string; value: string }[]
   image: { url: string; alt: string }
 }
@@ -14,7 +15,7 @@ export interface VariantPickerInput {
   variants: PublicVariant[]
   selectedId: string
   optionAxes: OptionAxis[]
-  selectionState: 'selected' | 'missing' | 'unavailable'
+  selectionState: 'selected' | 'missing' | 'unavailable' | 'out_of_stock'
 }
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -62,7 +63,7 @@ function variant(value: unknown): value is PublicVariant {
     !record(value) ||
     !keysAllowed(
       value,
-      ['id', 'label', 'money', 'options', 'available', 'image'],
+      ['id', 'label', 'money', 'options', 'available', 'image', 'availability'],
       ['id', 'label', 'money'],
     ) ||
     typeof value.id !== 'string' ||
@@ -96,12 +97,17 @@ function variant(value: unknown): value is PublicVariant {
     return false
   const options = value.options ?? []
   const available = value.available ?? true
+  const availability = value.availability
   const image = value.image
   if (
     !Array.isArray(options) ||
     options.length > 3 ||
     !options.every(option) ||
-    typeof available !== 'boolean'
+    typeof available !== 'boolean' ||
+    (availability !== undefined &&
+      availability !== 'in_stock' &&
+      availability !== 'out_of_stock' &&
+      availability !== 'unavailable')
   )
     return false
   if (image !== undefined) {
@@ -139,17 +145,22 @@ export function parseVariantPicker(value: unknown): VariantPickerInput | null {
   const optionAxes = Array.isArray(value.optionAxes) ? value.optionAxes : []
   if (optionAxes.length > 3 || !optionAxes.every(axis)) return null
   const selectionState =
-    value.selectionState === 'missing' || value.selectionState === 'unavailable'
+    value.selectionState === 'missing' ||
+    value.selectionState === 'unavailable' ||
+    value.selectionState === 'out_of_stock'
       ? value.selectionState
       : 'selected'
   return {
     variants: value.variants.map((entry) => {
       const item = entry as PublicVariant
+      const available = item.available ?? true
       return {
         id: item.id,
         label: item.label,
         money: item.money,
-        available: item.available ?? true,
+        available,
+        availability:
+          item.availability ?? (available ? ('in_stock' as const) : ('unavailable' as const)),
         options: item.options ?? [],
         image: item.image ?? { url: '/brand/mark.svg', alt: item.label },
       }

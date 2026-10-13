@@ -21,6 +21,8 @@ final class SearchController
                 'id' => $product['id'],
                 'url' => '/products/'.$product['slug'],
                 'title' => $product['title'],
+                'available' => $product['available'],
+                'availability' => $product['availability'],
                 'image' => $product['image'],
                 'money' => [
                     'amountMinor' => $product['money']['amount'],
