@@ -8,19 +8,27 @@ use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Pricing\Actions\ApplyCoupon;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Actions\ReadCoupons;
 use App\Domain\Pricing\Actions\SaveCoupon;
 use App\Domain\Pricing\Contracts\PriceCalculator;
+use App\Domain\Pricing\Data\CouponBasketLine;
 use App\Domain\Pricing\Data\CouponHold;
+use App\Domain\Pricing\Data\PricedLine;
 use App\Domain\Pricing\Data\PriceRequest;
 use App\Domain\Pricing\Exceptions\PricingCouponConflict;
 use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
 use App\Domain\Pricing\Exceptions\PricingCouponRejected;
+use App\Domain\Pricing\Exceptions\PricingInvalidQuote;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Process\Process;
 
 uses(DatabaseMigrations::class);
@@ -283,4 +291,199 @@ it('PricingCoupon HTTP rejects forged coupon saves', function (): void {
     $this->app->instance('env', 'local');
     $this->postJson('/admin/coupons', ['coupon' => pricingCouponInput()])->assertStatus(419);
     $this->app->instance('env', 'testing');
+});
+
+it('PricingCoupon rejects invalid configuration holds and ineligible quotes', function (): void {
+    $owner = catalogInstalledOwner();
+    $denied = $owner->fresh();
+    $denied->forceFill(['role' => 'fulfillment', 'permissions' => StaffPermissions::forRole('fulfillment')])->save();
+    expect(fn () => app(SaveCoupon::class)->save($denied, pricingCouponInput(['code' => 'NOPE'])))
+        ->toThrow(AuthorizationException::class);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'code' => 'FIX', 'mode' => 'fixed', 'amount' => null, 'percent_numerator' => null,
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'code' => 'PCT', 'percent_numerator' => null,
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'code' => 'OVER', 'percent_numerator' => 150, 'percent_denominator' => 100,
+    ])))->toThrow(ValidationException::class);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'id' => (string) Str::uuid(), 'version' => 1, 'code' => 'GONE',
+    ])))->toThrow(HttpException::class);
+    $image = catalogReadyImage($owner->id);
+    $parent = app(SaveCategory::class)->save($owner, catalogCategoryInput(['status' => 'published']));
+    $child = app(SaveCategory::class)->save($owner, catalogCategoryInput([
+        'title' => 'Bulbs', 'slug' => 'bulbs', 'status' => 'published', 'parent_id' => $parent['id'],
+    ]));
+    $product = app(SaveProduct::class)->save($owner, catalogProductInput($image, [
+        'status' => 'published', 'category_ids' => [$child['id']],
+    ]));
+    $variantId = (string) DB::table('product_variants')->where('product_id', $product['id'])->value('id');
+    $line = pricingCouponLine($product['id'], $variantId, 1, pricingCouponUsd(1000), [$child['id']]);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'code' => 'MISS', 'product_ids' => [(string) Str::uuid()],
+    ])))->toThrow(HttpException::class);
+    $fixed = app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'code' => 'lampfix',
+        'mode' => 'fixed',
+        'amount' => 100,
+        'percent_numerator' => '',
+        'percent_denominator' => '',
+        'starts_at' => '',
+        'ends_at' => '',
+        'max_redemptions' => '',
+        'max_redemptions_per_customer' => '',
+        'product_ids' => [$product['id']],
+        'category_ids' => [$parent['id']],
+    ]));
+    $updated = app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'id' => $fixed['id'],
+        'version' => $fixed['revision'],
+        'code' => 'LAMPFIX',
+        'mode' => 'fixed',
+        'amount' => 150,
+        'percent_numerator' => null,
+        'max_redemptions' => 5,
+        'max_redemptions_per_customer' => null,
+        'product_ids' => [$product['id']],
+        'category_ids' => [],
+    ]));
+    expect($updated['revision'])->toBe(2);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'id' => $fixed['id'], 'version' => 1, 'code' => 'STALE', 'mode' => 'fixed', 'amount' => 150, 'percent_numerator' => null,
+    ])))->toThrow(HttpException::class);
+    $other = pricingSavedCoupon($owner, ['code' => 'OTHER']);
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'id' => $other['id'], 'version' => $other['revision'], 'code' => 'LAMPFIX',
+    ])))->toThrow(ValidationException::class);
+    $quoted = new DateTimeImmutable('2026-10-13T00:00:00Z');
+    $applied = app(ApplyCoupon::class)->apply('lampfix', [$line], $quoted);
+    expect($applied->mode)->toBe('fixed')->and($applied->eligibleLineIds)->toBe([$line->line->lineId]);
+    $nested = pricingSavedCoupon($owner, [
+        'code' => 'NEST', 'category_ids' => [$parent['id']], 'max_redemptions' => 10, 'max_redemptions_per_customer' => null,
+    ]);
+    expect(app(ApplyCoupon::class)->apply('NEST', [$line], $quoted)->code)->toBe('NEST');
+    $shipping = pricingSavedCoupon($owner, [
+        'code' => 'SHIP', 'mode' => 'free_shipping', 'amount' => null, 'percent_numerator' => null, 'max_redemptions' => 10,
+    ]);
+    $free = app(ApplyCoupon::class)->apply('SHIP', [$line], $quoted);
+    expect($free->waivesShipping)->toBeTrue()->and($free->discount->mode)->toBe('none');
+    $paused = pricingSavedCoupon($owner, ['code' => 'STOP', 'status' => 'paused']);
+    expect(fn () => app(ApplyCoupon::class)->apply('STOP', [$line], $quoted))->toThrow(PricingCouponRejected::class);
+    $spend = pricingSavedCoupon($owner, ['code' => 'BIG', 'min_eligible_subtotal' => 5000]);
+    expect(fn () => app(ApplyCoupon::class)->apply('BIG', [$line], $quoted))->toThrow(PricingCouponRejected::class);
+    $tooMuch = pricingSavedCoupon($owner, [
+        'code' => 'HUGE', 'mode' => 'fixed', 'amount' => 5000, 'percent_numerator' => null,
+    ]);
+    expect(fn () => app(ApplyCoupon::class)->apply('HUGE', [$line], $quoted))->toThrow(PricingCouponRejected::class);
+    expect(fn () => app(ApplyCoupon::class)->apply('', [$line], $quoted))->toThrow(PricingCouponRejected::class);
+    expect(fn () => app(ApplyCoupon::class)->apply('LAMPFIX', [], $quoted))->toThrow(PricingCouponRejected::class);
+    expect(fn () => app(ApplyCoupon::class)->apply('LAMPFIX', [$line], $quoted, strtoupper((string) Str::uuid())))
+        ->toThrow(PricingCouponRejected::class);
+    expect(fn () => app(ApplyCoupon::class)->apply('OTHER', [$line], new DateTimeImmutable('2026-12-31T00:00:00Z')))
+        ->toThrow(PricingCouponRejected::class);
+    $holder = app(HoldCoupon::class);
+    $customer = (string) Str::uuid();
+    $capped = pricingSavedCoupon($owner, ['code' => 'CAP1', 'max_redemptions' => 1, 'max_redemptions_per_customer' => null]);
+    $holder->hold(new CouponHold(
+        (string) Str::uuid(), (string) Str::uuid(), $capped['id'], $capped['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    expect(fn () => app(ApplyCoupon::class)->apply('CAP1', [$line], $quoted))->toThrow(PricingCouponExhausted::class);
+    $room = pricingSavedCoupon($owner, ['code' => 'ROOM', 'max_redemptions' => 5, 'max_redemptions_per_customer' => null]);
+    $holder->hold(new CouponHold(
+        (string) Str::uuid(), (string) Str::uuid(), $room['id'], $room['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    $holder->hold(new CouponHold(
+        (string) Str::uuid(), (string) Str::uuid(), $room['id'], $room['revision'], (string) Str::uuid(), now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    expect(fn () => app(SaveCoupon::class)->save($owner, pricingCouponInput([
+        'id' => $room['id'], 'version' => $room['revision'], 'code' => 'ROOM', 'max_redemptions' => 1, 'max_redemptions_per_customer' => null,
+    ])))->toThrow(ValidationException::class);
+    $limited = pricingSavedCoupon($owner, ['code' => 'ONCEYOU', 'max_redemptions' => 5, 'max_redemptions_per_customer' => 1]);
+    $holder->hold(new CouponHold(
+        (string) Str::uuid(), (string) Str::uuid(), $limited['id'], $limited['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    expect(fn () => app(ApplyCoupon::class)->apply('ONCEYOU', [$line], $quoted, $customer))->toThrow(PricingCouponExhausted::class);
+    expect(fn () => $holder->hold(new CouponHold(
+        (string) Str::uuid(), (string) Str::uuid(), $paused['id'], $paused['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    )))->toThrow(PricingCouponRejected::class);
+    expect(fn () => $holder->hold(new CouponHold(
+        (string) Str::uuid(), (string) Str::uuid(), $limited['id'], $limited['revision'], null, now()->addMinutes(15)->toDateTimeImmutable(),
+    )))->toThrow(PricingCouponRejected::class);
+    $intent = (string) Str::uuid();
+    $firstKey = (string) Str::uuid();
+    $open = pricingSavedCoupon($owner, ['code' => 'OPEN', 'max_redemptions' => 3, 'max_redemptions_per_customer' => null]);
+    $holder->hold(new CouponHold($intent, $firstKey, $open['id'], $open['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable()));
+    expect(fn () => $holder->hold(new CouponHold(
+        $intent, (string) Str::uuid(), $open['id'], $open['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    )))->toThrow(PricingCouponConflict::class);
+    $releaseKey = (string) Str::uuid();
+    $released = $holder->release($intent, $releaseKey);
+    expect($holder->release($intent, $releaseKey)->status)->toBe($released->status);
+    expect(fn () => $holder->commit($intent, (string) Str::uuid()))->toThrow(PricingCouponRejected::class);
+    expect(fn () => $holder->commit((string) Str::uuid(), (string) Str::uuid()))->toThrow(PricingCouponRejected::class);
+    expect(fn () => $holder->release((string) Str::uuid(), (string) Str::uuid()))->toThrow(PricingCouponRejected::class);
+    expect(fn () => $holder->commit(strtoupper((string) Str::uuid()), (string) Str::uuid()))->toThrow(InvalidArgumentException::class);
+    $freshIntent = (string) Str::uuid();
+    $commitKey = (string) Str::uuid();
+    $holder->hold(new CouponHold(
+        $freshIntent, (string) Str::uuid(), $open['id'], $open['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    $holder->commit($freshIntent, $commitKey);
+    DB::table('coupon_redemptions')->where('intent_id', $freshIntent)->delete();
+    DB::table('coupon_holds')->where('intent_id', $freshIntent)->delete();
+    expect(fn () => $holder->commit($freshIntent, $commitKey))->toThrow(PricingCouponRejected::class);
+    $clashIntent = (string) Str::uuid();
+    $clashKey = (string) Str::uuid();
+    $holder->hold(new CouponHold(
+        $clashIntent, $clashKey, $open['id'], $open['revision'], $customer, now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    $otherIntent = (string) Str::uuid();
+    $holder->hold(new CouponHold(
+        $otherIntent, (string) Str::uuid(), $open['id'], $open['revision'], (string) Str::uuid(), now()->addMinutes(15)->toDateTimeImmutable(),
+    ));
+    expect(fn () => $holder->commit($otherIntent, $clashKey))->toThrow(PricingCouponConflict::class);
+    expect(fn () => new CouponHold('not-a-uuid', (string) Str::uuid(), $open['id'], 1, null, now()->toDateTimeImmutable()))
+        ->toThrow(InvalidArgumentException::class);
+    expect(fn () => new CouponBasketLine(
+        new PricedLine((string) Str::uuid(), $variantId, 1, pricingCouponUsd(100)),
+        strtoupper($product['id']),
+    ))->toThrow(PricingInvalidQuote::class);
+    expect(fn () => new CouponBasketLine(
+        new PricedLine((string) Str::uuid(), $variantId, 1, pricingCouponUsd(100)),
+        $product['id'],
+        [$child['id'], $child['id']],
+    ))->toThrow(PricingInvalidQuote::class);
+    expect(fn () => app(ReadCoupons::class)->staffCoupon((string) Str::uuid()))->toThrow(NotFoundHttpException::class);
+    $detail = app(ReadCoupons::class)->staffCoupon($fixed['id']);
+    expect($detail['product_ids'])->toBe([$product['id']])
+        ->and(app(ReadCoupons::class)->staffCoupons()[0]['code'])->toBeString()
+        ->and(app(ReadCoupons::class)->catalogOptions()['products'])->not->toBeEmpty();
+    $this->get('/')->assertStatus(503);
+});
+
+it('PricingCoupon HTTP lists edits and rejects missing or stale coupons', function (): void {
+    $owner = catalogInstalledOwner();
+    $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
+    $this->post('/admin/coupons', ['coupon' => pricingCouponInput(['code' => 'LISTME'])])->assertRedirect();
+    $id = (string) DB::table('coupons')->value('id');
+    $this->get('/admin/coupons')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('CouponIndex')
+        ->has('coupons', 1)
+        ->where('coupons.0.code', 'LISTME')
+        ->where('canWrite', true));
+    $this->get('/admin/coupons/'.(string) Str::uuid())->assertNotFound();
+    $this->patch('/admin/coupons/'.$id, ['coupon' => pricingCouponInput([
+        'code' => 'LISTED', 'version' => 1, 'name' => 'Studio welcome edited',
+    ])])->assertRedirect('/admin/coupons/'.$id);
+    $this->from('/admin/coupons/'.$id)->patch('/admin/coupons/'.$id, ['coupon' => pricingCouponInput([
+        'code' => 'STALE2', 'version' => 1, 'name' => 'Stale edit',
+    ])])->assertRedirect('/admin/coupons/'.$id)->assertSessionHasErrors('coupon');
+    $this->get('/admin/coupons/'.$id)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('CouponEdit')
+        ->where('coupon.code', 'LISTED')
+        ->where('coupon.version', 2)
+        ->where('saved', false));
+    $this->get('/')->assertStatus(503);
 });
