@@ -15,4 +15,4 @@ Objective: one authoritative deterministic calculation for display, checkout and
 
 ## Contracts and verification
 
-Provides `PriceCalculator`. Unit/property tests cover 0/2/3-decimal currencies, odd-cent fixed discounts, inclusive taxes, dates, refund residuals, bounds and allocation sums. MySQL tests cover coupon limits. Target `php artisan test --filter=Pricing`. Market-specific tax acceptance is a launch gate; a configurable calculator is not a universal tax-compliance service.
+Provides `PriceCalculator`. T027 implements integer `Money`, UTC sale-window unit prices, largest-remainder merchandise allocations and immutable quote fingerprints (`bin/php artisan test --filter=PricingMoney`). Inclusive taxes, coupon persistence and checkout quote invalidation remain later pricing tasks. Unit/property tests cover 0/2/3-decimal currencies, odd-cent fixed discounts, dates, refund residual unit splits, bounds and allocation sums. MySQL tests cover coupon limits. Target `php artisan test --filter=Pricing`. Market-specific tax acceptance is a launch gate; a configurable calculator is not a universal tax-compliance service.
