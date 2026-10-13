@@ -377,7 +377,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T025: Cart ownership and line mutations
 
-- [ ] Complete T025.
+- [x] Complete T025 locally; hosted Quality CI evidence was not collected from this agent.
+- **Evidence October 13:** Failing `CheckoutOrdersCart` tests were written first, then cart tables, `ReadCart`/`UpdateCart`, storefront HTML/JSON cart routes, native add-to-cart/cart forms, and a mixed physical+digital `DemoStoreSeeder` fixture. Guest and account carts are separate; quantity replaces are revision-checked; stale writes return 409; other sessions cannot mutate a line; invalid/unavailable variants and digital quantity above one fail; posted prices are ignored. Privileged staff still must pass 2FA before catalog admin. Adding to cart does not reserve stock or open checkout. `GET /` remains 503. Full PHP suite: 368 tests / 2756 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 45 Vue tests; 10 Chromium journeys including add-to-cart of physical and digital lines. Composer/npm audits passed; 237 registry signatures / 95 attestations. Local PCOV CheckoutOrders coverage was not collected (no coverage driver). Hosted Quality for this branch is pending.
 - **Module / requirements:** `checkout-orders` · ORDER-01, PLAT-06.
 - **Depends on:** T009, T024.
 - **Acceptance:** Guest/account carts support revision-checked quantity edits; invalid/unavailable variants fail and supplied prices are ignored. Add the real mixed-cart fixture now that cart and catalog migrations exist.

@@ -63,7 +63,7 @@ it('CatalogProduct publishes a simple physical product with one SKU price and im
     expect(json_encode($public))->not->toContain('original_key', 'media/'.$image.'/original', 'supplier');
     expect(app(CatalogReader::class)->publishedCount())->toBe(1);
     $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
-    $this->get('/products/studio-lamp')->assertOk()->assertSee('Studio Lamp')->assertDontSee('Add to cart');
+    $this->get('/products/studio-lamp')->assertOk()->assertSee('Studio Lamp')->assertSee('Add to cart');
 });
 
 it('CatalogProduct HTTP keeps privileged staff behind two-factor before catalog admin', function (): void {
