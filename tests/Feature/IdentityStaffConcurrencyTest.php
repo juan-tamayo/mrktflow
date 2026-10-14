@@ -7,12 +7,9 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\Process\Process;
-
-uses(DatabaseMigrations::class);
 
 it('IdentityStaff serializes simultaneous owner demotions across real MySQL connections', function (): void {
     $access = app(SetupAccess::class);

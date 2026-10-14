@@ -19,7 +19,6 @@ use App\Domain\Pricing\Exceptions\PricingInvalidQuote;
 use App\Domain\Pricing\Exceptions\PricingTaxCoverageMissing;
 use App\Domain\Pricing\Exceptions\PricingTaxRuleConflict;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +26,6 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

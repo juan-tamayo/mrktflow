@@ -8,15 +8,12 @@ use App\Domain\Identity\Support\StaffPermissions;
 use App\Http\Middleware\RequireCustomerSession;
 use App\Http\Support\CustomerSession;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     DB::table('installations')->where('id', 1)->update(['status' => 'complete', 'completed_at' => now()]);

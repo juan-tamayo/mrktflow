@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-uses(DatabaseMigrations::class);
+afterEach(function (): void {
+    RefreshDatabaseState::$migrated = false;
+});
 
 it('PlatformEnvironment uses real MySQL and cannot access the development database', function (): void {
     expect(DB::selectOne('SELECT DATABASE() AS name')->name)->toBe('mrktflow_test');

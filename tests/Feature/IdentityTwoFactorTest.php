@@ -11,7 +11,6 @@ use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Identity\Support\StaffTotp;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +18,6 @@ use Inertia\Testing\AssertableInertia;
 use OTPHP\TOTP;
 use ParagonIE\ConstantTime\Base32;
 
-uses(RefreshDatabase::class);
 beforeEach(fn () => $this->withoutVite());
 
 function twoFactorPassword(): string

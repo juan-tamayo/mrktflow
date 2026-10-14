@@ -7,15 +7,12 @@ use App\Domain\Identity\Actions\DeliverCustomerChallengeMail;
 use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Identity\Actions\RegisterCustomer;
 use App\Jobs\SendCustomerChallengeMail;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(DatabaseMigrations::class);
 
 beforeEach(function (): void {
     DB::table('installations')->where('id', 1)->update(['status' => 'complete', 'completed_at' => now()]);

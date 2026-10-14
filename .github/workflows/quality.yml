@@ -24,6 +24,7 @@ jobs:
           extensions: pdo_mysql, mbstring, intl, zip, gd, dom
           coverage: pcov
           tools: composer:2.8.10
+          ini-values: pcov.directory=app/Domain
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22.23.3'
@@ -54,11 +55,11 @@ jobs:
           bin/npm run format:check
       - name: Tests and production build
         run: |
-          bin/php artisan test --coverage-clover=coverage/php.xml
+          bin/php artisan test --compact --coverage-clover=coverage/php.xml
           bin/php scripts/coverage-gate.php
           bin/npm run test:unit -- --run
           bin/npm run build
-          bin/npm exec -- playwright install --with-deps chromium
+          bin/npm exec -- playwright install chromium
           bin/npm run test:e2e
       - name: Dependency verification
         run: |

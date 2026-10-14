@@ -17,7 +17,6 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Pricing\Exceptions\PricingCouponRejected;
 use App\Domain\Pricing\Exceptions\PricingTaxCoverageMissing;
 use App\Domain\Shipping\Exceptions\ShippingNoService;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +24,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Fixtures\CustomerRegistration;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

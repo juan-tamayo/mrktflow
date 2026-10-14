@@ -10,7 +10,6 @@ use App\Domain\Shipping\Actions\SaveShippingRules;
 use App\Domain\Shipping\Data\ShippingDestination;
 use App\Domain\Shipping\Exceptions\ShippingRuleConflict;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +17,6 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

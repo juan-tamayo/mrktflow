@@ -8,13 +8,11 @@ use App\Domain\CheckoutOrders\Actions\ReadCart;
 use App\Domain\CheckoutOrders\Actions\UpdateCart;
 use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Identity\Models\StaffAccount;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\Fixtures\CustomerRegistration;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

@@ -9,11 +9,8 @@ use App\Domain\Platform\Contracts\OutboxConsumer;
 use App\Domain\Platform\Data\OutboxEvent;
 use App\Domain\Platform\Support\OutboundHttp;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-uses(RefreshDatabase::class);
 
 it('PlatformOutbox records immutable encrypted intent with durable consumer receipts', function (): void {
     $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:fixture:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);

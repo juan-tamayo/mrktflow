@@ -5,13 +5,10 @@ declare(strict_types=1);
 use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-
-uses(RefreshDatabase::class);
 
 it('PlatformInstall issues a high-entropy secret and stores only its digest', function (): void {
     $secret = app(SetupAccess::class)->issueSecret();

@@ -8,6 +8,7 @@ use App\Domain\Platform\Actions\PublishOutbox;
 use App\Domain\Platform\Actions\QueueMedia;
 use App\Domain\Platform\Actions\RetryOutbox;
 use App\Domain\Platform\Actions\SetupAccess;
+use App\Jobs\ReconcilePendingPayments;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -113,6 +114,15 @@ Artisan::command('identity:mail-recover', function (QueueCustomerChallengeMail $
 })->purpose('Recover bounded customer credential-mail work and purge expired encrypted payloads');
 
 Schedule::command('identity:mail-recover')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('payments:reconcile', function (): int {
+    (new ReconcilePendingPayments)->handle();
+    $this->info('Reconciled a bounded batch of unknown payment attempts.');
+
+    return 0;
+})->purpose('Query unknown payment attempts and apply verified provider outcomes');
+
+Schedule::command('payments:reconcile')->everyMinute()->withoutOverlapping(2);
 
 Artisan::command('identity:mail-health', function (): int {
     $pending = DB::table('customer_challenge_deliveries')->whereIn('status', ['pending', 'sending'])->count();

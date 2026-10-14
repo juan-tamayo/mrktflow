@@ -5,13 +5,10 @@ declare(strict_types=1);
 use App\Application\Identity\RequestCustomerChallengeMail;
 use App\Domain\Identity\Actions\RegisterCustomer;
 use App\Domain\Identity\Models\CustomerAccount;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->withoutVite();

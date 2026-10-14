@@ -42,7 +42,7 @@ Install one cron entry under the same application user (example path):
 * * * * * cd /srv/mrktflow && /srv/mrktflow/bin/php artisan schedule:run >> /var/log/mrktflow/scheduler.log 2>&1
 ```
 
-The scheduler records its heartbeat and recovers up to 100 due outbox receipts and 100 pending images per minute. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
+The scheduler records its heartbeat and recovers up to 100 due outbox receipts and 100 pending images per minute. `payments:reconcile` queries a bounded batch of unknown payment attempts outside row locks. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
 
 `bin/php artisan platform:health` prints heartbeat freshness, pending/failed receipt counts, queue/failed-job counts and the oldest due receipt age. It exits 1 for a missing/older-than-180-second heartbeat, any quarantined/failed job, an unpurged failed media draft, or due outbox/media work older than 300 seconds. Freshness and queue age are observations, not proof of a running worker or a verified email sender. Monitor the command and alert operators on a failing exit status. `/up` alone cannot confirm readiness.
 

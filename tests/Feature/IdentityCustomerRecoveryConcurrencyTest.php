@@ -5,14 +5,11 @@ declare(strict_types=1);
 use App\Domain\Identity\Actions\IssueCustomerChallenge;
 use App\Domain\Identity\Actions\RegisterCustomer;
 use App\Domain\Identity\Models\CustomerAccount;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(DatabaseMigrations::class);
 
 it('IdentityCustomer consumes a recovery token once across simultaneous real MySQL connections', function (): void {
     DB::table('installations')->where('id', 1)->update(['status' => 'complete', 'completed_at' => now()]);

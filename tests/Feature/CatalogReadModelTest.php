@@ -15,13 +15,11 @@ use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Http\Resources\ProductResource;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

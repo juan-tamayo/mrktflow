@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 use App\Domain\Platform\Actions\PublishOutbox;
 use App\Domain\Platform\Actions\RecordEvent;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Symfony\Component\Process\Process;
-
-uses(DatabaseMigrations::class);
 
 it('PlatformOutboxWorker publishes committed intent automatically and leaves failed publication recoverable', function (): void {
     $id = app(RecordEvent::class)->record('platform.audit.recorded', 'audit:commit:1', ['action' => 'fixture.saved', 'subject_type' => 'fixture', 'subject_id' => '1']);

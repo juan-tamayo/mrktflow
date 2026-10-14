@@ -11,13 +11,11 @@ use App\Domain\Identity\Support\StaffTotp;
 use App\Domain\Platform\Actions\InstallStore;
 use App\Domain\Platform\Actions\SetupAccess;
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
 
-uses(RefreshDatabase::class);
 beforeEach(fn () => $this->withoutVite());
 
 function staffHttpInput(): array

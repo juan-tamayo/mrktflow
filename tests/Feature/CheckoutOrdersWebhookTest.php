@@ -6,7 +6,6 @@ use App\Domain\CheckoutOrders\Actions\AcceptProviderEvent;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Http\Controllers\Webhooks\StripeController;
 use App\Jobs\ProcessPaymentEvent;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +15,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);
@@ -156,7 +154,7 @@ it('CheckoutOrdersWebhook job loads the persisted event and rejects an oversized
     $signed = signedStripeEvent(['id' => 'evt_test_job']);
     $id = app(AcceptProviderEvent::class)->accept($signed['payload'], $signed['signature'], null);
     (new ProcessPaymentEvent($id))->handle();
-    expect(DB::table('provider_events')->where('id', $id)->value('processing_state'))->toBe('received');
+    expect(DB::table('provider_events')->where('id', $id)->value('processing_state'))->toBe('processed');
     expect(fn () => (new ProcessPaymentEvent((string) Str::uuid()))->handle())->toThrow(RuntimeException::class);
     postStripeWebhook(signedStripeEvent([
         'id' => 'evt_test_oversize',

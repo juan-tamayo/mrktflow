@@ -535,7 +535,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T037: Payment confirmation and reconciliation
 
-- [ ] Complete T037.
+- [x] Complete T037 locally; live Stripe capture reconciliation was not executed (no test credentials in this environment).
+- **Evidence October 14:** Failing `CheckoutOrdersReconciliation` tests were written first, then `payments`, `ConfirmOrderPayment`, `ReconcilePayment`, `ProcessPaymentEvent` confirmation, and bounded `payments:reconcile`. Matching provider success commits stock/coupon holds, records one capture, confirms the order, and emits `checkout.order.paid` once. Duplicate jobs and later expired events cannot downgrade success. Unknown attempts are queried; a retrieve-paid-before-local-commit crash recovers on reconcile. Mismatched amount stays unpaid; return URLs cannot mark paid. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersReconciliation` 4 tests / 43 assertions; `CheckoutOrdersWebhook` 6/46. Full PHP suite after Quality-path tighten: 449 tests / 3829 assertions in 92s without coverage; Pint. Hosted Quality on `24f04a7` ([run 38491549507](https://github.com/juan-tamayo/mrktflow/actions/runs/38491549507)) was cancelled at the 25-minute job budget during Tests and production build. Feature tests now migrate once and truncate (restoring installation, staff-security, and builtin class rows), PCOV is limited to `app/Domain`, PHPUnit is compact, and Playwright skips `--with-deps`. Hosted Quality for the tightened HEAD is pending. Merge only after a green Quality run.
 - **Module / requirements:** `checkout-orders` · ORDER-04.
 - **Depends on:** T036.
 - **Acceptance:** Verified matching success commits allocations and emits OrderPaid once; unordered events cannot downgrade success; unknown attempts queried.

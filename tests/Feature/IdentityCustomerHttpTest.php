@@ -6,13 +6,10 @@ use App\Domain\Identity\Actions\RegisterCustomer;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->withoutVite();

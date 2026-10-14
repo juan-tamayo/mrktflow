@@ -7,14 +7,11 @@ use App\Domain\Platform\Actions\ProcessMedia;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-
-uses(DatabaseMigrations::class);
 
 beforeEach(function (): void {
     Storage::fake('local', ['throw' => true]);

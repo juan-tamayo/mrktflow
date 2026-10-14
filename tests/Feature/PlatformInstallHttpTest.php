@@ -3,11 +3,9 @@
 declare(strict_types=1);
 
 use App\Domain\Platform\Actions\SetupAccess;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 
-uses(RefreshDatabase::class);
 beforeEach(fn () => $this->withoutVite());
 
 it('PlatformInstall HTTP hides setup until a CLI secret exists and denies ungranted writes', function (): void {

@@ -15,7 +15,6 @@ use App\Domain\CheckoutOrders\Exceptions\CheckoutQuoteStale;
 use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Models\StaffAccount;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +24,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\Process\Process;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);
