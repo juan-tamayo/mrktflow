@@ -535,7 +535,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T037: Payment confirmation and reconciliation
 
-- [ ] Complete T037.
+- [x] Complete T037 locally; live Stripe capture reconciliation was not executed (no test credentials in this environment).
+- **Evidence October 14:** Failing `CheckoutOrdersReconciliation` tests were written first, then `payments`, `ConfirmOrderPayment`, `ReconcilePayment`, `ProcessPaymentEvent` confirmation, and bounded `payments:reconcile`. Matching provider success commits stock/coupon holds, records one capture, confirms the order, and emits `checkout.order.paid` once. Duplicate jobs and later expired events cannot downgrade success. Unknown attempts are queried; a retrieve-paid-before-local-commit crash recovers on reconcile. Mismatched amount stays unpaid; return URLs cannot mark paid. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersReconciliation` 4 tests / 43 assertions; `CheckoutOrdersWebhook` 6/46. Full PHP suite: 447 tests / 3821 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 62 Vue tests; Chromium `platform-smoke` 8 passed (closed storefront 503). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Local PCOV CheckoutOrders coverage was not collected (no coverage driver). Hosted Quality for this branch is pending. Merge only after a green Quality run.
 - **Module / requirements:** `checkout-orders` · ORDER-04.
 - **Depends on:** T036.
 - **Acceptance:** Verified matching success commits allocations and emits OrderPaid once; unordered events cannot downgrade success; unknown attempts queried.

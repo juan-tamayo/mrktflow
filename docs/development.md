@@ -154,7 +154,11 @@ Guests and signed-in customers open `/checkout` from a nonempty cart. The form c
 
 ## Verified durable webhook inbox
 
-`POST /webhooks/stripe` is CSRF-exempt and verifies the raw Stripe-Signature HMAC, timestamp window, configured account, and livemode/environment before inserting a unique encrypted `provider_events` row. A replay of the same signed event returns 2xx without a second row. Invalid signatures or environments return 400 and store nothing. Persistence failure returns 503 so the provider can retry. The inbox does not mark an order paid; `ProcessPaymentEvent` is an ID-only encrypted job on the payments queue for later reconciliation. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=CheckoutOrdersWebhook`.
+`POST /webhooks/stripe` is CSRF-exempt and verifies the raw Stripe-Signature HMAC, timestamp window, configured account, and livemode/environment before inserting a unique encrypted `provider_events` row. A replay of the same signed event returns 2xx without a second row. Invalid signatures or environments return 400 and store nothing. Persistence failure returns 503 so the provider can retry. The inbox does not mark an order paid by itself. `ProcessPaymentEvent` is an ID-only encrypted job on the payments queue that queries the provider session and confirms only a matching capture. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=CheckoutOrdersWebhook`.
+
+## Payment confirmation and reconciliation
+
+Verified matching success commits stock and coupon holds, records one `payments` capture, confirms the order, and emits `checkout.order.paid` once (`intent_key` `order:paid:{orderId}`). Duplicate inbox jobs and later expired/unpaid observations cannot downgrade that success. Unknown attempts are queried through `ReconcilePayment` and a bounded `payments:reconcile` scheduler job. A crash after the provider reports capture and before the local commit is recovered by the same query path; return URLs still cannot mark an order paid. Amount, currency, account, and live/test mismatches stay unpaid. Live Stripe capture evidence remains pending. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=CheckoutOrdersReconciliation`.
 
 ## Payment/reservation contract spike
 

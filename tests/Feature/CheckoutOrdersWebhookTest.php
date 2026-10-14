@@ -156,7 +156,7 @@ it('CheckoutOrdersWebhook job loads the persisted event and rejects an oversized
     $signed = signedStripeEvent(['id' => 'evt_test_job']);
     $id = app(AcceptProviderEvent::class)->accept($signed['payload'], $signed['signature'], null);
     (new ProcessPaymentEvent($id))->handle();
-    expect(DB::table('provider_events')->where('id', $id)->value('processing_state'))->toBe('received');
+    expect(DB::table('provider_events')->where('id', $id)->value('processing_state'))->toBe('processed');
     expect(fn () => (new ProcessPaymentEvent((string) Str::uuid()))->handle())->toThrow(RuntimeException::class);
     postStripeWebhook(signedStripeEvent([
         'id' => 'evt_test_oversize',
