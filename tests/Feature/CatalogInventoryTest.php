@@ -16,7 +16,6 @@ use App\Domain\Catalog\Exceptions\CatalogInventoryConflict;
 use App\Domain\Catalog\Exceptions\CatalogInventoryUntracked;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Support\StaffPermissions;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -25,7 +24,6 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
 use Symfony\Component\Process\Process;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

@@ -3,13 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
-
-uses(DatabaseMigrations::class);
 
 it('CheckoutOrdersConcurrency reserves the last synthetic unit once and rolls back allocations atomically', function (): void {
     Schema::create('spike_stock', function (Blueprint $table): void {

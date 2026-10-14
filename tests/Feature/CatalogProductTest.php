@@ -10,7 +10,6 @@ use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +17,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

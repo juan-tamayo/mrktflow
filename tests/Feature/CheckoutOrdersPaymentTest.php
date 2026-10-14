@@ -15,7 +15,6 @@ use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Http\Controllers\Storefront\PaymentController;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
@@ -25,7 +24,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

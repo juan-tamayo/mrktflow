@@ -5,14 +5,11 @@ declare(strict_types=1);
 use App\Domain\Platform\Actions\QueueMedia;
 use App\Domain\Platform\Actions\StoreMedia;
 use App\Domain\Platform\Contracts\MediaUploadAuthorization;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
-
-uses(DatabaseMigrations::class);
 
 beforeEach(function (): void {
     Storage::fake('local', ['throw' => true]);

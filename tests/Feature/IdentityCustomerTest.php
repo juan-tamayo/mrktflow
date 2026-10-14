@@ -8,7 +8,6 @@ use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -16,8 +15,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     DB::table('installations')->where('id', 1)->update(['status' => 'complete', 'completed_at' => now()]);
@@ -73,25 +70,28 @@ it('IdentityCustomer uses separate providers and never inherits matching staff p
 
 it('IdentityCustomer requires a transaction and current verified identity before guest ownership proof', function (): void {
     $customer = app(RegisterCustomer::class)->register(CustomerRegistration::input());
-    // RefreshDatabase owns a transaction; proof shares that boundary.
-    expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
-    $customer->forceFill(['email_verified_at' => now()])->save();
-    $proof = app(ProveCustomerIdentity::class)->prove($customer);
-    expect($proof->customerId)->toBe($customer->id);
-    expect($proof->email)->toBe('shopper@example.test');
-    DB::table('customer_accounts')->where('id', $customer->id)->update(['session_version' => 2]);
-    expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+    DB::transaction(function () use ($customer): void {
+        expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+        $customer->forceFill(['email_verified_at' => now()])->save();
+        $proof = app(ProveCustomerIdentity::class)->prove($customer);
+        expect($proof->customerId)->toBe($customer->id);
+        expect($proof->email)->toBe('shopper@example.test');
+        DB::table('customer_accounts')->where('id', $customer->id)->update(['session_version' => 2]);
+        expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+    });
 });
 
 it('IdentityCustomer denies disabled, removed, and email-changed stale principals', function (): void {
     $customer = app(RegisterCustomer::class)->register(CustomerRegistration::input());
     $customer->forceFill(['email_verified_at' => now()])->save();
-    DB::table('customer_accounts')->where('id', $customer->id)->update(['email' => 'changed@example.test']);
-    expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
-    DB::table('customer_accounts')->where('id', $customer->id)->update(['email' => $customer->email, 'is_active' => false]);
-    expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
-    DB::table('customer_accounts')->where('id', $customer->id)->delete();
-    expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+    DB::transaction(function () use ($customer): void {
+        DB::table('customer_accounts')->where('id', $customer->id)->update(['email' => 'changed@example.test']);
+        expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+        DB::table('customer_accounts')->where('id', $customer->id)->update(['email' => $customer->email, 'is_active' => false]);
+        expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+        DB::table('customer_accounts')->where('id', $customer->id)->delete();
+        expect(fn () => app(ProveCustomerIdentity::class)->prove($customer))->toThrow(AuthorizationException::class);
+    });
 });
 
 it('IdentityCustomer rolls registration back if durable audit intent cannot be recorded', function (): void {

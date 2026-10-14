@@ -9,13 +9,11 @@ use App\Domain\Catalog\Actions\SaveProductSchema;
 use App\Domain\Catalog\Actions\SearchCatalog;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Support\StaffPermissions;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

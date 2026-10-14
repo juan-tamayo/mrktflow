@@ -7,13 +7,10 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\ThemesContent\Data\ProductView;
 use App\Domain\ThemesContent\Rendering\DefaultThemeRenderer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(RefreshDatabase::class);
 
 function themeSpikeProduct(): array
 {

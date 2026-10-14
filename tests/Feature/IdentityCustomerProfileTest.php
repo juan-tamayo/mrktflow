@@ -7,13 +7,10 @@ use App\Domain\Identity\Actions\CustomerAddresses;
 use App\Domain\Identity\Actions\RegisterCustomer;
 use App\Domain\Identity\Actions\UpdateCustomerProfile;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Fixtures\CustomerRegistration;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->withoutVite();

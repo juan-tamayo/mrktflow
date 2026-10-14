@@ -3,13 +3,10 @@
 declare(strict_types=1);
 
 use App\Domain\Platform\Actions\RecordEvent;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-
-uses(RefreshDatabase::class);
 
 it('PlatformCorrelation assigns server-owned request IDs to success and error responses', function (): void {
     $first = $this->withHeader('X-Request-ID', 'untrusted-request-id')->get('/up');

@@ -20,7 +20,6 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\ConsumeEvent;
 use App\Jobs\ProcessPaymentEvent;
 use App\Jobs\ReconcilePendingPayments;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
@@ -30,7 +29,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-uses(DatabaseMigrations::class);
 beforeEach(function (): void {
     $this->withoutVite();
     Storage::fake('local', ['throw' => true]);

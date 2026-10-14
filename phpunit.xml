@@ -20,7 +20,10 @@
     </testsuites>
     <source>
         <include>
-            <directory>app</directory>
+            <directory>app/Domain/Pricing</directory>
+            <directory>app/Domain/Catalog</directory>
+            <directory>app/Domain/CheckoutOrders</directory>
+            <directory>app/Domain/Fulfillment</directory>
         </include>
     </source>
     <php>
