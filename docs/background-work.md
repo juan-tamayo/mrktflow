@@ -59,7 +59,7 @@ Framework failed-job records and logs are private operational data. All queued w
 
 Record local event intent inside the same transaction as the business state. Bind consumers in server-owned `config/outbox.php`; never accept a consumer class from HTTP/template/AI input. Consumer effects and completion receipts share a transaction. Consumers may persist another durable intent, but may not perform external network calls inside that transaction.
 
-Use `OutboundHttp::client()` for provider calls: 5-second connection, 20-second total timeout, TLS verification, redirects disabled, and no implicit mutation retries. Adapters must validate provider endpoints and apply provider-specific idempotency/reconciliation before retrying an external mutation. Ordinary SMTP cannot guarantee exactly-once delivery. [Laravel timeout behavior](https://laravel.com/framework/docs/13.x/http-client#timeout).
+Use `OutboundHttp::client()` for provider calls: 5-second connection, 20-second total timeout, TLS verification, redirects disabled, and no implicit mutation retries. Adapters must validate provider endpoints and apply provider-specific idempotency/reconciliation before retrying an external mutation. Signed Stripe webhooks persist an encrypted inbox row before 2xx and enqueue ID-only `ProcessPaymentEvent` work on the `payments` lane. Ordinary SMTP cannot guarantee exactly-once delivery. [Laravel timeout behavior](https://laravel.com/framework/docs/13.x/http-client#timeout).
 
 ## Local verification
 
