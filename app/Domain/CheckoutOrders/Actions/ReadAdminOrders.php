@@ -118,6 +118,7 @@ final class ReadAdminOrders
             'notes' => $notes,
             'refunds' => $this->refunds($orderId, $currency, $exponent),
             'refundable' => $this->refundable($order, $lines, $currency, $exponent),
+            'cancellable' => $this->cancellable($order, $lines),
         ];
     }
 
@@ -164,6 +165,27 @@ final class ReadAdminOrders
             'money' => CartMoney::format($remaining, $currency, $exponent),
             'lines' => $quantities,
         ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     */
+    private function cancellable(object $order, array $lines): bool
+    {
+        if (! in_array($this->string($order, 'status'), ['confirmed', 'on_hold', 'completed'], true)) {
+            return false;
+        }
+        foreach ($lines as $line) {
+            $held = is_int($line['held_qty'] ?? null) ? $line['held_qty'] : 0;
+            $quantity = is_int($line['quantity'] ?? null) ? $line['quantity'] : 0;
+            $refundable = is_int($line['refundable_quantity'] ?? null) ? $line['refundable_quantity'] : 0;
+            $cancelled = is_int($line['cancelled_qty'] ?? null) ? $line['cancelled_qty'] : 0;
+            if ($held > 0 || $quantity - $refundable - $held - $cancelled > 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function authorize(StaffAccount $actor): void

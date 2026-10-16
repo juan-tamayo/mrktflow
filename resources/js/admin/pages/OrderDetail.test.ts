@@ -18,7 +18,9 @@ it('shows frozen lines totals independent states and notes', () => {
     props: {
       saved: true,
       canRefund: false,
+      canCancel: false,
       refundSaved: false,
+      cancellationSaved: false,
       order: {
         id: '11111111-1111-4111-8111-111111111111',
         number: 'MABCDEF123456',
@@ -83,6 +85,7 @@ it('shows frozen lines totals independent states and notes', () => {
           money: { amount: 2805, currency: 'USD', exponent: 2, formatted: 'USD 28.05' },
           lines: [{ id: '22222222-2222-4222-8222-222222222222', quantity: 1 }],
         },
+        cancellable: true,
       },
     },
   })
