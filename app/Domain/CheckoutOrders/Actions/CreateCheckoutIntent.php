@@ -14,6 +14,7 @@ use App\Domain\CheckoutOrders\Exceptions\CheckoutQuoteStale;
 use App\Domain\CheckoutOrders\Support\CartCatalog;
 use App\Domain\CheckoutOrders\Support\CartMoney;
 use App\Domain\CheckoutOrders\Support\CartOwner;
+use App\Domain\CheckoutOrders\Support\OrderStates;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
 use App\Domain\Pricing\Data\CouponHold;
@@ -217,6 +218,9 @@ final class CreateCheckoutIntent
             'guest_token_hash' => $owner->guestTokenHash,
             'email' => is_string($snapshot['email'] ?? null) ? (string) $snapshot['email'] : '',
             'status' => 'pending',
+            'financial_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
+            'download_status' => 'not_required',
             'currency' => $grand['currency'],
             'exponent' => $grand['exponent'],
             'merchandise_amount' => $merchandise['amount'],
@@ -238,7 +242,8 @@ final class CreateCheckoutIntent
             'created_at' => $now,
             'updated_at' => $now,
         ]);
-        $this->insertLines($orderId, $current['snapshot'], $now);
+        $kinds = $this->insertLines($orderId, $current['snapshot'], $now);
+        DB::table('orders')->where('id', $orderId)->update(OrderStates::initial($zero, $kinds['physical'], $kinds['digital']));
         $this->insertAddress($orderId, 'billing', $snapshot['billing'] ?? null, $now);
         if (($snapshot['shipping_address'] ?? null) !== null) {
             $this->insertAddress($orderId, 'shipping', $snapshot['shipping_address'], $now);
@@ -290,8 +295,9 @@ final class CreateCheckoutIntent
 
     /**
      * @param  array<string, mixed>  $snapshot
+     * @return array{physical: bool, digital: bool}
      */
-    private function insertLines(string $orderId, array $snapshot, mixed $now): void
+    private function insertLines(string $orderId, array $snapshot, mixed $now): array
     {
         $quoted = is_array($snapshot['lines'] ?? null) ? $snapshot['lines'] : [];
         $byId = [];
@@ -303,6 +309,8 @@ final class CreateCheckoutIntent
         $cartId = is_string($snapshot['cart_id'] ?? null) ? (string) $snapshot['cart_id'] : '';
         $rows = DB::table('cart_lines')->where('cart_id', $cartId)->orderBy('variant_id')->lockForUpdate()->get();
         $catalog = app(CartCatalog::class);
+        $physical = false;
+        $digital = false;
         foreach ($rows as $row) {
             $lineId = $this->string($row, 'id');
             $variantId = $this->string($row, 'variant_id');
@@ -314,13 +322,16 @@ final class CreateCheckoutIntent
             $subtotal = $this->money($quotedLine['subtotal'] ?? null);
             $lineDiscount = $this->money($quotedLine['discount'] ?? null);
             $total = $this->money($quotedLine['total'] ?? null);
+            $type = $variant['type'] === 'digital' ? 'digital' : 'physical';
+            $physical = $physical || $type === 'physical';
+            $digital = $digital || $type === 'digital';
             DB::table('order_lines')->insert([
                 'id' => (string) Str::uuid(),
                 'order_id' => $orderId,
                 'cart_line_id' => $lineId,
                 'variant_id' => $variantId,
                 'product_id' => $variant['product_id'],
-                'type' => $variant['type'] === 'digital' ? 'digital' : 'physical',
+                'type' => $type,
                 'sku' => $variant['sku'],
                 'title' => $variant['title'],
                 'quantity' => $this->int($row, 'quantity'),
@@ -332,6 +343,8 @@ final class CreateCheckoutIntent
                 'created_at' => $now,
             ]);
         }
+
+        return ['physical' => $physical, 'digital' => $digital];
     }
 
     private function insertAddress(string $orderId, string $kind, mixed $address, mixed $now): void

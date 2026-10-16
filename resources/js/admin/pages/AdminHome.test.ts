@@ -15,6 +15,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       canManageCatalog: true,
       canManagePricing: true,
       canManageShipping: true,
+      canReadOrders: true,
       canPreviewTheme: true,
     },
   })
@@ -34,6 +35,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       .map((link) => link.attributes('href')),
   ).toEqual(['/admin/coupons', '/admin/taxes', '/admin/pricing-preview'])
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
   await wrapper.setProps({
@@ -41,6 +43,7 @@ it('shows the closed launch status and only authorized workspace actions', async
     canManageCatalog: false,
     canManagePricing: false,
     canManageShipping: false,
+    canReadOrders: false,
     canPreviewTheme: false,
   })
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
@@ -50,6 +53,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/taxes"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/pricing-preview"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
   expect(
@@ -66,6 +70,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/taxes',
           '/admin/pricing-preview',
           '/admin/shipping',
+          '/admin/orders',
           '/admin/staff',
           '/admin/two-factor',
           '/admin/theme-preview',
@@ -83,6 +88,7 @@ it('escapes staff names in the branded workspace', () => {
       canManageCatalog: false,
       canManagePricing: false,
       canManageShipping: false,
+      canReadOrders: false,
       canPreviewTheme: false,
     },
   })
