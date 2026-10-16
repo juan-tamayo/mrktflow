@@ -596,7 +596,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T042: Order cancellation workflow
 
-- [ ] Complete T042.
+- [x] Complete T042 locally; live Stripe sandbox refunds were not executed (no test credentials in this environment).
+- **Evidence October 16:** Failing `CheckoutOrdersCancellation` tests were written first, then `CancelOrder`, cancellation refund kind, `OrderCancellationController`, `CancelOrderDialog`, `checkout.order.cancelled`, and `download_status` `revoked`. Paid unshipped cancellation refunds remaining capture, releases unshipped stock once, leaves coupon redemptions committed, and emits `order:cancelled:{orderId}` once; replays and a second key do not double-refund. Partially shipped orders are refused for the return path. Zero-total orders cancel without a provider refund. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersCancellation` 3 tests / 53 assertions; `CheckoutOrders` 78/907. Full PHP suite: 468 tests / 4160 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 66 Vue tests; Chromium e2e 11 passed (closed storefront 503). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Live Stripe refunds were not executed. Hosted Quality for this branch is pending. Merge only after a green Quality run on the current HEAD.
 - **Module / requirements:** `checkout-orders` · ORDER-06.
 - **Depends on:** T038, T041.
 - **Acceptance:** Cancellation resolves payment/refund, releases only eligible allocations and emits a durable fact; shipped lines require return path.

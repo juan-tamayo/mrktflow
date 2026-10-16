@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import CancelOrderDialog from '../components/CancelOrderDialog.vue'
 import RefundDialog from '../components/RefundDialog.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 
@@ -50,12 +51,15 @@ type Order = {
   notes: Array<{ id: string; body: string; staff_name: string; created_at: string }>
   refunds: Array<{ id: string; status: string; kind: string; reason: string; amount: Money }>
   refundable: { amount: number; money: Money; lines: Array<{ id: string; quantity: number }> }
+  cancellable: boolean
 }
 const props = defineProps<{
   order: Order
   canRefund: boolean
+  canCancel: boolean
   saved: boolean
   refundSaved: boolean
+  cancellationSaved: boolean
 }>()
 const note = useForm({ note: '' })
 const submit = () => {
@@ -94,6 +98,7 @@ const formatAddress = (address: Address) =>
       </p>
       <p v-if="saved" class="workspace-note">Internal note saved.</p>
       <p v-if="refundSaved" class="workspace-note">Refund submitted.</p>
+      <p v-if="cancellationSaved" class="workspace-note">Cancellation submitted.</p>
       <p>
         {{ order.email }} · {{ order.created_at }} · order {{ order.status }} · financial
         {{ order.financial_status }} · fulfillment {{ order.fulfillment_status }} · downloads
@@ -133,6 +138,7 @@ const formatAddress = (address: Address) =>
         :refundable="order.refundable"
         :lines="order.lines"
       />
+      <CancelOrderDialog v-if="canCancel" :order-id="order.id" :cancellable="order.cancellable" />
       <h2>Internal notes</h2>
       <p v-if="order.notes.length === 0" class="workspace-note">No internal notes yet.</p>
       <ul v-else class="product-list">

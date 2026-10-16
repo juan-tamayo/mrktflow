@@ -48,8 +48,11 @@ final class ApplyRefundOutcome
                     'subject_id' => $orderId,
                     'actor_type' => 'staff',
                     'actor_id' => $this->string($refund, 'staff_id'),
-                    'metadata' => ['version' => 1, 'kind' => $this->string($refund, 'kind')],
+                    'metadata' => ['version' => 1],
                 ]);
+                if ($this->string($refund, 'kind') === 'cancellation') {
+                    app(CancelOrder::class)->complete($orderId, $this->string($refund, 'reason'));
+                }
 
                 return;
             }
@@ -74,7 +77,7 @@ final class ApplyRefundOutcome
     /** @param  iterable<object>  $lines */
     private function commit(object $refund, iterable $lines): void
     {
-        if ($this->string($refund, 'kind') !== 'quantity') {
+        if (! in_array($this->string($refund, 'kind'), ['quantity', 'cancellation'], true)) {
             return;
         }
         $refundId = $this->string($refund, 'id');
