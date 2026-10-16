@@ -5,7 +5,7 @@ import OrderDetail from './OrderDetail.vue'
 const post = vi.fn()
 vi.mock('@inertiajs/vue3', () => ({
   Head: { template: '<span />' },
-  useForm: (fields: { note: string }) => ({
+  useForm: (fields: Record<string, unknown>) => ({
     ...fields,
     processing: false,
     post,
@@ -17,6 +17,8 @@ it('shows frozen lines totals independent states and notes', () => {
   const wrapper = mount(OrderDetail, {
     props: {
       saved: true,
+      canRefund: false,
+      refundSaved: false,
       order: {
         id: '11111111-1111-4111-8111-111111111111',
         number: 'MABCDEF123456',
@@ -41,6 +43,9 @@ it('shows frozen lines totals independent states and notes', () => {
             sku: 'LAMP-001',
             title: 'Studio Lamp',
             quantity: 1,
+            refundable_quantity: 1,
+            held_qty: 0,
+            cancelled_qty: 0,
             subtotal: { amount: 2500, currency: 'USD', exponent: 2, formatted: 'USD 25.00' },
             discount: { amount: 250, currency: 'USD', exponent: 2, formatted: 'USD 2.50' },
             total: { amount: 2250, currency: 'USD', exponent: 2, formatted: 'USD 22.50' },
@@ -72,6 +77,12 @@ it('shows frozen lines totals independent states and notes', () => {
             created_at: '2026-10-16T12:05:00Z',
           },
         ],
+        refunds: [],
+        refundable: {
+          amount: 2805,
+          money: { amount: 2805, currency: 'USD', exponent: 2, formatted: 'USD 28.05' },
+          lines: [{ id: '22222222-2222-4222-8222-222222222222', quantity: 1 }],
+        },
       },
     },
   })

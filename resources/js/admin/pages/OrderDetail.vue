@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import RefundDialog from '../components/RefundDialog.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 
 defineOptions({ name: 'AdminOrderDetail' })
@@ -37,6 +38,9 @@ type Order = {
     sku: string
     title: string
     quantity: number
+    refundable_quantity: number
+    held_qty: number
+    cancelled_qty: number
     subtotal: Money
     discount: Money
     total: Money
@@ -44,10 +48,14 @@ type Order = {
   billing: Address | null
   shipping: Address | null
   notes: Array<{ id: string; body: string; staff_name: string; created_at: string }>
+  refunds: Array<{ id: string; status: string; kind: string; reason: string; amount: Money }>
+  refundable: { amount: number; money: Money; lines: Array<{ id: string; quantity: number }> }
 }
 const props = defineProps<{
   order: Order
+  canRefund: boolean
   saved: boolean
+  refundSaved: boolean
 }>()
 const note = useForm({ note: '' })
 const submit = () => {
@@ -85,6 +93,7 @@ const formatAddress = (address: Address) =>
         independent.
       </p>
       <p v-if="saved" class="workspace-note">Internal note saved.</p>
+      <p v-if="refundSaved" class="workspace-note">Refund submitted.</p>
       <p>
         {{ order.email }} · {{ order.created_at }} · order {{ order.status }} · financial
         {{ order.financial_status }} · fulfillment {{ order.fulfillment_status }} · downloads
@@ -96,7 +105,7 @@ const formatAddress = (address: Address) =>
         <li v-for="line in order.lines" :key="line.id">
           <p>
             {{ line.title }} · {{ line.sku }} · {{ line.type }} · qty {{ line.quantity }} ·
-            {{ line.total.formatted }}
+            unshipped {{ line.refundable_quantity }} · {{ line.total.formatted }}
           </p>
         </li>
       </ul>
@@ -110,6 +119,20 @@ const formatAddress = (address: Address) =>
       <p v-if="order.billing">Billing {{ formatAddress(order.billing) }}</p>
       <p v-if="order.shipping">Shipping {{ formatAddress(order.shipping) }}</p>
       <p v-else>No shipping address.</p>
+      <h2>Refunds</h2>
+      <p v-if="order.refunds.length === 0" class="workspace-note">No refunds yet.</p>
+      <ul v-else class="product-list">
+        <li v-for="refund in order.refunds" :key="refund.id">
+          <p>{{ refund.kind }} · {{ refund.status }} · {{ refund.amount.formatted }}</p>
+          <p>{{ refund.reason }}</p>
+        </li>
+      </ul>
+      <RefundDialog
+        v-if="canRefund"
+        :order-id="order.id"
+        :refundable="order.refundable"
+        :lines="order.lines"
+      />
       <h2>Internal notes</h2>
       <p v-if="order.notes.length === 0" class="workspace-note">No internal notes yet.</p>
       <ul v-else class="product-list">

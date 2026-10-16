@@ -75,16 +75,34 @@ final class StripeGateway implements PaymentGateway
 
     public function retrieveRefund(RefundIntent $intent, ?string $providerRefundId): RefundResult
     {
-        if ($providerRefundId === null || $providerRefundId === '') {
+        if ($providerRefundId !== null && $providerRefundId !== '') {
+            return $this->observeRefund($intent, $this->send(
+                'GET',
+                'https://api.stripe.com/v1/refunds/'.$providerRefundId,
+                [],
+                null,
+            ));
+        }
+        $payload = $this->send(
+            'GET',
+            'https://api.stripe.com/v1/refunds',
+            ['payment_intent' => $intent->captureId, 'limit' => '100'],
+            null,
+        );
+        if ($payload === null || ! is_array($payload['data'] ?? null)) {
             return RefundResult::unknown();
         }
+        foreach ($payload['data'] as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $metadata = is_array($item['metadata'] ?? null) ? $item['metadata'] : [];
+            if (($metadata['refund_id'] ?? null) === $intent->refundId) {
+                return $this->observeRefund($intent, $item);
+            }
+        }
 
-        return $this->observeRefund($intent, $this->send(
-            'GET',
-            'https://api.stripe.com/v1/refunds/'.$providerRefundId,
-            [],
-            null,
-        ));
+        return RefundResult::unknown();
     }
 
     /**
@@ -110,7 +128,7 @@ final class StripeGateway implements PaymentGateway
             if ($headers !== []) {
                 $client = $client->withHeaders($headers);
             }
-            $response = $method === 'GET' ? $client->get($url) : $client->asForm()->post($url, $body);
+            $response = $method === 'GET' ? $client->get($url, $body) : $client->asForm()->post($url, $body);
             if ($response->failed()) {
                 return null;
             }

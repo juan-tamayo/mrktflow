@@ -338,6 +338,11 @@ final class CreateCheckoutIntent
                 'subtotal_amount' => $subtotal['amount'],
                 'discount_amount' => $lineDiscount['amount'],
                 'total_amount' => $total['amount'],
+                'tax_amount' => $this->money($quotedLine['tax'] ?? [
+                    'amount' => 0,
+                    'currency' => $subtotal['currency'],
+                    'exponent' => $subtotal['exponent'],
+                ])['amount'],
                 'tax_class_key' => $variant['tax_class_key'],
                 'digital_asset_version_id' => $variant['type'] === 'digital' ? $this->digitalVersion($variantId) : null,
                 'created_at' => $now,
