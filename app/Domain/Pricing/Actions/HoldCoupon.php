@@ -106,6 +106,43 @@ final class HoldCoupon
         });
     }
 
+    public function rehold(string $intentId, string $operationKey): CouponReceipt
+    {
+        $this->assertIds($intentId, $operationKey);
+
+        return DB::transaction(function () use ($intentId, $operationKey): CouponReceipt {
+            $hold = $this->lockHold($intentId);
+            if ($this->claim($operationKey, $intentId, 'hold', $this->mutationHash('rehold', $intentId))) {
+                return $this->receipt($intentId);
+            }
+            $status = $this->string($hold, 'status');
+            if (in_array($status, ['active', 'committed'], true)) {
+                return $this->receipt($intentId);
+            }
+            if ($status !== 'released') {
+                throw new PricingCouponRejected;
+            }
+            $coupon = DB::table('coupons')->where('id', $this->string($hold, 'coupon_id'))->lockForUpdate()->first();
+            if ($coupon === null || $this->string($coupon, 'status') !== 'active') {
+                throw new PricingCouponRejected;
+            }
+            $max = $this->nullableInt($coupon, 'max_redemptions');
+            if ($max !== null && $this->int($coupon, 'held_count') + $this->int($coupon, 'redeemed_count') >= $max) {
+                throw new PricingCouponExhausted;
+            }
+            $now = now();
+            DB::table('coupon_holds')->where('id', $this->string($hold, 'id'))->update([
+                'status' => 'active',
+                'expires_at' => $now->copy()->utc()->addMinutes(30),
+                'updated_at' => $now,
+            ]);
+            DB::table('coupons')->where('id', $this->string($hold, 'coupon_id'))->increment('held_count');
+            DB::table('coupons')->where('id', $this->string($hold, 'coupon_id'))->update(['updated_at' => $now]);
+
+            return $this->receipt($intentId);
+        });
+    }
+
     public function release(string $intentId, string $operationKey): CouponReceipt
     {
         $this->assertIds($intentId, $operationKey);

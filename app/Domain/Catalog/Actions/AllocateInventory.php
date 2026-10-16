@@ -60,6 +60,61 @@ final class AllocateInventory implements InventoryAllocator
         });
     }
 
+    public function rehold(string $intentId, string $operationKey): InventoryReceipt
+    {
+        if (! Str::isUuid($intentId) || $intentId !== strtolower($intentId)
+            || ! Str::isUuid($operationKey) || $operationKey !== strtolower($operationKey)) {
+            throw new InvalidArgumentException('Invalid inventory rehold.');
+        }
+
+        return DB::transaction(function () use ($intentId, $operationKey): InventoryReceipt {
+            $reservations = $this->lockIntent($intentId);
+            if ($this->claim($operationKey, $intentId, 'hold', $this->hash('rehold', $intentId, []))) {
+                return $this->receipt($intentId);
+            }
+            $released = [];
+            foreach ($reservations as $reservation) {
+                $status = $this->stringValue($reservation, 'status');
+                if (in_array($status, ['active', 'committed'], true)) {
+                    continue;
+                }
+                if ($status !== 'released' || $this->intValue($reservation, 'remaining_qty') !== 0
+                    || $this->intValue($reservation, 'shipped_qty') !== 0) {
+                    throw new CatalogInvalidAllocation;
+                }
+                $released[] = $reservation;
+            }
+            if ($released === []) {
+                return $this->receipt($intentId);
+            }
+            foreach ($released as $reservation) {
+                $quantity = $this->intValue($reservation, 'original_qty');
+                $balance = $this->lockedTrackedBalance($this->stringValue($reservation, 'variant_id'));
+                if ($this->intValue($balance, 'on_hand') - $this->intValue($balance, 'reserved') < $quantity) {
+                    throw new CatalogInsufficientStock;
+                }
+            }
+            $now = now();
+            $expires = $now->copy()->utc()->addMinutes(30);
+            foreach ($released as $reservation) {
+                $quantity = $this->intValue($reservation, 'original_qty');
+                $id = $this->stringValue($reservation, 'id');
+                $variantId = $this->stringValue($reservation, 'variant_id');
+                DB::table('stock_reservations')->where('id', $id)->update([
+                    'released_qty' => 0,
+                    'remaining_qty' => $quantity,
+                    'status' => 'active',
+                    'expires_at' => $expires,
+                    'updated_at' => $now,
+                ]);
+                DB::table('inventory_balances')->where('variant_id', $variantId)->increment('reserved', $quantity);
+                $this->move('hold:'.$operationKey.':'.$variantId, $variantId, $id, 0, $quantity, 'hold', $now);
+            }
+
+            return $this->receipt($intentId);
+        });
+    }
+
     public function commit(string $intentId, string $operationKey): InventoryReceipt
     {
         if (! Str::isUuid($intentId) || $intentId !== strtolower($intentId)

@@ -546,7 +546,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T038: Expiry, cancellation and late-success recovery
 
-- [ ] Complete T038.
+- [x] Complete T038 locally; live Stripe expiry/late-success races were not executed (no test credentials in this environment).
+- **Evidence October 16:** Failing `CheckoutOrdersExpiry` tests were written first, then `ExpireCheckout`, `ExpireCheckoutSessions`, `payments:expire`, inventory/coupon `rehold`, and `ConfirmOrderPayment` late-success recovery. Due open sessions are retrieved then cancelled before stock/coupon release; provider outage retains holds. Late matching success after expiry re-reserves when stock remains, otherwise records the capture, marks the order `on_hold`, and writes `audit:order-hold:{orderId}`. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersExpiry` 6 tests / 45 assertions; `CheckoutOrders` 65/613. Full PHP suite: 455 tests / 3857 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 62 Vue tests; Chromium `platform-smoke` 8 passed (closed storefront 503). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Live Stripe expiry evidence remains pending. Hosted Quality for this branch is pending. Merge only after a green Quality run on the current HEAD.
 - **Module / requirements:** `checkout-orders` · ORDER-03, ORDER-04.
 - **Depends on:** T037.
 - **Acceptance:** Resolve/cancel provider sessions before releasing holds; unknown status retains holds; late success re-reserves or holds order for resolution.
