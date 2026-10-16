@@ -19,8 +19,10 @@ it('shows frozen lines totals independent states and notes', () => {
       saved: true,
       canRefund: false,
       canCancel: false,
+      canResendReceipt: true,
       refundSaved: false,
       cancellationSaved: false,
+      receiptSaved: false,
       order: {
         id: '11111111-1111-4111-8111-111111111111',
         number: 'MABCDEF123456',
@@ -86,6 +88,14 @@ it('shows frozen lines totals independent states and notes', () => {
           lines: [{ id: '22222222-2222-4222-8222-222222222222', quantity: 1 }],
         },
         cancellable: true,
+        timeline: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            type: 'paid',
+            created_at: '2026-10-16T12:00:00Z',
+            amount: { amount: 0, currency: 'USD', exponent: 2, formatted: 'USD 0.00' },
+          },
+        ],
       },
     },
   })
@@ -96,4 +106,6 @@ it('shows frozen lines totals independent states and notes', () => {
   expect(wrapper.text()).toContain('Hold for address confirmation.')
   expect(wrapper.text()).toContain('Internal note saved.')
   expect(wrapper.find('textarea[name="note"]').exists()).toBe(true)
+  expect(wrapper.text()).toContain('paid · 2026-10-16T12:00:00Z')
+  expect(wrapper.text()).toContain('Resend receipt')
 })

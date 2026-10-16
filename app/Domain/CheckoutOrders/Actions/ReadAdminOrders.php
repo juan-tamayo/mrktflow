@@ -119,7 +119,30 @@ final class ReadAdminOrders
             'refunds' => $this->refunds($orderId, $currency, $exponent),
             'refundable' => $this->refundable($order, $lines, $currency, $exponent),
             'cancellable' => $this->cancellable($order, $lines),
+            'timeline' => $this->timeline($orderId, $currency, $exponent),
         ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function timeline(string $orderId, string $currency, int $exponent): array
+    {
+        $rows = [];
+        foreach (DB::table('order_events')->where('order_id', $orderId)->orderBy('created_at')->orderBy('id')->get() as $event) {
+            $payload = $this->payload($event);
+            $amount = is_int($payload['amount'] ?? null) ? $payload['amount'] : 0;
+            $code = is_string($payload['currency'] ?? null) ? $payload['currency'] : $currency;
+            $scale = is_int($payload['exponent'] ?? null) ? $payload['exponent'] : $exponent;
+            $rows[] = [
+                'id' => $this->string($event, 'id'),
+                'type' => $this->string($event, 'type'),
+                'created_at' => $this->iso($this->string($event, 'created_at')),
+                'amount' => CartMoney::format($amount, $code, $scale),
+            ];
+        }
+
+        return $rows;
     }
 
     /**
@@ -233,6 +256,21 @@ final class ReadAdminOrders
             'postal_code' => $this->nullable($row, 'postal_code') ?? '',
             'country_code' => $this->string($row, 'country_code'),
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function payload(object $event): array
+    {
+        $raw = get_object_vars($event)['payload'] ?? null;
+        if (is_array($raw)) {
+            return $raw;
+        }
+        if (! is_string($raw) || $raw === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function term(mixed $value): string
