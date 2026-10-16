@@ -38,7 +38,7 @@ final class ReconcilePayment
                 return null;
             }
             $status = $this->string($attempt, 'status');
-            if (in_array($status, ['succeeded', 'failed', 'expired'], true)) {
+            if (in_array($status, ['succeeded', 'failed'], true)) {
                 return null;
             }
             $order = DB::table('orders')->where('id', $this->string($attempt, 'order_id'))->lockForUpdate()->first();

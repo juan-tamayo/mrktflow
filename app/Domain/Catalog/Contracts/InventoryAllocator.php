@@ -12,6 +12,8 @@ interface InventoryAllocator
 {
     public function hold(InventoryHold $hold): InventoryReceipt;
 
+    public function rehold(string $intentId, string $operationKey): InventoryReceipt;
+
     public function commit(string $intentId, string $operationKey): InventoryReceipt;
 
     public function release(InventoryMutation $mutation): InventoryReceipt;

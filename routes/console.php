@@ -8,6 +8,7 @@ use App\Domain\Platform\Actions\PublishOutbox;
 use App\Domain\Platform\Actions\QueueMedia;
 use App\Domain\Platform\Actions\RetryOutbox;
 use App\Domain\Platform\Actions\SetupAccess;
+use App\Jobs\ExpireCheckoutSessions;
 use App\Jobs\ReconcilePendingPayments;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -123,6 +124,15 @@ Artisan::command('payments:reconcile', function (): int {
 })->purpose('Query unknown payment attempts and apply verified provider outcomes');
 
 Schedule::command('payments:reconcile')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('payments:expire', function (): int {
+    (new ExpireCheckoutSessions)->handle();
+    $this->info('Expired a bounded batch of due checkout sessions.');
+
+    return 0;
+})->purpose('Cancel due provider sessions and release only terminal unpaid holds');
+
+Schedule::command('payments:expire')->everyMinute()->withoutOverlapping(2);
 
 Artisan::command('identity:mail-health', function (): int {
     $pending = DB::table('customer_challenge_deliveries')->whereIn('status', ['pending', 'sending'])->count();

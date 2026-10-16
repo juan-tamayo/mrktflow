@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Domain\CheckoutOrders\Actions;
 
 use App\Domain\Catalog\Contracts\InventoryAllocator;
+use App\Domain\Catalog\Exceptions\CatalogInsufficientStock;
 use App\Domain\CheckoutOrders\Data\PaymentSession;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -36,7 +38,7 @@ final class ConfirmOrderPayment
                 return;
             }
             $status = $this->string($attempt, 'status');
-            if (in_array($status, ['failed', 'expired'], true)) {
+            if ($status === 'failed') {
                 return;
             }
             $storedSession = $this->nullable($attempt, 'provider_session_id');
@@ -56,6 +58,8 @@ final class ConfirmOrderPayment
             }
             $now = now();
             if ($status !== 'succeeded') {
+                $this->recordCapture($order, $attempt, $captureId, $now);
+                $shortage = ! $this->restoreAllocations($orderId);
                 DB::table('payment_attempts')->where('id', $attemptId)->update([
                     'status' => 'succeeded',
                     'provider' => 'stripe',
@@ -63,15 +67,11 @@ final class ConfirmOrderPayment
                     'updated_at' => $now,
                 ]);
                 DB::table('orders')->where('id', $orderId)->update([
-                    'status' => 'confirmed',
+                    'status' => $shortage ? 'on_hold' : 'confirmed',
                     'updated_at' => $now,
                 ]);
-                $this->recordCapture($order, $attempt, $captureId, $now);
-                if (DB::table('stock_reservations')->where('intent_id', $orderId)->exists()) {
-                    app(InventoryAllocator::class)->commit($orderId, $this->operationKey('stock-commit', $orderId));
-                }
-                if (DB::table('coupon_holds')->where('intent_id', $orderId)->exists()) {
-                    app(HoldCoupon::class)->commit($orderId, $this->operationKey('coupon-commit', $orderId));
+                if ($shortage) {
+                    $this->alertShortage($order);
                 }
             }
             $this->emitPaid($order, $attemptId, $captureId);
@@ -98,6 +98,55 @@ final class ConfirmOrderPayment
                 throw new RuntimeException('A different capture is already recorded for this attempt.');
             }
         }
+    }
+
+    private function restoreAllocations(string $orderId): bool
+    {
+        $reservation = DB::table('stock_reservations')->where('intent_id', $orderId)->orderBy('variant_id')->lockForUpdate()->first();
+        if ($reservation !== null) {
+            $status = $this->string($reservation, 'status');
+            if ($status === 'released') {
+                try {
+                    app(InventoryAllocator::class)->rehold($orderId, $this->operationKey('stock-rehold', $orderId));
+                } catch (CatalogInsufficientStock) {
+                    return false;
+                }
+                $status = 'active';
+            }
+            if ($status === 'active') {
+                app(InventoryAllocator::class)->commit($orderId, $this->operationKey('stock-commit', $orderId));
+            }
+        }
+        $coupon = DB::table('coupon_holds')->where('intent_id', $orderId)->lockForUpdate()->first();
+        if ($coupon === null) {
+            return true;
+        }
+        $couponStatus = $this->string($coupon, 'status');
+        if ($couponStatus === 'released') {
+            try {
+                app(HoldCoupon::class)->rehold($orderId, $this->operationKey('coupon-rehold', $orderId));
+            } catch (PricingCouponExhausted) {
+                return false;
+            }
+            $couponStatus = 'active';
+        }
+        if ($couponStatus === 'active') {
+            app(HoldCoupon::class)->commit($orderId, $this->operationKey('coupon-commit', $orderId));
+        }
+
+        return true;
+    }
+
+    private function alertShortage(object $order): void
+    {
+        $orderId = $this->string($order, 'id');
+        app(RecordEvent::class)->record('platform.audit.recorded', 'audit:order-hold:'.$orderId, [
+            'action' => 'checkout.order.on-hold',
+            'subject_type' => 'order',
+            'subject_id' => $orderId,
+            'actor_type' => 'system',
+            'metadata' => ['reason_code' => 'late-success-stock'],
+        ]);
     }
 
     private function emitPaid(object $order, string $attemptId, string $captureId): void
