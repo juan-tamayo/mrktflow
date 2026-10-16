@@ -59,7 +59,7 @@
                         <form method="post" action="/checkout/{{ $quote['id'] }}/pay" class="theme-checkout-form">
                             @csrf
                             <input type="hidden" name="fingerprint" value="{{ $quote['fingerprint'] }}">
-                            <button type="submit" class="primary-button">Pay now</button>
+                            <button type="submit" class="primary-button">{{ ($quote['grand_total']['amount'] ?? 1) === 0 ? 'Place order' : 'Pay now' }}</button>
                         </form>
                     @else
                         <p class="theme-purchase-note">Confirm these totals before payment. Hosted payment starts after confirmation.</p>

@@ -107,6 +107,9 @@ final class PaymentController
     {
         $redirect = is_string($session['provider_redirect'] ?? null) ? (string) $session['provider_redirect'] : null;
         if (! ($request->expectsJson() || $request->is('store-api/*'))) {
+            if (($session['zero_total'] ?? false) === true && is_string($session['order_id'] ?? null)) {
+                return redirect('/checkout/orders/'.$session['order_id']);
+            }
             if ($redirect !== null) {
                 return redirect()->away($redirect);
             }

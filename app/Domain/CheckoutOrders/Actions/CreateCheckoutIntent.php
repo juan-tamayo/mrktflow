@@ -216,7 +216,7 @@ final class CreateCheckoutIntent
             'customer_id' => $owner->customerId,
             'guest_token_hash' => $owner->guestTokenHash,
             'email' => is_string($snapshot['email'] ?? null) ? (string) $snapshot['email'] : '',
-            'status' => $zero ? 'confirmed' : 'pending',
+            'status' => 'pending',
             'currency' => $grand['currency'],
             'exponent' => $grand['exponent'],
             'merchandise_amount' => $merchandise['amount'],
@@ -246,7 +246,7 @@ final class CreateCheckoutIntent
         DB::table('payment_attempts')->insert([
             'id' => $attemptId,
             'order_id' => $orderId,
-            'status' => $zero ? 'succeeded' : 'created',
+            'status' => 'created',
             'amount' => $grand['amount'],
             'currency' => $grand['currency'],
             'exponent' => $grand['exponent'],
@@ -266,17 +266,11 @@ final class CreateCheckoutIntent
                 $owner->customerId,
                 $holdUntil,
             ));
-            if ($zero) {
-                app(HoldCoupon::class)->commit($orderId, (string) Str::uuid());
-            }
-        }
-        if ($zero) {
-            $tracked = $this->trackedLines($orderId);
-            if ($tracked !== []) {
-                app(InventoryAllocator::class)->commit($orderId, (string) Str::uuid());
-            }
         }
         $this->complete($claimId, $orderId, $attemptId);
+        if ($zero) {
+            app(CompleteFreeOrder::class)->complete($attemptId);
+        }
         app(RecordEvent::class)->record('platform.audit.recorded', 'checkout:intent:'.$orderId, [
             'action' => 'checkout.intent.created',
             'subject_type' => 'order',

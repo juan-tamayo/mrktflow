@@ -557,7 +557,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T039: Zero-total checkout and confirmation screen
 
-- [ ] Complete T039.
+- [x] Complete T039 locally; live Stripe sandbox charges were not executed (no test credentials in this environment).
+- **Evidence October 16:** Failing `CheckoutOrdersFree` tests were written first, then `CompleteFreeOrder`, local `payments` provider, `GET /checkout/orders/{orderId}`, and `order-status`. Zero-total orders skip Stripe, commit holds, record a local zero capture (`local_{attemptId}`), and emit `checkout.order.paid` once; replays are idempotent. Forged success query parameters and payment return URLs cannot mark paid. Pending confirmation HTML refreshes until the order is confirmed; unowned IDs 404. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersFree` 3 tests / 67 assertions; `CheckoutOrders` 68/680. Full PHP suite: 458 tests / 3923 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 62 Vue tests; Chromium e2e 11 passed (closed storefront 503). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Live Stripe evidence remains pending. Hosted Quality for this branch is pending. Merge only after a green Quality run on the current HEAD.
 - **Module / requirements:** `checkout-orders` · ORDER-03, WEB-07.
 - **Depends on:** T037.
 - **Acceptance:** Free orders use the same idempotent confirmation pipeline without gateway; return URL alone cannot mark paid; pending UI recovers.
