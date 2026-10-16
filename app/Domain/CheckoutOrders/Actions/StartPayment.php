@@ -63,7 +63,13 @@ final class StartPayment
             if ($attempt === null || $order === null) {
                 throw new CheckoutQuoteStale;
             }
-            if ($this->bool($order, 'zero_total') || $this->string($attempt, 'status') === 'succeeded') {
+            if ($this->bool($order, 'zero_total')) {
+                app(CompleteFreeOrder::class)->complete($attemptId);
+                $view = app(CreateCheckoutIntent::class)->snapshot($owner, $attemptId);
+
+                return ['skip' => true, 'view' => $view];
+            }
+            if ($this->string($attempt, 'status') === 'succeeded') {
                 return ['skip' => true, 'view' => $view];
             }
             $status = $this->string($attempt, 'status');
