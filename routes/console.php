@@ -10,6 +10,7 @@ use App\Domain\Platform\Actions\RetryOutbox;
 use App\Domain\Platform\Actions\SetupAccess;
 use App\Jobs\ExpireCheckoutSessions;
 use App\Jobs\ReconcilePendingPayments;
+use App\Jobs\ReconcilePendingRefunds;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,15 @@ Artisan::command('payments:reconcile', function (): int {
 })->purpose('Query unknown payment attempts and apply verified provider outcomes');
 
 Schedule::command('payments:reconcile')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('payments:reconcile-refunds', function (): int {
+    (new ReconcilePendingRefunds)->handle();
+    $this->info('Reconciled a bounded batch of unknown refunds.');
+
+    return 0;
+})->purpose('Query unknown provider refunds and apply verified outcomes');
+
+Schedule::command('payments:reconcile-refunds')->everyMinute()->withoutOverlapping(2);
 
 Artisan::command('payments:expire', function (): int {
     (new ExpireCheckoutSessions)->handle();

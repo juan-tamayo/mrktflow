@@ -68,12 +68,17 @@ final class ReadAdminOrders
         $exponent = $this->int($order, 'exponent');
         $lines = [];
         foreach (DB::table('order_lines')->where('order_id', $orderId)->orderBy('sku')->orderBy('id')->get() as $line) {
+            $available = $this->int($line, 'quantity') - $this->int($line, 'shipped_qty')
+                - $this->int($line, 'cancelled_qty') - $this->int($line, 'held_qty');
             $lines[] = [
                 'id' => $this->string($line, 'id'),
                 'type' => $this->string($line, 'type'),
                 'sku' => $this->string($line, 'sku'),
                 'title' => $this->string($line, 'title'),
                 'quantity' => $this->int($line, 'quantity'),
+                'refundable_quantity' => max(0, $available),
+                'held_qty' => $this->int($line, 'held_qty'),
+                'cancelled_qty' => $this->int($line, 'cancelled_qty'),
                 'subtotal' => CartMoney::format($this->int($line, 'subtotal_amount'), $currency, $exponent),
                 'discount' => CartMoney::format($this->int($line, 'discount_amount'), $currency, $exponent),
                 'total' => CartMoney::format($this->int($line, 'total_amount'), $currency, $exponent),
@@ -111,6 +116,53 @@ final class ReadAdminOrders
             'billing' => $this->address($orderId, 'billing'),
             'shipping' => $this->address($orderId, 'shipping'),
             'notes' => $notes,
+            'refunds' => $this->refunds($orderId, $currency, $exponent),
+            'refundable' => $this->refundable($order, $lines, $currency, $exponent),
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function refunds(string $orderId, string $currency, int $exponent): array
+    {
+        $rows = [];
+        foreach (DB::table('refunds')->where('order_id', $orderId)->orderBy('created_at')->orderBy('id')->get() as $refund) {
+            $rows[] = [
+                'id' => $this->string($refund, 'id'),
+                'status' => $this->string($refund, 'status'),
+                'kind' => $this->string($refund, 'kind'),
+                'reason' => $this->string($refund, 'reason'),
+                'amount' => CartMoney::format($this->int($refund, 'amount'), $currency, $exponent),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     * @return array<string, mixed>
+     */
+    private function refundable(object $order, array $lines, string $currency, int $exponent): array
+    {
+        $captured = (int) (DB::table('payments')->where('order_id', $this->string($order, 'id'))->value('amount') ?? 0);
+        $allocated = (int) DB::table('refunds')->where('order_id', $this->string($order, 'id'))
+            ->whereIn('status', ['processing', 'unknown', 'succeeded'])
+            ->sum('amount');
+        $remaining = max(0, $captured - $allocated);
+        $quantities = [];
+        foreach ($lines as $line) {
+            $quantities[] = [
+                'id' => $line['id'],
+                'quantity' => $line['refundable_quantity'],
+            ];
+        }
+
+        return [
+            'amount' => $remaining,
+            'money' => CartMoney::format($remaining, $currency, $exponent),
+            'lines' => $quantities,
         ];
     }
 

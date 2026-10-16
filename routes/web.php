@@ -123,6 +123,7 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/orders', [OrderController::class, 'index']);
         Route::get('/admin/orders/{orderId}', [OrderController::class, 'show'])->whereUuid('orderId');
         Route::post('/admin/orders/{orderId}/notes', [OrderController::class, 'storeNote'])->whereUuid('orderId')->middleware('throttle:30,1,order-notes:');
+        Route::post('/admin/orders/{orderId}/refunds', [OrderController::class, 'storeRefund'])->whereUuid('orderId')->middleware('throttle:30,1,order-refunds:');
     });
     Route::get('/staff/invitation', [StaffInvitationController::class, 'show']);
     Route::post('/staff/invitation', [StaffInvitationController::class, 'accept'])->middleware('throttle:5,1,staff-invite-accept:');

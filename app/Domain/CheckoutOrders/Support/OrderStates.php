@@ -35,7 +35,7 @@ final class OrderStates
 
     public static function assertFinancial(string $status): void
     {
-        if (! in_array($status, ['unpaid', 'paid', 'unknown'], true)) {
+        if (! in_array($status, ['unpaid', 'paid', 'unknown', 'partially_refunded', 'refunded'], true)) {
             throw new InvalidArgumentException('Invalid financial status.');
         }
     }

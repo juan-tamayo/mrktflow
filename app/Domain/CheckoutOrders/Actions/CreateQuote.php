@@ -227,6 +227,13 @@ final class CreateQuote
                     break;
                 }
             }
+            $lineTax = 0;
+            foreach ($taxed->taxLines as $taxLine) {
+                if ($taxLine->lineId === $allocation->lineId) {
+                    $lineTax = $taxLine->tax->amount;
+                    break;
+                }
+            }
             $lines[] = [
                 'id' => $allocation->lineId,
                 'title' => $title,
@@ -235,6 +242,7 @@ final class CreateQuote
                 'subtotal' => CartMoney::format($allocation->lineSubtotal->amount, $allocation->lineSubtotal->currency, $allocation->lineSubtotal->exponent),
                 'discount' => CartMoney::format($allocation->discount->amount, $allocation->discount->currency, $allocation->discount->exponent),
                 'total' => CartMoney::format($allocation->lineTotal->amount, $allocation->lineTotal->currency, $allocation->lineTotal->exponent),
+                'tax' => CartMoney::format($lineTax, $allocation->lineTotal->currency, $allocation->lineTotal->exponent),
             ];
         }
         $snapshot = [

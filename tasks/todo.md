@@ -585,7 +585,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T041: Partial and full provider refunds
 
-- [ ] Complete T041.
+- [x] Complete T041 locally; live Stripe refunds were not executed (no test credentials in this environment).
+- **Evidence October 16:** Failing `CheckoutOrdersRefund` tests were written first, then `refunds`/`refund_lines`, line hold/cancel counters, `RequestRefund`/`ReconcileRefund`/`ApplyRefundOutcome`, Stripe retrieve-by-capture list, `/admin/orders/{id}/refunds`, and `RefundDialog`. Quantity refunds claim remaining unit money (including line tax) and hold unshipped qty; success cancels/releases those units atomically; failure clears holds; unknown keeps holds until reconcile, including timeout-after-refund via `payments:reconcile-refunds`. Amount-only goodwill does not cancel quantities. Concurrent last-unit refunds serialize. Privileged staff still must pass 2FA and reauthenticate. `GET /` remains 503. `CheckoutOrdersRefund` 4 tests / 66 assertions. Full PHP: 465 tests / 4101 assertions; Pint; PHPStan level 8; typecheck; lint; format:check; 65 Vue tests; production build; Chromium e2e 11 passed; Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Live Stripe refunds were not executed (no test credentials). Local PCOV was not collected. Hosted Quality for this branch is pending. Merge only after a green Quality run.
 - **Module / requirements:** `checkout-orders` · ORDER-06.
 - **Depends on:** T040.
 - **Acceptance:** Refund allocation stays within remaining money/quantities. Requested unshipped quantity refunds hold fulfillment; success cancels/releases those quantities atomically, failure clears holds, unknown preserves holds. Amount-only goodwill refunds do not cancel quantities.
