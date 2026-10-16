@@ -2,6 +2,7 @@
 import BrandLogo from '../components/BrandLogo.vue'
 import CancelOrderDialog from '../components/CancelOrderDialog.vue'
 import RefundDialog from '../components/RefundDialog.vue'
+import ResendReceiptDialog from '../components/ResendReceiptDialog.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 
 defineOptions({ name: 'AdminOrderDetail' })
@@ -52,14 +53,17 @@ type Order = {
   refunds: Array<{ id: string; status: string; kind: string; reason: string; amount: Money }>
   refundable: { amount: number; money: Money; lines: Array<{ id: string; quantity: number }> }
   cancellable: boolean
+  timeline: Array<{ id: string; type: string; created_at: string; amount: Money }>
 }
 const props = defineProps<{
   order: Order
   canRefund: boolean
   canCancel: boolean
+  canResendReceipt: boolean
   saved: boolean
   refundSaved: boolean
   cancellationSaved: boolean
+  receiptSaved: boolean
 }>()
 const note = useForm({ note: '' })
 const submit = () => {
@@ -99,6 +103,7 @@ const formatAddress = (address: Address) =>
       <p v-if="saved" class="workspace-note">Internal note saved.</p>
       <p v-if="refundSaved" class="workspace-note">Refund submitted.</p>
       <p v-if="cancellationSaved" class="workspace-note">Cancellation submitted.</p>
+      <p v-if="receiptSaved" class="workspace-note">Receipt resend queued.</p>
       <p>
         {{ order.email }} · {{ order.created_at }} · order {{ order.status }} · financial
         {{ order.financial_status }} · fulfillment {{ order.fulfillment_status }} · downloads
@@ -139,6 +144,14 @@ const formatAddress = (address: Address) =>
         :lines="order.lines"
       />
       <CancelOrderDialog v-if="canCancel" :order-id="order.id" :cancellable="order.cancellable" />
+      <ResendReceiptDialog v-if="canResendReceipt" :order-id="order.id" />
+      <h2>Timeline</h2>
+      <p v-if="order.timeline.length === 0" class="workspace-note">No recorded events yet.</p>
+      <ul v-else class="product-list">
+        <li v-for="entry in order.timeline" :key="entry.id">
+          <p>{{ entry.type }} · {{ entry.created_at }} · {{ entry.amount.formatted }}</p>
+        </li>
+      </ul>
       <h2>Internal notes</h2>
       <p v-if="order.notes.length === 0" class="workspace-note">No internal notes yet.</p>
       <ul v-else class="product-list">

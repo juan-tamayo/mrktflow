@@ -613,7 +613,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T043: Order timeline, receipts and customer view
 
-- [ ] Complete T043.
+- [x] Complete T043 locally; hosted Quality for this branch is pending.
+- **Evidence October 16:** Failing `CheckoutOrdersReceipt` tests were written first, then `order_events` / `order_receipt_intents`, `RecordOrderEvent`, paid-event receipt queueing, `ResendOrderReceipt`, customer `/account/orders` views, and admin timeline/resend. Own-order HTML shows frozen lines/totals; another customer UUID 404s. The paid consumer records timeline and one `receipt:paid:{orderId}` intent; redelivery does not duplicate. Staff resend is explicit, idempotent, and audited without SMTP. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersReceipt` 2 tests / 71 assertions; `CheckoutOrders` 80/983. Full PHP suite: 470 tests / 4234 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 67 Vue tests; Chromium e2e 11 passed (closed storefront 503). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Live SMTP and live Stripe were not executed. Hosted Quality for this branch is pending. Merge only after a green Quality run on the current HEAD.
 - **Module / requirements:** `checkout-orders` · ORDER-05, ORDER-07, OPS-01.
 - **Depends on:** T009, T040.
 - **Acceptance:** Own-order view and receipt reflect immutable history; event-derived receipt intent deduplicates; resend is explicit/audited.

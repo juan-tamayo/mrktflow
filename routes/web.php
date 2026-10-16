@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\OrderCancellationController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderReceiptController;
 use App\Http\Controllers\Admin\PricingPreviewController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImportController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
+use App\Http\Controllers\Storefront\CustomerOrderController;
 use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
 use App\Http\Controllers\Storefront\CustomerProfileController;
 use App\Http\Controllers\Storefront\OrderStatusController;
@@ -126,6 +128,7 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/orders/{orderId}/notes', [OrderController::class, 'storeNote'])->whereUuid('orderId')->middleware('throttle:30,1,order-notes:');
         Route::post('/admin/orders/{orderId}/refunds', [OrderController::class, 'storeRefund'])->whereUuid('orderId')->middleware('throttle:30,1,order-refunds:');
         Route::post('/admin/orders/{orderId}/cancellation', [OrderCancellationController::class, 'store'])->whereUuid('orderId')->middleware('throttle:30,1,order-cancel:');
+        Route::post('/admin/orders/{orderId}/receipt', [OrderReceiptController::class, 'store'])->whereUuid('orderId')->middleware('throttle:30,1,order-receipt:');
     });
     Route::get('/staff/invitation', [StaffInvitationController::class, 'show']);
     Route::post('/staff/invitation', [StaffInvitationController::class, 'accept'])->middleware('throttle:5,1,staff-invite-accept:');
@@ -149,6 +152,8 @@ Route::prefix('account')->middleware(RequireInstalledStore::class)->group(functi
     });
     Route::middleware(RequireCustomerSession::class)->group(function (): void {
         Route::get('/', [CustomerAccountController::class, 'home']);
+        Route::get('/orders', [CustomerOrderController::class, 'index']);
+        Route::get('/orders/{orderId}', [CustomerOrderController::class, 'show'])->whereUuid('orderId');
         Route::get('/profile', [CustomerProfileController::class, 'show']);
         Route::post('/profile', [CustomerProfileController::class, 'update'])->middleware('throttle:5,1,customer-profile:');
         Route::get('/addresses', [CustomerAddressController::class, 'index']);

@@ -45,9 +45,11 @@ final class OrderController
             'order' => $orders->detail($staff, $orderId),
             'canRefund' => $staff->hasPermission('orders.refund'),
             'canCancel' => $staff->hasPermission('orders.manage'),
+            'canResendReceipt' => $staff->hasPermission('orders.manage'),
             'saved' => session()->get('order_note_saved', false),
             'refundSaved' => session()->get('order_refund_saved', false),
             'cancellationSaved' => session()->get('order_cancelled', false),
+            'receiptSaved' => session()->get('order_receipt_resent', false),
         ]);
     }
 
