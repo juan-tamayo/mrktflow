@@ -65,6 +65,7 @@ final class StaffSessionController
             'canManageCatalog' => $staff->hasPermission('catalog.read'),
             'canManagePricing' => $staff->hasPermission('pricing.manage'),
             'canManageShipping' => $staff->hasPermission('shipping.manage'),
+            'canReadOrders' => $staff->hasPermission('orders.read'),
             'canPreviewTheme' => $staff->hasPermission('content.read'),
         ]);
     }

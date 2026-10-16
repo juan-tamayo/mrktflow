@@ -7,6 +7,7 @@ namespace App\Domain\CheckoutOrders\Actions;
 use App\Domain\Catalog\Contracts\InventoryAllocator;
 use App\Domain\Catalog\Exceptions\CatalogInsufficientStock;
 use App\Domain\CheckoutOrders\Data\PaymentSession;
+use App\Domain\CheckoutOrders\Support\OrderStates;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
 use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
@@ -66,10 +67,10 @@ final class ConfirmOrderPayment
                     'provider_session_id' => $sessionId,
                     'updated_at' => $now,
                 ]);
-                DB::table('orders')->where('id', $orderId)->update([
+                DB::table('orders')->where('id', $orderId)->update(array_merge(OrderStates::paidColumns($order), [
                     'status' => $shortage ? 'on_hold' : 'confirmed',
                     'updated_at' => $now,
-                ]);
+                ]));
                 if ($shortage) {
                     $this->alertShortage($order);
                 }

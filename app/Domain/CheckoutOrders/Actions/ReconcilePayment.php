@@ -95,9 +95,14 @@ final class ReconcilePayment
                 return;
             }
             if (in_array($status, ['created', 'awaiting_payment'], true) && $this->nullable($attempt, 'provider_session_id') === null) {
+                $now = now();
                 DB::table('payment_attempts')->where('id', $attemptId)->update([
                     'status' => 'unknown',
-                    'updated_at' => now(),
+                    'updated_at' => $now,
+                ]);
+                DB::table('orders')->where('id', $this->string($attempt, 'order_id'))->where('financial_status', 'unpaid')->update([
+                    'financial_status' => 'unknown',
+                    'updated_at' => $now,
                 ]);
             }
         });

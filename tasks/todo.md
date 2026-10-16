@@ -574,7 +574,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T040: Admin order list and detail
 
-- [ ] Complete T040.
+- [x] Complete T040 locally; live Stripe was not executed (no test credentials in this environment).
+- **Evidence October 16:** Failing `CheckoutOrdersAdmin` tests were written first, then `financial_status`/`fulfillment_status`/`download_status` on `orders`, `order_notes`, `ReadAdminOrders`/`AddOrderNote`, `/admin/orders` list/detail, and workspace navigation for `orders.read`. Search matches number/email/date. Detail shows frozen lines/totals and independent states (physical unpaid remains unfulfilled; paid digital is entitled with fulfillment `not_required`). Notes audit omits body. Owner and fulfillment may read; content editors and customers are denied. Privileged staff still must pass 2FA. `GET /` remains 503. `CheckoutOrdersAdmin` 3 tests / 108 assertions. Full PHP suite: 461 tests / 4031 assertions; Pint; PHPStan level 8; frontend type/lint/format/build; 64 Vue tests; 11 Chromium journeys (platform smoke treats `/admin/orders` as a real staff route). Composer audit clean; npm 0 vulnerabilities; 237 registry signatures / 95 attestations. Local PCOV CheckoutOrders coverage was not collected (no coverage driver). Live Stripe was not executed. Hosted Quality for this branch is pending. Merge only after a green Quality run.
 - **Module / requirements:** `checkout-orders` · ORDER-05.
 - **Depends on:** T037, T013.
 - **Acceptance:** Permitted staff search orders and see frozen line/totals plus independent financial/fulfillment states and notes.

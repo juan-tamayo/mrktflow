@@ -127,6 +127,13 @@ final class StartPayment
             $values['provider'] = 'stripe';
         }
         DB::table('payment_attempts')->where('id', $attemptId)->update($values);
+        if (($values['status'] ?? null) === 'unknown') {
+            $orderId = $this->string($attempt, 'order_id');
+            DB::table('orders')->where('id', $orderId)->where('financial_status', 'unpaid')->update([
+                'financial_status' => 'unknown',
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     private function charge(object $order, object $attempt, string $attemptId): HostedCheckoutCharge

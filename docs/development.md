@@ -168,6 +168,10 @@ Due `created`/`awaiting_payment` attempts are expired through `ExpireCheckout` a
 
 Zero-total orders skip Stripe and use `CompleteFreeOrder`: the same hold-commit and `checkout.order.paid` pipeline as a captured payment, with a local zero-amount `payments` row (`provider` `local`, capture `local_{attemptId}`). Replays are idempotent. Forged success query parameters and payment return URLs only display status. `GET /checkout/orders/{orderId}` is owner-scoped, shows pending with a refresh link until the order is confirmed, then a confirmation screen. HTML pay for a free quote redirects there. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Live provider charges were not executed. Run `bin/php artisan test --filter=CheckoutOrdersFree`.
 
+## Admin order list and detail
+
+Staff with `orders.read` search `/admin/orders` by order number, customer email, and UTC date range, then open `/admin/orders/{id}`. The detail shows frozen lines and totals plus independent order, financial, fulfillment, and download states. Physical unpaid orders stay `unfulfilled` when financial is `unpaid`; paid digital-only orders stay `not_required` for shipment while downloads become `entitled`. Internal notes persist with a staff audit that omits note body. Owner and fulfillment staff can read; content editors receive 403. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=CheckoutOrdersAdmin`.
+
 ## Payment/reservation contract spike
 
 No payment credentials are needed for the local spike. Run `bin/php artisan test --filter=CheckoutOrdersGateway` for bound payment/refund observation rules, and `bin/php artisan test --filter=CheckoutOrdersConcurrency` for separate MySQL worker connections competing for one synthetic stock unit and transactional rollback. The concurrency fixture verifies the restricted PHP test database, creates only temporary test tables and cleans them up; it does not add merchant migrations or permit testing against a store database. Webhook authenticity remains T036. See [commerce contracts and limitations](commerce-rules.md#paymentreservation-spike-t011).

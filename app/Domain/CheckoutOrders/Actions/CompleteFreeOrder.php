@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\CheckoutOrders\Actions;
 
 use App\Domain\Catalog\Contracts\InventoryAllocator;
+use App\Domain\CheckoutOrders\Support\OrderStates;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -46,10 +47,10 @@ final class CompleteFreeOrder
                     'provider' => 'local',
                     'updated_at' => $now,
                 ]);
-                DB::table('orders')->where('id', $orderId)->update([
+                DB::table('orders')->where('id', $orderId)->update(array_merge(OrderStates::paidColumns($order), [
                     'status' => 'confirmed',
                     'updated_at' => $now,
-                ]);
+                ]));
             } else {
                 $this->recordCompletion($order, $attempt, $captureId, $now);
                 $this->commitAllocations($orderId);
