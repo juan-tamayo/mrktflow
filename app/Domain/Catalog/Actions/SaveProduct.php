@@ -9,6 +9,7 @@ use App\Domain\Catalog\Support\ReservedCatalogSlugs;
 use App\Domain\Catalog\Support\StoreCurrency;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
+use App\Domain\ShoppingTools\Actions\EvaluateWatchEvent;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -116,6 +117,15 @@ final class SaveProduct
                 }
                 if (array_key_exists('schema_id', $data) || array_key_exists('attributes', $data)) {
                     $this->syncSchema($id, is_string($data['schema_id'] ?? null) ? $data['schema_id'] : null, is_array($data['attributes'] ?? null) ? $data['attributes'] : [], $now);
+                }
+                // SHOP-04 watch alerts: a save landing in published
+                // is a price source for the product's variants (the
+                // default variant's price is written by this action),
+                // and a save that enters publication is also a stock
+                // source.
+                if ($data['status'] === 'published') {
+                    $stockEntered = $existing === null || (string) $existing->status !== 'published';
+                    app(EvaluateWatchEvent::class)->product($id, 'product:'.$id.':'.$version, $stockEntered);
                 }
                 $action = $data['status'] === 'published' ? 'catalog.product.published' : 'catalog.product.saved';
                 app(RecordEvent::class)->record('platform.audit.recorded', 'catalog:product:'.$id.':'.$version, [

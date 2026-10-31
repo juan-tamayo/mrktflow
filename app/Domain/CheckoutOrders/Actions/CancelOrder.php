@@ -12,6 +12,7 @@ use App\Domain\CheckoutOrders\Data\PaymentIntent;
 use App\Domain\CheckoutOrders\Data\RefundIntent;
 use App\Domain\CheckoutOrders\Exceptions\CheckoutIdempotencyConflict;
 use App\Domain\CheckoutOrders\Support\RefundAllocator;
+use App\Domain\Fulfillment\Actions\RevokeEntitlements;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -86,6 +87,10 @@ final class CancelOrder
                 'actor_type' => 'staff',
                 'metadata' => ['version' => 1],
             ]);
+            // Cancellations that reach completion without a refund
+            // outcome (zero-total, nothing left to refund) still revoke
+            // issued entitlements in the same transaction.
+            app(RevokeEntitlements::class)->syncForOrder($orderId, null, 'order-cancel');
         });
     }
 

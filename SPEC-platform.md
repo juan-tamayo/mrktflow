@@ -15,3 +15,5 @@ Objective: a repeatable, secure installation and the shared runtime primitives n
 ## Boundaries and verification
 
 Own installation/settings/media/event primitives; never implement product or payment rules here. Verify a fresh install, interrupted resume, replayed setup request, absent worker, failed storage write and redacted diagnostic export. Shared command suite plus targeted `php artisan test --filter=Platform` once implemented. Success: first-owner setup cannot be stolen/replayed and background failures are visible/recoverable.
+
+T091 implements the PLAT-07 delivery-preference primitives: verified contacts, purpose-scoped grants/revocations with provenance, and global/transport suppressions behind one `DeliveryPolicy` that marketing consumers must consult while essential transactional templates stay unblockable; the signed one-click unsubscribe POST is the single cookie-free CSRF exception and every replay is idempotent (`bin/php artisan test --filter=MarketingPreferences`).

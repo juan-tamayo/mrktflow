@@ -2,6 +2,8 @@
 
 Objective: help shoppers save, monitor and compare products. Depends on platform, identity and catalog. Inherits [architecture](docs/architecture.md), [data model](docs/data-model.md), and [commands](docs/coding-handoff.md).
 
+Implementation status: SHOP-01 and SHOP-02 are implemented by T055 (2026-10-30); SHOP-03 is implemented by T056 (2026-10-30) for subscription, email verification and signed unsubscribe; SHOP-04 is implemented by T057 (2026-10-30) for stock/price event detection, deduplicated and 24-hour-capped alert intents, and delivery with a full send-time recheck; SHOP-05 and SHOP-06 are implemented by T058 (2026-10-30) for the typed comparison read model and its storefront endpoint, and by T059 (2026-10-30) for the compare tray and the accessible comparison table UI; the T060 integration gate (2026-10-30) verified SHOP-01 through SHOP-06 compose end to end — the save→login merge→compare→cart and subscribe→verify→restock→alert→product journeys pass as continuous flows, and interleaved customer/guest sessions leak no state; SHOP-07 through SHOP-11 remain proposed.
+
 ## Requirements
 
 - **SHOP-01:** Guest wishlist persists in a server-owned anonymous session; accounts synchronize across devices. Save specific variant where selected; default variant otherwise. Merge union on login, keep newest intent and deduplicate.

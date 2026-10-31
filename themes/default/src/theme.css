@@ -1,3 +1,34 @@
+/* General Sans is self-hosted: the application CSP only allows same-origin
+   styles and fonts, so the Fontshare CDN stylesheet would be blocked. Files
+   in ./fonts (Fontshare / Indian Type Foundry, free for commercial use). */
+@font-face {
+  font-family: 'General Sans';
+  src: url('./fonts/general-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('./fonts/general-sans-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('./fonts/general-sans-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('./fonts/general-sans-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
 .theme-shell {
   max-width: 1240px;
 }
@@ -220,6 +251,11 @@
   color: var(--muted);
   font-size: 0.875rem;
 }
+/* The platform cart line actions component keeps the line's grid rhythm. */
+.theme-cart-line-actions {
+  display: grid;
+  gap: 0.75rem;
+}
 .theme-cart-notices {
   color: var(--muted);
   line-height: 1.6;
@@ -256,5 +292,543 @@
   }
   .theme-preview-notice {
     margin-bottom: 1.5rem;
+  }
+}
+.theme-compare-tray {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.875rem;
+}
+.theme-compare-count {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+.theme-compare-entries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+.theme-compare-entries li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  min-width: 0;
+}
+.theme-compare-entries span {
+  overflow-wrap: anywhere;
+}
+.theme-compare-actions {
+  margin: 1rem 0 0;
+}
+.theme-compare-actions .theme-purchase-note {
+  margin-block: 0.5rem 0;
+}
+.theme-compare-toggle {
+  margin: 1rem 0 0;
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9375rem;
+}
+.compare-table caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.75rem;
+}
+.compare-table th,
+.compare-table td {
+  border-top: 1px solid var(--line);
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.compare-table thead th {
+  border-top: 0;
+  min-width: 10rem;
+}
+.compare-table thead .theme-purchase-note {
+  margin-block: 0.5rem;
+}
+.compare-table tbody tr.compare-differs {
+  background: var(--surface);
+}
+@media (max-width: 760px) {
+  /* Stacked rows: every value stays reachable and readable at 360px,
+     labelled with its column, with no horizontal scrolling. */
+  .compare-table,
+  .compare-table thead,
+  .compare-table tbody,
+  .compare-table tr,
+  .compare-table th,
+  .compare-table td {
+    display: block;
+    width: auto;
+  }
+  .compare-table thead th {
+    min-width: 0;
+    border-top: 1px solid var(--line);
+  }
+  .compare-table tbody tr {
+    border-top: 1px solid var(--line);
+    padding: 0.5rem 0;
+  }
+  .compare-table tbody th,
+  .compare-table tbody td {
+    border-top: 0;
+    padding-block: 0.25rem;
+  }
+  .compare-table tbody td::before {
+    content: attr(data-column) ': ';
+    font-weight: 600;
+    color: var(--muted);
+  }
+}
+
+/* ——— Casa Norte shop shell ———
+   The storefront chrome (masthead, footer, homepage) is set as the shop's
+   own stationery: the printed pantry label. Flat fields, square corners,
+   one chile-red accent reserved for the action. */
+:root {
+  font-family:
+    'General Sans',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  --accent: #b03a26;
+  --cn-ground: #26331f;
+  --cn-paper: #f6f1e3;
+  --cn-ink: #211a12;
+  --cn-chile: #b03a26;
+  --cn-sage: #b7c8be;
+  --cn-blush: #d6c4b8;
+  --cn-slate: #a6b3bc;
+  --cn-step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --cn-step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --cn-step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+}
+.cn-masthead {
+  flex-wrap: wrap;
+  row-gap: 0.75rem;
+}
+.cn-wordmark span {
+  color: var(--ink);
+}
+.cn-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.cn-nav a {
+  text-decoration: none;
+}
+.cn-nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+.cn-footer {
+  display: block;
+  margin-top: 5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--line);
+}
+.cn-footer-name {
+  margin: 0;
+  font-size: clamp(3rem, 9vw, 7.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+.cn-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.cn-footer-nav a {
+  text-decoration: none;
+}
+.cn-footer-nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+.cn-footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin: 2.5rem 0 0;
+  color: var(--muted);
+  font-size: var(--cn-step-small);
+}
+
+/* Hero: the label card over a dim photograph of the market. */
+.cn-hero {
+  position: relative;
+  margin-top: 1.5rem;
+  padding: clamp(2rem, 6vw, 5rem) clamp(1rem, 4vw, 3rem);
+  background-color: var(--cn-ground);
+  background-image: url('/images/casa-norte-hero.jpg');
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+.cn-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(24 30 17 / 58%);
+}
+.cn-label-card {
+  position: relative;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: clamp(1.75rem, 4vw, 2.75rem);
+  background: var(--cn-paper);
+  color: var(--cn-ink);
+  animation: cn-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.cn-label-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: var(--cn-step-small);
+}
+.cn-label-card h1 {
+  margin: 1.25rem 0 0;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+.cn-label-facts {
+  margin: 1.5rem 0 0;
+  font-size: var(--cn-step-lead);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.cn-label-line {
+  margin: 1.25rem 0 0;
+  max-width: 34ch;
+  line-height: 1.55;
+}
+.cn-label-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin: 1.75rem 0 0;
+}
+.cn-button {
+  display: inline-block;
+  padding: 0.9rem 1.6rem;
+  background: var(--cn-chile);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.cn-button:hover {
+  background: var(--cn-ink);
+}
+.cn-text-link {
+  font-weight: 500;
+  text-underline-offset: 0.3em;
+}
+.cn-label-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 2rem 0 0;
+  padding-top: 1rem;
+  border-top: 2px dotted var(--cn-ink);
+  font-size: var(--cn-step-small);
+  font-weight: 500;
+}
+
+/* Sections */
+.cn-section {
+  margin-top: clamp(3.5rem, 8vw, 6rem);
+}
+.cn-section-title {
+  margin: 0;
+  font-size: var(--cn-step-head);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.cn-section-sub {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: var(--cn-step-lead);
+}
+.cn-aisles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+.cn-aisle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-height: 15rem;
+  padding: 1.75rem;
+  color: var(--cn-ink);
+  text-decoration: none;
+}
+.cn-aisle:nth-child(3n + 1) {
+  background: var(--cn-sage);
+}
+.cn-aisle:nth-child(3n + 2) {
+  background: var(--cn-blush);
+}
+.cn-aisle:nth-child(3n) {
+  background: var(--cn-slate);
+}
+.cn-aisle strong {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.cn-aisle-desc {
+  line-height: 1.55;
+}
+.cn-aisle-meta {
+  margin-top: auto;
+  font-weight: 700;
+  font-size: var(--cn-step-small);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Featured product: square plate, spare text. */
+.cn-featured {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+  margin-top: clamp(3.5rem, 8vw, 6rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--cn-paper);
+  color: var(--cn-ink);
+}
+.cn-featured-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.cn-featured-kicker {
+  margin: 0;
+  color: var(--cn-chile);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: var(--cn-step-small);
+}
+.cn-featured-body h2 {
+  margin: 1rem 0 0;
+  font-size: var(--cn-step-head);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.cn-featured-desc {
+  margin: 1.25rem 0 0;
+  max-width: 34ch;
+  line-height: 1.6;
+}
+.cn-featured-price {
+  margin: 1.5rem 0 0;
+  font-size: var(--cn-step-lead);
+  font-weight: 700;
+}
+.cn-featured-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.75rem 0 0;
+}
+.cn-cell {
+  display: inline-block;
+  padding: 0.95rem 1.5rem;
+  background: var(--cn-slate);
+  color: var(--cn-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+.cn-cell-ink {
+  background: var(--cn-ink);
+  color: var(--cn-paper);
+}
+.cn-cell:hover {
+  background: var(--cn-chile);
+  color: #fff;
+}
+
+/* Product shelf */
+.cn-grid .theme-product-card img {
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+/* The letter and its tear-off coupon. */
+.cn-letter {
+  max-width: 45rem;
+  margin: clamp(3.5rem, 8vw, 6rem) auto 0;
+  padding: clamp(2rem, 5vw, 3.5rem);
+  background: var(--cn-paper);
+  color: var(--cn-ink);
+}
+.cn-letter p {
+  margin: 0 0 1.25rem;
+  line-height: 1.6;
+}
+.cn-letter mark {
+  background: #f2d06b;
+  color: var(--cn-ink);
+  padding: 0 0.2em;
+}
+.cn-sign {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+.cn-sign span {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--cn-step-small);
+  font-weight: 500;
+}
+.cn-coupon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 3px dotted var(--cn-ink);
+}
+.cn-coupon-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: var(--cn-step-small);
+}
+.cn-coupon-code {
+  font-size: var(--cn-step-head);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.cn-coupon-note {
+  flex-basis: 100%;
+  line-height: 1.5;
+}
+
+/* Closing band: one word is the button. */
+.cn-cta {
+  position: relative;
+  display: block;
+  margin-top: clamp(3.5rem, 8vw, 6rem);
+  padding: 1.5rem clamp(1rem, 4vw, 3rem) 0;
+  background: var(--cn-ground);
+  color: var(--cn-paper);
+  text-decoration: none;
+  overflow: hidden;
+}
+.cn-cta:hover,
+.cn-cta:focus-visible {
+  background: var(--cn-chile);
+  color: #fff;
+}
+.cn-cta-note {
+  font-size: var(--cn-step-lead);
+  font-weight: 500;
+}
+.cn-cta-arrow {
+  position: absolute;
+  top: 1.25rem;
+  right: clamp(1rem, 4vw, 3rem);
+  font-size: 3rem;
+  line-height: 1;
+}
+.cn-cta-word {
+  display: block;
+  margin-top: 2rem;
+  font-size: clamp(6rem, 24vw, 21rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.82;
+}
+.cn-credits {
+  margin: 2rem 0 0;
+  color: var(--muted);
+  font-size: var(--cn-step-small);
+  line-height: 1.6;
+}
+
+/* Motion: staged rise on load, fade-rise reveals on scroll. */
+@keyframes cn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cn-motion [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cn-motion [data-reveal].cn-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cn-label-card {
+    animation: none;
+  }
+  .cn-motion [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+@media (max-width: 760px) {
+  .cn-aisles {
+    grid-template-columns: 1fr;
+  }
+  .cn-aisle {
+    min-height: 0;
+  }
+  .cn-featured {
+    grid-template-columns: 1fr;
+  }
+  .cn-label-top span:nth-child(2) {
+    display: none;
   }
 }

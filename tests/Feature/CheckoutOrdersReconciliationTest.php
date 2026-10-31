@@ -328,5 +328,5 @@ it('CheckoutOrdersReconciliation HTTP keeps privileged staff behind two-factor a
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/store-api/v1/checkout-sessions/'.(string) Str::uuid().'/payment')
         ->assertStatus(409);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

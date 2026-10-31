@@ -75,7 +75,7 @@ it('CatalogImportPreview maps columns, reports mixed-validity rows, and writes n
     expect(DB::table('product_variants')->count())->toBe($beforeVariants);
     expect(DB::table('products')->where('id', $existing['id'])->value('title'))->toBe('Studio Lamp');
     expect(DB::table('product_variants')->where('sku', 'LAMP-001')->value('price_amount'))->toBe(2499);
-    $this->get('/')->assertStatus(503)->assertDontSee('Oak Desk');
+    $this->get('/')->assertOk()->assertDontSee('Oak Desk');
 });
 
 it('CatalogImportPreview exports a formula-safe mixed-validity error report', function (): void {
@@ -177,7 +177,7 @@ it('CatalogImportPreview HTTP lets authorized staff dry-run a CSV and download r
     expect($errors->headers->get('content-disposition'))->toContain('attachment');
     expect($errors->streamedContent())->toContain('BAD')->toContain('price');
     expect(DB::table('products')->count())->toBe(0);
-    $this->get('/')->assertStatus(503)->assertDontSee('Oak Desk');
+    $this->get('/')->assertOk()->assertDontSee('Oak Desk');
     $this->get('/admin/products')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->component('ProductIndex')
         ->where('canWrite', true));

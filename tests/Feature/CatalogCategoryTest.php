@@ -57,7 +57,7 @@ it('CatalogCategory keeps drafts private and renders published empty categories'
     $draft = app(SaveCategory::class)->save($owner, catalogCategoryInput());
     expect(fn () => app(CatalogReader::class)->publicCategory('lighting'))->toThrow(CatalogCategoryUnpublished::class);
     $this->get('/categories/lighting')->assertNotFound()->assertDontSee('Lighting');
-    $this->get('/')->assertStatus(503)->assertDontSee('Lighting');
+    $this->get('/')->assertOk()->assertDontSee('Lighting');
     $published = app(SaveCategory::class)->save($owner, catalogCategoryInput([
         'id' => $draft['id'], 'version' => $draft['version'], 'status' => 'published',
     ]));
@@ -68,7 +68,7 @@ it('CatalogCategory keeps drafts private and renders published empty categories'
     $page = $this->get('/categories/lighting');
     $page->assertOk()->assertSee('Lighting')->assertSee('No products in this category yet')->assertDontSee('Add to cart');
     $page->assertSee('Lighting', false);
-    $this->get('/')->assertStatus(503)->assertDontSee('Lighting');
+    $this->get('/')->assertOk()->assertSee('Lighting');
 });
 
 it('CatalogCategory lists published products with breadcrumbs and hides drafts', function (): void {
@@ -94,7 +94,7 @@ it('CatalogCategory lists published products with breadcrumbs and hides drafts',
     $product->assertSee('Lighting')->assertSee('Lamps')->assertSee('Add to cart')->assertDontSee('Theme preview');
     $product->assertSee('/categories/lighting/lamps', false);
     $this->get('/products/missing-lamp')->assertNotFound()->assertDontSee('Studio Lamp');
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
     expect(json_encode(app(CatalogReader::class)->publicCategory('lighting/lamps')))->not->toContain('original_key', $owner->password);
 });
 

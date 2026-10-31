@@ -130,7 +130,7 @@ it('CheckoutOrdersCartMerge assigns a guest-only cart, moves unique lines, and i
 
 it('CheckoutOrdersCartMerge login transfers the current guest cart and logout hides the account cart', function (): void {
     $catalog = mergeCatalog();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
     $this->postJson('/store-api/v1/cart/lines', [
         'variantId' => $catalog['physical_variant'],
         'quantity' => 4,

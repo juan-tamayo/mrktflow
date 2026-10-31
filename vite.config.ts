@@ -8,10 +8,15 @@ const laravelEntries = [
   'resources/js/storefront.ts',
   'themes/default/src/theme.css',
   'themes/default/src/product.ts',
+  'themes/default/src/watch.ts',
+  'themes/default/src/compareTray.ts',
+  'themes/default/src/compareActions.ts',
+  'themes/default/src/comparisonTable.ts',
   'themes/default/src/search.ts',
   'themes/default/src/cart.ts',
   'themes/default/src/checkout.ts',
   'themes/default/src/cartIndicator.ts',
+  'themes/default/src/home.ts',
 ] as const
 
 export default defineConfig({

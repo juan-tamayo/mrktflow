@@ -1,0 +1,86 @@
+# MRKTFlow demo store — production stack for the shared VPS.
+# Live copy: /opt/mrktflow/docker-compose.yml (src/ is an rsync of the repo,
+# .env and .env.db are VPS-only, mode 0600, never committed).
+# Caddy (movda-caddy) reverse-proxies tienda.tamayo.co -> mrktflow-app:8080.
+name: mrktflow
+
+x-app: &app
+  image: mrktflow:demo
+  build:
+    context: ./src
+    dockerfile: Dockerfile
+    args:
+      INSTALL_DEV: "false"
+  restart: unless-stopped
+  init: true
+  volumes:
+    - ./.env:/var/www/html/.env:ro
+    - app-storage:/var/www/html/storage
+  networks: [internal]
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    mem_limit: 768m
+    command: ["--innodb-buffer-pool-size=128M", "--innodb-log-buffer-size=16M", "--max-connections=60", "--performance-schema=OFF", "--partial-revokes=ON"]
+    env_file: .env.db
+    environment:
+      MYSQL_DATABASE: mrktflow
+      MYSQL_USER: mrktflow
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks: [internal]
+
+  app:
+    <<: *app
+    mem_limit: 512m
+    environment:
+      CONTAINER_ROLE: app
+    command: ["app"]
+    depends_on:
+      mysql: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-H", "Host: tienda.tamayo.co", "-H", "X-Forwarded-Proto: https", "http://127.0.0.1:8080/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    networks:
+      internal: {}
+      movda-edge:
+        aliases: [mrktflow-app]
+
+  queue:
+    <<: *app
+    mem_limit: 320m
+    environment:
+      CONTAINER_ROLE: queue
+    command: ["queue"]
+    depends_on:
+      app: { condition: service_healthy }
+
+  scheduler:
+    <<: *app
+    mem_limit: 192m
+    environment:
+      CONTAINER_ROLE: scheduler
+    command: ["scheduler"]
+    depends_on:
+      app: { condition: service_healthy }
+
+networks:
+  internal:
+  movda-edge:
+    external: true
+    name: movda-edge
+
+volumes:
+  mysql-data:
+  app-storage:

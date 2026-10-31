@@ -150,7 +150,7 @@ it('CheckoutOrdersAdmin lets permitted staff search frozen orders with independe
     $empty = $reader->search($catalog['owner'], ['q' => 'nobody@example.test']);
     expect($empty['data'])->toBe([]);
     expect(fn () => $reader->detail($catalog['owner'], (string) Str::uuid()))->toThrow(NotFoundHttpException::class);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersAdmin HTTP allows owner and fulfillment staff and denies content editors', function (): void {
@@ -214,7 +214,7 @@ it('CheckoutOrdersAdmin HTTP allows owner and fulfillment staff and denies conte
         ->getJson('/admin/orders')->assertForbidden();
     $this->actingAs($editor, 'staff')->withSession(catalogStaffSession($editor))
         ->getJson('/admin/orders/'.$intent['order_id'])->assertForbidden();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersAdmin records internal notes with an audit fact and rejects unauthorized writers', function (): void {
@@ -252,5 +252,5 @@ it('CheckoutOrdersAdmin records internal notes with an audit fact and rejects un
     $this->actingAs($editor->fresh(), 'staff')->withSession(catalogStaffSession($editor->fresh()))
         ->postJson('/admin/orders/'.$intent['order_id'].'/notes', ['note' => 'Nope.'])
         ->assertForbidden();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

@@ -147,7 +147,7 @@ it('CheckoutOrdersFree completes a zero-total order through the local confirmati
 
 it('CheckoutOrdersFree confirmation screen recovers pending status and ignores a forged success URL', function (): void {
     $catalog = freeCatalog();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
     $this->postJson('/store-api/v1/cart/lines', [
         'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => 1,
     ])->assertOk();
@@ -244,5 +244,5 @@ it('CheckoutOrdersFree HTTP keeps privileged staff behind two-factor and leaves 
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->get('/checkout/orders/'.(string) Str::uuid())
         ->assertNotFound();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

@@ -60,7 +60,7 @@ it('CatalogImportApply writes validated create and update rows and records per-r
     expect(DB::table('products')->where('id', $existing['id'])->value('title'))->toBe('Studio Lamp Updated');
     expect(DB::table('product_variants')->where('sku', 'LAMP-001')->value('price_amount'))->toBe(2599);
     expect(DB::table('products')->where('slug', 'bad-price')->exists())->toBeFalse();
-    $this->get('/')->assertStatus(503)->assertDontSee('Oak Desk');
+    $this->get('/')->assertOk()->assertDontSee('Oak Desk');
     $this->get('/products/oak-desk')->assertNotFound();
 });
 
@@ -113,7 +113,7 @@ it('CatalogImportApply archives without dropping SKUs and keeps public catalog p
     expect(fn () => app(CatalogReader::class)->publicProduct('studio-lamp'))->toThrow(CatalogProductUnpublished::class);
     $this->get('/products/studio-lamp')->assertNotFound()->assertDontSee('Studio Lamp');
     $this->get('/search?q=Studio')->assertOk()->assertDontSee('Studio Lamp');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
     $replay = app(ArchiveProduct::class)->archive($owner, ['id' => $saved['id'], 'version' => $archived['version']]);
     expect($replay['status'])->toBe('archived');
     expect($replay['version'])->toBe($archived['version']);
@@ -204,7 +204,7 @@ it('CatalogImportApply HTTP lets authorized staff apply, export, and archive', f
         ->assertRedirect('/admin/products/'.$productId);
     expect(DB::table('products')->where('id', $productId)->value('status'))->toBe('archived');
     $this->get('/products/oak-desk')->assertNotFound()->assertDontSee('Oak Desk');
-    $this->get('/')->assertStatus(503)->assertDontSee('Oak Desk');
+    $this->get('/')->assertOk()->assertDontSee('Oak Desk');
     $this->get('/admin/products')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->component('ProductIndex')
         ->where('products.data.0.status', 'archived'));

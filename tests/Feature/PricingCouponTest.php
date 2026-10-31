@@ -74,7 +74,7 @@ it('PricingCoupon lets merchants configure one-coupon rules and quotes only elig
         ->toThrow(PricingCouponRejected::class);
     expect(fn () => app(ApplyCoupon::class)->apply('LAMP-10', [$lampLine], new DateTimeImmutable('2025-12-31T23:59:59Z')))
         ->toThrow(PricingCouponRejected::class);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingCoupon holds commits and releases redemptions atomically without oversubscription', function (): void {
@@ -253,7 +253,7 @@ it('PricingCoupon HTTP keeps privileged staff behind two-factor and rejects cust
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/coupons', ['coupon' => pricingCouponInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingCoupon HTTP lets authorized staff save coupons and denies other roles', function (): void {
@@ -280,7 +280,7 @@ it('PricingCoupon HTTP lets authorized staff save coupons and denies other roles
             ->postJson('/admin/coupons', ['coupon' => pricingCouponInput(['code' => 'DENIED'])])
             ->assertForbidden();
     }
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingCoupon HTTP rejects forged coupon saves', function (): void {
@@ -458,7 +458,7 @@ it('PricingCoupon rejects invalid configuration holds and ineligible quotes', fu
     expect($detail['product_ids'])->toBe([$product['id']])
         ->and(app(ReadCoupons::class)->staffCoupons()[0]['code'])->toBeString()
         ->and(app(ReadCoupons::class)->catalogOptions()['products'])->not->toBeEmpty();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingCoupon HTTP lists edits and rejects missing or stale coupons', function (): void {
@@ -483,5 +483,5 @@ it('PricingCoupon HTTP lists edits and rejects missing or stale coupons', functi
         ->where('coupon.code', 'LISTED')
         ->where('coupon.version', 2)
         ->where('saved', false));
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

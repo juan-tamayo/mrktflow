@@ -40,6 +40,13 @@ final class OrderStates
         }
     }
 
+    public static function assertFulfillment(string $status): void
+    {
+        if (! in_array($status, ['not_required', 'unfulfilled', 'partially_fulfilled', 'fulfilled'], true)) {
+            throw new InvalidArgumentException('Invalid fulfillment status.');
+        }
+    }
+
     private static function string(object $row, string $key): string
     {
         $value = get_object_vars($row)[$key] ?? null;

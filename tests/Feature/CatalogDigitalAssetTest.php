@@ -83,7 +83,7 @@ it('CatalogDigitalAsset versions private files, pins them to digital variants, a
         ->and($publicJson)->not->toContain('original_key')
         ->and($publicJson)->not->toContain('checksum')
         ->and($publicJson)->not->toContain('/original');
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lighting Guide');
+    $this->get('/')->assertOk()->assertSee('Studio Lighting Guide');
     $this->get('/products/studio-guide')->assertOk()
         ->assertSee('Studio Lighting Guide')
         ->assertSee('Digital download')

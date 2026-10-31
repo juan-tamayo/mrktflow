@@ -64,7 +64,7 @@ it('CatalogInventory tracks on-hand reserved remaining and rejects adjustments b
     $public = app(CatalogReader::class)->publicProduct('studio-lamp');
     expect($public['variants'][0])->not->toHaveKeys(['on_hand', 'reserved', 'available_quantity'])
         ->and(json_encode($public))->not->toContain('inventory_balances');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CatalogInventory holds commits releases and ships atomically with conserved quantities and idempotent ledger writes', function (): void {

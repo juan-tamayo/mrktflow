@@ -27,6 +27,7 @@ final class ReconcilePendingRefunds implements ShouldBeEncrypted, ShouldQueue
     {
         $reconcile = app(ReconcileRefund::class);
         $ids = DB::table('refunds')->whereIn('status', ['unknown', 'processing'])
+            ->where('origin', 'staff')
             ->orderBy('updated_at')->limit(20)->pluck('id');
         foreach ($ids as $id) {
             if (is_string($id)) {

@@ -65,7 +65,8 @@ final class CleanMedia
                         $changedFiles++;
                     }
                     if ($asset->purged_at === null && in_array($asset->status, ['staging', 'failed'], true)
-                        && now()->subHours(24)->gte($asset->updated_at)) {
+                        && now()->subHours(24)->gte($asset->updated_at)
+                        && ! $this->referencedByDigitalVersion((string) $asset->id)) {
                         if ($fileLimit <= 0) {
                             return $changedFiles > 0 ? 1 : 0;
                         }
@@ -97,5 +98,17 @@ final class CleanMedia
         }
 
         return $changed;
+    }
+
+    /**
+     * A media asset backing any digital asset version is a purchased
+     * file (CAT-06/FUL-06): cleanup must never destroy it, even if the
+     * row somehow ages into purge eligibility — version rows delete
+     * restrictOnDelete, and this is the application-layer refusal for
+     * the file itself.
+     */
+    private function referencedByDigitalVersion(string $mediaId): bool
+    {
+        return DB::table('digital_asset_versions')->where('media_asset_id', $mediaId)->exists();
     }
 }

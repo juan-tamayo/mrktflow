@@ -242,7 +242,7 @@ it('CheckoutOrdersRefund allocates remaining money and quantities, holds unshipp
         'shipping_amount' => 0,
         'reason' => 'Too much goodwill.',
     ], (string) Str::uuid()))->toThrow(ValidationException::class);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersRefund clears holds on failure, preserves them when unknown, and reconciles timeout-after-refund', function (): void {
@@ -285,7 +285,7 @@ it('CheckoutOrdersRefund clears holds on failure, preserves them when unknown, a
     ], $unknownKey);
     expect($replay['id'])->toBe($unknown['id'])->and($replay['status'])->toBe('succeeded');
     (new ReconcilePendingRefunds)->handle();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersRefund serializes racing partial refunds so remaining quantity is claimed once', function (): void {
@@ -400,5 +400,5 @@ it('CheckoutOrdersRefund HTTP requires refund permission, fresh 2FA, and keeps G
             'reason' => 'No.',
             'idempotency_key' => (string) Str::uuid(),
         ])->assertForbidden();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

@@ -183,7 +183,7 @@ it('CheckoutOrdersCart rejects invalid unavailable digital-over-one and stale mu
 
 it('CheckoutOrdersCart HTTP keeps guest and account carts revision-checked and denies other sessions', function (): void {
     $catalog = cartCatalog();
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
     $empty = $this->getJson('/store-api/v1/cart')->assertOk()->assertJsonPath('data.revision', 1)->assertJsonPath('data.lines', []);
     expect($empty->headers->get('Cache-Control'))->toContain('no-store');
     $this->postJson('/store-api/v1/cart/lines', [

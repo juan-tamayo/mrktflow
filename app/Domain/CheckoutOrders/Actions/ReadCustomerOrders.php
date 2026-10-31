@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\CheckoutOrders\Actions;
 
 use App\Domain\CheckoutOrders\Support\CartMoney;
+use App\Domain\Fulfillment\Rules\TrackingUrl;
 use App\Domain\Identity\Models\CustomerAccount;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -77,12 +78,52 @@ final class ReadCustomerOrders
                 'grand_total' => CartMoney::format($this->int($order, 'grand_total_amount'), $currency, $exponent),
             ],
             'lines' => $lines,
+            'shipments' => $this->shipments($orderId),
             'receipt' => [
                 'template' => 'order-receipt',
                 'grand_total' => CartMoney::format($this->int($order, 'grand_total_amount'), $currency, $exponent),
             ],
             'timeline' => $this->timeline($orderId, $currency, $exponent),
         ];
+    }
+
+    /**
+     * Shipments of this order with the quantities in each one. Stored
+     * tracking URLs are re-validated against the tracking policy at read
+     * time, so a value recorded before the policy existed is exposed only
+     * when it is still safe to render as a customer link.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function shipments(string $orderId): array
+    {
+        $shipments = [];
+        foreach (DB::table('shipments')->where('order_id', $orderId)->orderBy('created_at')->orderBy('id')->get() as $shipment) {
+            $shipmentId = $this->string($shipment, 'id');
+            $lines = [];
+            foreach (DB::table('shipment_lines')
+                ->join('order_lines', 'order_lines.id', '=', 'shipment_lines.order_line_id')
+                ->where('shipment_lines.shipment_id', $shipmentId)
+                ->orderBy('order_lines.sku')->orderBy('order_lines.id')
+                ->get(['shipment_lines.quantity', 'order_lines.title', 'order_lines.sku']) as $line) {
+                $lines[] = [
+                    'title' => $this->string($line, 'title'),
+                    'sku' => $this->string($line, 'sku'),
+                    'quantity' => $this->int($line, 'quantity'),
+                ];
+            }
+            $rawUrl = get_object_vars($shipment)['tracking_url'] ?? null;
+            $shipments[] = [
+                'id' => $shipmentId,
+                'carrier' => $this->string($shipment, 'carrier'),
+                'tracking_number' => $this->string($shipment, 'tracking_number'),
+                'tracking_url' => is_string($rawUrl) ? TrackingUrl::sanitize($rawUrl) : null,
+                'created_at' => $this->iso($this->string($shipment, 'created_at')),
+                'lines' => $lines,
+            ];
+        }
+
+        return $shipments;
     }
 
     /**

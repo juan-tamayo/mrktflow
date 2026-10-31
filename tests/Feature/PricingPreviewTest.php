@@ -139,7 +139,7 @@ it('PricingPreview matches storefront mixed-cart itemized totals including coupo
         ->and($digital['shipping']['amount'])->toBe(0)
         ->and($digital['tax']['amount'])->toBe(50)
         ->and($digital['grand_total']['amount'])->toBe(550);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingPreview explains missing tax shipping coupon and currency failures without inventing totals', function (): void {
@@ -164,7 +164,7 @@ it('PricingPreview explains missing tax shipping coupon and currency failures wi
     expect(fn () => app(PreviewPricing::class)->preview(pricingPreviewInput(['cart' => 'bundle'])))
         ->toThrow(PricingInvalidQuote::class);
     expect($catalog['owner']->hasPermission('pricing.manage'))->toBeTrue();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingPreview HTTP keeps privileged staff behind two-factor and rejects customers', function (): void {
@@ -181,7 +181,7 @@ it('PricingPreview HTTP keeps privileged staff behind two-factor and rejects cus
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/pricing-preview', ['preview' => pricingPreviewInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingPreview HTTP lets authorized staff preview identical totals and denies other roles', function (): void {
@@ -218,7 +218,7 @@ it('PricingPreview HTTP lets authorized staff preview identical totals and denie
             ->postJson('/admin/pricing-preview', ['preview' => pricingPreviewInput()])
             ->assertForbidden();
     }
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingPreview HTTP rejects forged preview posts', function (): void {
@@ -250,5 +250,5 @@ it('PricingPreview cart gate leaves empty and unavailable shoppers a way forward
         ->assertSee('An item is no longer available.')
         ->assertSee('Remove unavailable items to continue')
         ->assertDontSee('href="/checkout"', false);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

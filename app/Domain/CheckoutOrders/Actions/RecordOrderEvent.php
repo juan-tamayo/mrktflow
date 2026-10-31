@@ -17,7 +17,7 @@ final class RecordOrderEvent
     public function record(string $orderId, string $type, array $payload, ?string $sourceEventId = null): string
     {
         if (! Str::isUuid($orderId) || $orderId !== strtolower($orderId)
-            || ! in_array($type, ['paid', 'cancelled', 'receipt_queued', 'receipt_resent'], true)
+            || ! in_array($type, ['paid', 'cancelled', 'receipt_queued', 'receipt_resent', 'external_refund', 'dispute_opened', 'dispute_won', 'dispute_lost', 'shipment_created', 'shipment_notification_queued', 'return_requested', 'return_approved', 'return_received', 'return_restocked', 'entitlements_issued', 'download_access_requested', 'download_started', 'entitlements_revoked', 'entitlements_suspended', 'entitlements_restored', 'entitlement_update_granted', 'entitlement_limit_reset'], true)
             || ($sourceEventId !== null && (! Str::isUuid($sourceEventId) || $sourceEventId !== strtolower($sourceEventId)))) {
             throw new InvalidArgumentException('Invalid order event.');
         }

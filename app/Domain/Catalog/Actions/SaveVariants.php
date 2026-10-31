@@ -8,6 +8,7 @@ use App\Domain\Catalog\Support\StoreCurrency;
 use App\Domain\Catalog\Support\VariantOptions;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
+use App\Domain\ShoppingTools\Actions\EvaluateWatchEvent;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -111,6 +112,13 @@ final class SaveVariants
                         $existingIds[] = $existingId;
                     }
                 }
+                // Pre-save listed flags, captured before the rewrite
+                // below: SHOP-04 treats a variant re-listing as a
+                // publication change for watch alerts.
+                $listedBefore = [];
+                foreach (DB::table('product_variants')->where('product_id', $data['id'])->select(['id', 'available'])->get() as $row) {
+                    $listedBefore[(string) $row->id] = (bool) $row->available;
+                }
                 $removeIds = array_values(array_diff($existingIds, $keepIds));
                 if ($removeIds !== []) {
                     if (DB::table('inventory_balances')->whereIn('variant_id', $removeIds)->where('reserved', '>', 0)->exists()) {
@@ -174,6 +182,24 @@ final class SaveVariants
                 }
                 $version = ((int) $existing->version) + 1;
                 DB::table('products')->where('id', $data['id'])->update(['version' => $version, 'updated_at' => $now]);
+                // SHOP-04 watch alerts: every save is a price source
+                // (the baseline comparison decides), and a variant
+                // whose listed flag flips on is a publication source.
+                $watch = app(EvaluateWatchEvent::class);
+                $watchEventKey = 'variants:'.$data['id'].':'.$version;
+                foreach ($data['variants'] as $variant) {
+                    if (! isset($variant['id'])) {
+                        continue;
+                    }
+                    $watchVariantId = (string) $variant['id'];
+                    if (! array_key_exists($watchVariantId, $listedBefore)) {
+                        continue;
+                    }
+                    $watch->price($watchVariantId, $watchEventKey);
+                    if ($listedBefore[$watchVariantId] === false && $variant['available'] === true) {
+                        $watch->stock($watchVariantId, $watchEventKey);
+                    }
+                }
                 app(RecordEvent::class)->record('platform.audit.recorded', 'catalog:product:'.$data['id'].':'.$version, [
                     'action' => 'catalog.variants.saved', 'subject_type' => 'product', 'subject_id' => $data['id'],
                     'actor_type' => 'staff', 'actor_id' => $actor->id, 'metadata' => ['version' => $version, 'variant_count' => count($data['variants'])],

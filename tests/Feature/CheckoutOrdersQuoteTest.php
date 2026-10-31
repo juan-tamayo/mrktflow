@@ -202,7 +202,7 @@ it('CheckoutOrdersQuote refuses empty unavailable digital-over-one missing cover
 
 it('CheckoutOrdersQuote HTTP quotes guests and accounts, corrects addresses, and rejects stale CSRF posts', function (): void {
     $catalog = quoteCatalog();
-    $this->get('/')->assertStatus(503)->assertDontSee('Checkout');
+    $this->get('/')->assertOk()->assertDontSee('Checkout');
     $this->get('/checkout')->assertRedirect('/cart');
     $this->postJson('/store-api/v1/cart/lines', [
         'variantId' => $catalog['physical_variant'], 'quantity' => 1, 'expectedRevision' => 1,
@@ -308,5 +308,5 @@ it('CheckoutOrdersQuote HTTP keeps privileged staff behind two-factor and leaves
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/taxes', ['rules' => pricingTaxRulesInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
