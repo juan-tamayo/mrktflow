@@ -87,7 +87,7 @@ it('ShippingRules lets merchants configure origin zones and method types', funct
     $loaded = app(ReadShippingRules::class)->staffRules();
     expect($loaded['origin']['postal_code'])->toBe('90001')
         ->and($loaded['zones'][0]['name'])->toBe('California 90');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('ShippingRules rejects overlapping same-priority destination rules', function (): void {
@@ -214,7 +214,7 @@ it('ShippingRules HTTP keeps privileged staff behind two-factor and rejects cust
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/shipping', ['rules' => shippingRulesInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('ShippingRules HTTP lets authorized staff save and preview rules and denies other roles', function (): void {
@@ -251,7 +251,7 @@ it('ShippingRules HTTP lets authorized staff save and preview rules and denies o
             ->postJson('/admin/shipping', ['rules' => shippingRulesInput()])
             ->assertForbidden();
     }
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('ShippingRules HTTP rejects forged shipping saves', function (): void {

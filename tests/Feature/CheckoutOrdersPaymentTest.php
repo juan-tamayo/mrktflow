@@ -191,7 +191,7 @@ it('CheckoutOrdersGateway records unknown timeouts without releasing holds or ma
 
 it('CheckoutOrdersGateway HTTP starts payment, ignores return URLs as capture evidence, and skips Stripe for zero totals', function (): void {
     $catalog = paymentCatalog();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
     $this->postJson('/store-api/v1/cart/lines', [
         'variantId' => $catalog['physical_variant'], 'quantity' => 1, 'expectedRevision' => 1,
     ])->assertOk();
@@ -301,7 +301,7 @@ it('CheckoutOrdersGateway HTML pay redirects to the hosted session and refuses a
     $intent = app(CreateCheckoutIntent::class)->create($guest, $quoteTwo['id'], (string) Str::uuid());
     DB::table('payment_attempts')->where('id', $intent['id'])->update(['status' => 'failed']);
     expect(fn () => app(StartPayment::class)->start($guest, $intent['id']))->toThrow(CheckoutIntentConflict::class);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersGateway HTTP keeps privileged staff behind two-factor and leaves the storefront closed', function (): void {
@@ -318,6 +318,6 @@ it('CheckoutOrdersGateway HTTP keeps privileged staff behind two-factor and leav
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/store-api/v1/checkout-sessions/'.(string) Str::uuid().'/payment')
         ->assertStatus(409);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
     expect(class_exists(PaymentController::class))->toBeTrue();
 });

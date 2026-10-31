@@ -9,6 +9,7 @@ use App\Domain\Catalog\Data\InventoryLine;
 use App\Domain\Catalog\Data\InventoryMutation;
 use App\Domain\CheckoutOrders\Data\RefundResult;
 use App\Domain\CheckoutOrders\Support\OrderStates;
+use App\Domain\Fulfillment\Actions\RevokeEntitlements;
 use App\Domain\Platform\Actions\RecordEvent;
 use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
@@ -53,6 +54,9 @@ final class ApplyRefundOutcome
                 if ($this->string($refund, 'kind') === 'cancellation') {
                     app(CancelOrder::class)->complete($orderId, $this->string($refund, 'reason'));
                 }
+                // Access follows the money fact in the same transaction:
+                // a succeeded refund re-syncs issued entitlements.
+                app(RevokeEntitlements::class)->syncForOrder($orderId, $refundId, 'refund:'.$refundId);
 
                 return;
             }

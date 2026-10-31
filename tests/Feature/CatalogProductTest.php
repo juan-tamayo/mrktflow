@@ -37,7 +37,7 @@ it('CatalogProduct keeps drafts out of the public catalog while staff can save t
     expect($staffView['variant']['money'])->toBe(['amount' => 2499, 'currency' => 'USD', 'exponent' => 2]);
     expect($staffView['image']['url'])->toStartWith('/storage/media/');
     expect(json_encode($staffView))->not->toContain('original_key', 'original_name', $owner->password);
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp')->assertDontSee('LAMP-001');
+    $this->get('/')->assertOk()->assertDontSee('Studio Lamp')->assertDontSee('LAMP-001');
     $this->get('/products/studio-lamp')->assertNotFound()->assertDontSee('Studio Lamp');
     expect(app(CatalogReader::class)->publishedCount())->toBe(0);
 });
@@ -60,7 +60,7 @@ it('CatalogProduct publishes a simple physical product with one SKU price and im
     expect($public['image']['url'])->toMatch('#^/storage/media/[0-9a-f-]{36}/[a-f0-9]{64}\.png$#D');
     expect(json_encode($public))->not->toContain('original_key', 'media/'.$image.'/original', 'supplier');
     expect(app(CatalogReader::class)->publishedCount())->toBe(1);
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
     $this->get('/products/studio-lamp')->assertOk()->assertSee('Studio Lamp')->assertSee('Add to cart');
 });
 

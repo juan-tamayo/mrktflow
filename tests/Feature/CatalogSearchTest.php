@@ -39,7 +39,7 @@ it('CatalogSearch matches published titles and SKUs and keeps drafts out of resu
     $percent = app(SearchCatalog::class)->search(['q' => '%']);
     expect($percent['products'])->toBe([]);
     $this->get('/search?q=Studio')->assertOk()->assertSee('Studio Lamp')->assertDontSee('Hidden Draft Lamp')->assertDontSee('Add to cart');
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
 });
 
 it('CatalogSearch filters by category price and availability without leaking unpublished categories', function (): void {

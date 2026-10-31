@@ -58,7 +58,7 @@ it('CatalogSchema validates product values against the assigned schema', functio
     expect(json_encode($public))->not->toContain('original_key', $owner->password);
     $page = $this->get('/products/studio-lamp');
     $page->assertOk()->assertSee('24.2')->assertSee('rf')->assertSee('Megapixels')->assertSee('Add to cart');
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
 });
 
 it('CatalogSchema rejects invalid numeric enum and required values', function (): void {
@@ -284,7 +284,7 @@ it('CatalogSchema HTTP updates a schema and keeps privileged 2FA', function (): 
     ])])->assertRedirect('/admin/schemas/'.$id)->assertSessionHasErrors();
     $this->get('/admin/schemas/'.$id)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->component('ProductSchema')->where('schema.label', 'Field camera'));
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CatalogSchema HTTP rejects forged saves and does not flash nested schema payloads', function (): void {

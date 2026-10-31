@@ -14,6 +14,7 @@ use App\Domain\Catalog\Exceptions\CatalogInsufficientStock;
 use App\Domain\Catalog\Exceptions\CatalogInvalidAllocation;
 use App\Domain\Catalog\Exceptions\CatalogInventoryConflict;
 use App\Domain\Catalog\Exceptions\CatalogInventoryUntracked;
+use App\Domain\ShoppingTools\Actions\EvaluateWatchEvent;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -152,6 +153,49 @@ final class AllocateInventory implements InventoryAllocator
     public function ship(InventoryMutation $mutation): InventoryReceipt
     {
         return $this->mutate($mutation, 'ship');
+    }
+
+    public function restock(InventoryMutation $mutation): InventoryReceipt
+    {
+        $lines = $this->sorted($mutation->lines);
+
+        return DB::transaction(function () use ($mutation, $lines): InventoryReceipt {
+            $this->lockBalances($this->variantIds($lines));
+            if ($this->claim($mutation->operationKey, $mutation->intentId, 'restock', $this->hash('restock', $mutation->intentId, $lines))) {
+                return $this->receipt($mutation->intentId);
+            }
+            $now = now();
+            foreach ($lines as $line) {
+                $balance = $this->lockedTrackedBalance($line->variantId);
+                DB::table('inventory_balances')->where('variant_id', $line->variantId)->update([
+                    'on_hand' => $this->intValue($balance, 'on_hand') + $line->quantity,
+                    'updated_at' => $now,
+                ]);
+                $reservationId = DB::table('stock_reservations')
+                    ->where('intent_id', $mutation->intentId)
+                    ->where('variant_id', $line->variantId)
+                    ->value('id');
+                $this->move(
+                    'restock:'.$mutation->operationKey.':'.$line->variantId,
+                    $line->variantId,
+                    is_string($reservationId) ? $reservationId : null,
+                    $line->quantity,
+                    0,
+                    'restock',
+                    $now,
+                );
+                // SHOP-04: this restock act is a merchant restock
+                // source (unlike hold/commit/release above, which
+                // never evaluate): fire only when the committed
+                // available position enters availability.
+                $availableBefore = $this->intValue($balance, 'on_hand') - $this->intValue($balance, 'reserved');
+                if ($availableBefore <= 0 && $availableBefore + $line->quantity > 0) {
+                    app(EvaluateWatchEvent::class)->stock($line->variantId, 'restock:'.$mutation->operationKey);
+                }
+            }
+
+            return $this->receipt($mutation->intentId);
+        });
     }
 
     private function mutate(InventoryMutation $mutation, string $action): InventoryReceipt
@@ -308,7 +352,7 @@ final class AllocateInventory implements InventoryAllocator
         return hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR));
     }
 
-    private function move(string $sourceRef, string $variantId, string $reservationId, int $onHand, int $reserved, string $reason, mixed $now): void
+    private function move(string $sourceRef, string $variantId, ?string $reservationId, int $onHand, int $reserved, string $reason, mixed $now): void
     {
         DB::table('stock_movements')->insert([
             'id' => (string) Str::uuid(),

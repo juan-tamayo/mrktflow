@@ -161,7 +161,7 @@ it('CatalogReadModel exposes physical and digital sellability without leaking st
         ->assertSee('Out of stock')
         ->assertSee('Studio Lamp');
     $this->get('/search?q=Empty')->assertOk()->assertSee('Out of stock');
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
 });
 
 it('CatalogReadModel degrades archived and missing products without leaking titles on HTML or JSON', function (): void {
@@ -184,7 +184,7 @@ it('CatalogReadModel degrades archived and missing products without leaking titl
     expect($archivedJson->json('error.requestId'))->toBeString()->not->toBe('');
     $missingJson = $this->getJson('/store-api/v1/products/missing-lamp');
     $missingJson->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND')->assertDontSee('Studio Lamp');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CatalogReadModel JSON contract matches the public catalog snapshot', function (): void {
@@ -217,7 +217,7 @@ it('CatalogReadModel JSON contract matches the public catalog snapshot', functio
         ->assertJsonPath('data.0.available', true)
         ->assertJsonPath('data.0.availability', 'in_stock')
         ->assertJsonPath('meta.totalItems', 1);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CatalogReadModel HTTP keeps privileged staff behind two-factor and rejects customers', function (): void {
@@ -238,5 +238,5 @@ it('CatalogReadModel HTTP keeps privileged staff behind two-factor and rejects c
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/products', ['product' => ['title' => 'Denied']])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

@@ -1,0 +1,16 @@
+-- Test-only databases and database-only users (docs/development.md isolation).
+-- partial_revokes is enabled via the server command line BEFORE this runs, so
+-- underscores in these names are literal. Passwords are substituted on the
+-- host at deploy time (__TEST_PWD__, __DEV_PWD__, __BROWSER_PWD__); the real
+-- file lives only in /opt/mrktflow and is never committed.
+CREATE DATABASE IF NOT EXISTS mrktflow_test;
+CREATE USER IF NOT EXISTS 'mrktflow_test'@'%' IDENTIFIED BY '__TEST_PWD__';
+GRANT ALL PRIVILEGES ON `mrktflow_test`.* TO 'mrktflow_test'@'%';
+
+CREATE DATABASE IF NOT EXISTS mrktflow_dev;
+CREATE USER IF NOT EXISTS 'mrktflow_dev'@'%' IDENTIFIED BY '__DEV_PWD__';
+GRANT ALL PRIVILEGES ON `mrktflow_dev`.* TO 'mrktflow_dev'@'%';
+
+CREATE DATABASE IF NOT EXISTS mrktflow_browser;
+CREATE USER IF NOT EXISTS 'mrktflow_browser'@'%' IDENTIFIED BY '__BROWSER_PWD__';
+GRANT ALL PRIVILEGES ON `mrktflow_browser`.* TO 'mrktflow_browser'@'%';

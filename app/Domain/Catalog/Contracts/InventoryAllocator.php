@@ -19,4 +19,6 @@ interface InventoryAllocator
     public function release(InventoryMutation $mutation): InventoryReceipt;
 
     public function ship(InventoryMutation $mutation): InventoryReceipt;
+
+    public function restock(InventoryMutation $mutation): InventoryReceipt;
 }

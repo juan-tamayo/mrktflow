@@ -161,7 +161,7 @@ it('CheckoutOrdersReceipt queues one event-derived receipt and shows the owner f
         ->assertDontSee('guest_token_hash');
     $this->actingAs($bob, 'customer')->withSession(['customer_session_version' => 1]);
     $this->get('/account/orders/'.$paid['order_id'])->assertNotFound();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersReceipt resends only with an explicit audited staff action', function (): void {
@@ -210,5 +210,5 @@ it('CheckoutOrdersReceipt resends only with an explicit audited staff action', f
     $this->actingAs($fulfillment, 'staff')->withSession(catalogStaffSession($fulfillment))
         ->postJson('/admin/orders/'.$paid['order_id'].'/receipt', ['idempotency_key' => (string) Str::uuid()])
         ->assertForbidden();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

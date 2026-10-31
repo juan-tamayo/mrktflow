@@ -7,6 +7,8 @@ namespace App\Http\Support;
 use App\Domain\CheckoutOrders\Actions\MergeCart;
 use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Identity\Models\CustomerAccount;
+use App\Domain\ShoppingTools\Actions\MergeWishlist;
+use App\Domain\ShoppingTools\Support\WishlistOwner;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +39,7 @@ final class CustomerSession
             if ($notices !== []) {
                 $request->session()->put('cart_adjustment_notices', $notices);
             }
+            app(MergeWishlist::class)->merge(WishlistOwner::guest($guestToken), WishlistOwner::customer((string) $customer->id));
         }
         Inertia::clearHistory();
     }

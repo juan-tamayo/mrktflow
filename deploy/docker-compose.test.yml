@@ -1,0 +1,42 @@
+# MRKTFlow test stack — isolated MySQL 8.4 + dev-dependency image.
+# Live copy: /opt/mrktflow/docker-compose.test.yml. Never shares a database,
+# volume or network with the production stack. The three test databases and
+# their database-only users are created by mysql-init-test.sql (generated on
+# the host with the real passwords; the committed copy is a template).
+name: mrktflowtest
+
+services:
+  mysql:
+    image: mysql:8.4
+    mem_limit: 768m
+    command: ["--innodb-buffer-pool-size=128M", "--innodb-log-buffer-size=16M", "--max-connections=60", "--performance-schema=OFF", "--partial-revokes=ON"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TEST_MYSQL_ROOT_PASSWORD:?set TEST_MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./mysql-init-test.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    networks: [testnet]
+
+  test:
+    image: mrktflow:test
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+      args:
+        INSTALL_DEV: "true"
+    mem_limit: 1200m
+    depends_on:
+      mysql: { condition: service_healthy }
+    volumes:
+      - ./src/.env.testing:/var/www/html/.env.testing:ro
+    entrypoint: ["php", "artisan"]
+    command: ["test"]
+    networks: [testnet]
+
+networks:
+  testnet:

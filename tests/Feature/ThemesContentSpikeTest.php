@@ -84,5 +84,5 @@ it('ThemesContentSpike accepts native variant selection and never selects a temp
     $this->get('/admin/theme-preview?variant=10000000-0000-4000-8000-000000000003&template=../../.env')->assertOk()->assertSee('USD 95.00')->assertSee('The studio lamp')
         ->assertHeader('Cache-Control', 'no-store, private')->assertHeader('X-Robots-Tag', 'noindex, nofollow');
     $this->getJson('/admin/theme-preview?variant=unknown')->assertUnprocessable();
-    $this->get('/')->assertServiceUnavailable()->assertDontSee('The studio lamp');
+    $this->get('/')->assertOk()->assertDontSee('The studio lamp');
 });

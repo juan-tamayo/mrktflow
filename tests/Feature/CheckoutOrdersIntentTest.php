@@ -128,7 +128,7 @@ it('CheckoutOrdersIntent freezes the accepted quote, holds stock and coupons, an
         ->and((string) $line->variant_id)->toBe($catalog['physical_variant'])
         ->and((int) $line->quantity)->toBe(1);
     expect(json_encode($first, JSON_THROW_ON_ERROR))->not->toContain('guest-intent-token', 'guest_token_hash', 'password');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersIntent binds competing keys to one cart revision and rolls back a failed hold', function (): void {
@@ -267,7 +267,7 @@ it('CheckoutOrdersIntent serializes parallel identical submissions across real M
 
 it('CheckoutOrdersIntent HTTP creates a session, replays the same key, and rejects CSRF', function (): void {
     $catalog = intentCatalog();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
     $this->postJson('/store-api/v1/cart/lines', [
         'variantId' => $catalog['physical_variant'], 'quantity' => 1, 'expectedRevision' => 1,
     ])->assertOk();
@@ -396,7 +396,7 @@ it('CheckoutOrdersIntent HTTP rejects a missing key and a changed idempotent pay
     ], ['Idempotency-Key' => $key]);
     expect($conflict->status())->toBe(422)
         ->and($conflict->json('error.code'))->toBe('IDEMPOTENCY');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CheckoutOrdersIntent HTTP keeps privileged staff behind two-factor and leaves the storefront closed', function (): void {
@@ -413,5 +413,5 @@ it('CheckoutOrdersIntent HTTP keeps privileged staff behind two-factor and leave
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/taxes', ['rules' => pricingTaxRulesInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

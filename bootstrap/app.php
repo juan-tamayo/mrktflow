@@ -21,13 +21,27 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->prepend([RequestCorrelation::class, SecurityHeaders::class]);
-        $middleware->preventRequestForgery();
+        $middleware->prepend([RequestCorrelation::class]);
+        // SecurityHeaders is appended, not prepended: its HTTPS check reads
+        // $request->isSecure(), which is only true once TrustProxies (in the
+        // framework's default stack) has applied the forwarded-proto trust.
+        // Prepended ahead of TrustProxies it would reject every proxied
+        // request in production.
+        $middleware->append([SecurityHeaders::class]);
+        // The signed one-click unsubscribe POST is the single deliberate
+        // CSRF exception: it is cookie-free and gated solely by its
+        // purpose-scoped HMAC signature (PLAT-07). Every other state
+        // change keeps full request-forgery protection.
+        $middleware->preventRequestForgery(except: ['preferences/unsubscribe']);
         $middleware->trimStrings(except: ['owner.password', 'owner.password_confirmation', 'customer.password', 'customer.password_confirmation', 'password_reset.password', 'password_reset.password_confirmation', 'profile.current_password']);
         $middleware->trustHosts(
             at: fn () => ['^'.preg_quote((string) parse_url(config()->string('app.url'), PHP_URL_HOST), '/').'$'],
             subdomains: false,
         );
+        // Deployment topology (selected for the demo deployment): a single
+        // reverse proxy (Caddy) on the same Docker network is the only
+        // ingress; the application port is never published directly.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (Throwable $exception): void {

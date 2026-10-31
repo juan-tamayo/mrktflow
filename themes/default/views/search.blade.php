@@ -1,17 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Search · MRKTFlow</title>
-    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
-    @vite(['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/search.ts'])
-</head>
-<body>
-    <a class="skip-link" href="#search-main">Skip to search</a>
-    <div class="page-shell theme-shell">
-        <header class="masthead"><a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><span class="status">Catalog</span></header>
-        <main id="search-main" class="theme-search">
+@extends('default-theme::layout', [
+    'pageKey' => 'search',
+    'pageTitle' => 'Search · MRKTFlow',
+    'pageAssets' => ['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/search.ts', 'themes/default/src/compareTray.ts', 'themes/default/src/compareActions.ts'],
+    'mainId' => 'search-main',
+    'mainClass' => 'theme-search',
+    'skipLabel' => 'Skip to search',
+    'footerLabel' => 'Catalog',
+])
+@section('content')
             <p class="eyebrow">Search</p>
             <h1>Search<span class="accent">.</span></h1>
             <div id="catalog-filters" data-search="{{ json_encode(['query' => $search->query, 'sorts' => $search->sorts, 'categories' => $search->categories, 'facets' => $search->facets], JSON_THROW_ON_ERROR) }}">
@@ -78,6 +74,7 @@
                                     <span class="theme-availability">Unavailable</span>
                                 @endif
                             </a>
+                            <div data-compare-actions data-compare="{{ json_encode(['productId' => $product['id'], 'title' => $product['title']], JSON_THROW_ON_ERROR) }}"></div>
                         </li>
                     @endforeach
                 </ul>
@@ -94,8 +91,4 @@
                 </nav>
             @endif
             <p class="theme-purchase-note">Checkout is not available yet. This page does not create a cart.</p>
-        </main>
-        <footer class="footer"><span>Catalog</span><span>MRKTFlow</span></footer>
-    </div>
-</body>
-</html>
+@endsection

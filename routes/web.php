@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContentEditorController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
+use App\Http\Controllers\Admin\EntitlementController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\OrderCancellationController;
 use App\Http\Controllers\Admin\OrderController;
@@ -13,6 +15,8 @@ use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\ProductInventoryController;
 use App\Http\Controllers\Admin\ProductSchemaController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReturnController;
+use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
@@ -23,16 +27,23 @@ use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CatalogController;
 use App\Http\Controllers\Storefront\CheckoutController;
+use App\Http\Controllers\Storefront\ComparisonController;
 use App\Http\Controllers\Storefront\CustomerAccountController;
 use App\Http\Controllers\Storefront\CustomerAddressController;
 use App\Http\Controllers\Storefront\CustomerEmailVerificationController;
 use App\Http\Controllers\Storefront\CustomerOrderController;
 use App\Http\Controllers\Storefront\CustomerPasswordRecoveryController;
 use App\Http\Controllers\Storefront\CustomerProfileController;
+use App\Http\Controllers\Storefront\DownloadsController;
+use App\Http\Controllers\Storefront\DownloadStreamController;
+use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\OrderStatusController;
 use App\Http\Controllers\Storefront\PaymentController;
+use App\Http\Controllers\Storefront\PreferencesController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\StoreApiProductController;
+use App\Http\Controllers\Storefront\WatchController;
+use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Middleware\RequireCustomerGuest;
 use App\Http\Middleware\RequireCustomerSession;
 use App\Http\Middleware\RequireInstalledStore;
@@ -40,7 +51,7 @@ use App\Http\Middleware\RequireStaffSession;
 use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 
-Route::get('/', fn () => response()->view('storefront.closed', [], 503)->header('Retry-After', '3600'));
+Route::get('/', [HomeController::class, 'show']);
 Route::get('/search', [SearchController::class, 'show']);
 Route::get('/cart', [CartController::class, 'show']);
 Route::get('/checkout', [CheckoutController::class, 'show']);
@@ -59,6 +70,19 @@ Route::get('/checkout/orders/{orderId}', [OrderStatusController::class, 'show'])
 Route::post('/cart/lines', [CartController::class, 'store'])->middleware('throttle:60,1,cart-lines:');
 Route::post('/cart/lines/{lineId}', [CartController::class, 'update'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');
 Route::post('/cart/lines/{lineId}/delete', [CartController::class, 'destroy'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');
+Route::get('/wishlist', [WishlistController::class, 'show']);
+Route::post('/wishlist/items', [WishlistController::class, 'store'])->middleware('throttle:60,1,wishlist-items:');
+Route::post('/wishlist/items/{itemId}/delete', [WishlistController::class, 'destroy'])->whereUuid('itemId')->middleware('throttle:60,1,wishlist-items:');
+Route::get('/compare', [ComparisonController::class, 'show']);
+Route::get('/store-api/v1/compare', [ComparisonController::class, 'show']);
+Route::get('/store-api/v1/wishlist', [WishlistController::class, 'show']);
+Route::post('/store-api/v1/wishlist/items', [WishlistController::class, 'store'])->middleware('throttle:60,1,wishlist-items:');
+Route::delete('/store-api/v1/wishlist/items/{itemId}', [WishlistController::class, 'destroy'])->whereUuid('itemId')->middleware('throttle:60,1,wishlist-items:');
+Route::post('/watch/subscriptions', [WatchController::class, 'store'])->middleware('throttle:30,1,watch-subscriptions:');
+Route::post('/watch/subscriptions/{subscriptionId}/cancel', [WatchController::class, 'cancel'])->whereUuid('subscriptionId')->middleware('throttle:30,1,watch-subscriptions:');
+Route::get('/store-api/v1/watch/subscriptions', [WatchController::class, 'index']);
+Route::post('/store-api/v1/watch/subscriptions', [WatchController::class, 'store'])->middleware('throttle:30,1,watch-subscriptions:');
+Route::post('/store-api/v1/watch/subscriptions/{subscriptionId}/cancel', [WatchController::class, 'cancel'])->whereUuid('subscriptionId')->middleware('throttle:30,1,watch-subscriptions:');
 Route::get('/store-api/v1/cart', [CartController::class, 'show']);
 Route::post('/store-api/v1/cart/lines', [CartController::class, 'store'])->middleware('throttle:60,1,cart-lines:');
 Route::patch('/store-api/v1/cart/lines/{lineId}', [CartController::class, 'update'])->whereUuid('lineId')->middleware('throttle:60,1,cart-lines:');
@@ -129,6 +153,17 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/orders/{orderId}/refunds', [OrderController::class, 'storeRefund'])->whereUuid('orderId')->middleware('throttle:30,1,order-refunds:');
         Route::post('/admin/orders/{orderId}/cancellation', [OrderCancellationController::class, 'store'])->whereUuid('orderId')->middleware('throttle:30,1,order-cancel:');
         Route::post('/admin/orders/{orderId}/receipt', [OrderReceiptController::class, 'store'])->whereUuid('orderId')->middleware('throttle:30,1,order-receipt:');
+        Route::post('/admin/orders/{orderId}/shipments', [ShipmentController::class, 'store'])->whereUuid('orderId')->middleware('throttle:30,1,order-shipments:');
+        Route::post('/admin/orders/{orderId}/returns', [ReturnController::class, 'store'])->whereUuid('orderId')->middleware('throttle:30,1,order-returns:');
+        Route::post('/admin/orders/{orderId}/returns/{returnId}/approve', [ReturnController::class, 'approve'])->whereUuid('orderId')->whereUuid('returnId')->middleware('throttle:30,1,order-return-steps:');
+        Route::post('/admin/orders/{orderId}/returns/{returnId}/receive', [ReturnController::class, 'receive'])->whereUuid('orderId')->whereUuid('returnId')->middleware('throttle:30,1,order-return-steps:');
+        Route::post('/admin/orders/{orderId}/returns/{returnId}/restock', [ReturnController::class, 'restock'])->whereUuid('orderId')->whereUuid('returnId')->middleware('throttle:30,1,order-return-steps:');
+        Route::post('/admin/orders/{orderId}/entitlements/{entitlementId}/update', [EntitlementController::class, 'update'])->whereUuid('orderId')->whereUuid('entitlementId')->middleware('throttle:30,1,order-downloads:');
+        Route::post('/admin/orders/{orderId}/entitlements/{entitlementId}/reset-limit', [EntitlementController::class, 'resetLimit'])->whereUuid('orderId')->whereUuid('entitlementId')->middleware('throttle:30,1,order-downloads:');
+        Route::get('/admin/content-editor', [ContentEditorController::class, 'show']);
+        Route::get('/admin/content-editor/draft', [ContentEditorController::class, 'draft']);
+        Route::put('/admin/content-editor/draft', [ContentEditorController::class, 'save'])->middleware('throttle:30,1,content-draft:');
+        Route::post('/admin/content-editor/preview', [ContentEditorController::class, 'preview'])->middleware('throttle:30,1,content-preview:');
     });
     Route::get('/staff/invitation', [StaffInvitationController::class, 'show']);
     Route::post('/staff/invitation', [StaffInvitationController::class, 'accept'])->middleware('throttle:5,1,staff-invite-accept:');
@@ -136,6 +171,21 @@ Route::middleware(Middleware::class)->group(function (): void {
     Route::post('/setup/access', [InstallController::class, 'unlock'])->middleware('throttle:5,1,setup-access:');
     Route::post('/setup/settings', [InstallController::class, 'save'])->middleware('throttle:30,1,setup-settings:');
     Route::post('/setup/owner', [InstallController::class, 'owner'])->middleware('throttle:5,1,setup-owner:');
+});
+
+Route::middleware(RequireInstalledStore::class)->group(function (): void {
+    Route::get('/orders/download-access', [DownloadsController::class, 'accessForm']);
+    Route::post('/orders/download-access', [DownloadsController::class, 'requestAccess'])->middleware('throttle:5,1,guest-download-access:');
+    Route::post('/orders/download-access/confirm', [DownloadsController::class, 'confirm'])->middleware('throttle:5,1,guest-download-confirm:');
+    Route::get('/orders/{orderId}/downloads', [DownloadsController::class, 'guestDownloads'])->whereUuid('orderId');
+    Route::post('/orders/{orderId}/downloads/{entitlementId}/grants', [DownloadStreamController::class, 'issueGuest'])->whereUuid('orderId')->whereUuid('entitlementId')->middleware('throttle:10,1,guest-download-grant:');
+    Route::get('/orders/{orderId}/download-grants/{grantId}', [DownloadStreamController::class, 'statusGuest'])->whereUuid('orderId')->whereUuid('grantId');
+    Route::post('/orders/{orderId}/download-grants/{grantId}/start', [DownloadStreamController::class, 'startGuest'])->whereUuid('orderId')->whereUuid('grantId')->middleware('throttle:10,1,guest-download-start:');
+    Route::get('/orders/{orderId}/download-transfers/{transferId}', [DownloadStreamController::class, 'streamGuest'])->whereUuid('orderId')->whereUuid('transferId');
+    Route::get('/preferences/unsubscribe', [PreferencesController::class, 'unsubscribeForm']);
+    Route::post('/preferences/unsubscribe', [PreferencesController::class, 'unsubscribe'])->middleware('throttle:10,1,preference-unsubscribe:');
+    Route::get('/watch/verify', [WatchController::class, 'verifyForm']);
+    Route::post('/watch/verify', [WatchController::class, 'verify'])->middleware('throttle:10,1,watch-verify:');
 });
 
 Route::prefix('account')->middleware(RequireInstalledStore::class)->group(function (): void {
@@ -154,6 +204,14 @@ Route::prefix('account')->middleware(RequireInstalledStore::class)->group(functi
         Route::get('/', [CustomerAccountController::class, 'home']);
         Route::get('/orders', [CustomerOrderController::class, 'index']);
         Route::get('/orders/{orderId}', [CustomerOrderController::class, 'show'])->whereUuid('orderId');
+        Route::get('/downloads', [DownloadsController::class, 'accountDownloads']);
+        Route::post('/downloads/claim', [DownloadsController::class, 'claim'])->middleware('throttle:5,1,customer-download-claim:');
+        Route::post('/downloads/{entitlementId}/grants', [DownloadStreamController::class, 'issueAccount'])->whereUuid('entitlementId')->middleware('throttle:10,1,customer-download-grant:');
+        Route::get('/download-grants/{grantId}', [DownloadStreamController::class, 'statusAccount'])->whereUuid('grantId');
+        Route::post('/download-grants/{grantId}/start', [DownloadStreamController::class, 'startAccount'])->whereUuid('grantId')->middleware('throttle:10,1,customer-download-start:');
+        Route::get('/download-transfers/{transferId}', [DownloadStreamController::class, 'streamAccount'])->whereUuid('transferId');
+        Route::get('/preferences', [PreferencesController::class, 'show']);
+        Route::post('/preferences', [PreferencesController::class, 'update'])->middleware('throttle:5,1,customer-preferences:');
         Route::get('/profile', [CustomerProfileController::class, 'show']);
         Route::post('/profile', [CustomerProfileController::class, 'update'])->middleware('throttle:5,1,customer-profile:');
         Route::get('/addresses', [CustomerAddressController::class, 'index']);

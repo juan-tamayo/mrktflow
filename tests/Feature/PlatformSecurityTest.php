@@ -62,7 +62,9 @@ it('PlatformSecurity forces safe production settings and rejects plain HTTP', fu
         expect(config('session.encrypt'))->toBeTrue();
         expect(config('session.http_only'))->toBeTrue();
         $this->get('http://store.example.test/')->assertStatus(400);
-        $this->get('http://store.example.test/', ['X-Forwarded-Proto' => 'https'])->assertStatus(400);
+        // Deployment topology: a single reverse proxy is the only ingress,
+        // so its forwarded protocol is trusted (bootstrap/app.php).
+        $this->get('http://store.example.test/', ['X-Forwarded-Proto' => 'https'])->assertStatus(503);
         $this->get('https://store.example.test/')->assertStatus(503)
             ->assertHeader('Strict-Transport-Security', 'max-age=31536000');
         $this->get('https://attacker.example.test/')->assertStatus(400);

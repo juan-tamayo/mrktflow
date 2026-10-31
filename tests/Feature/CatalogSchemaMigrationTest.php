@@ -93,7 +93,7 @@ it('CatalogSchemaMigration migrates an additive optional field and keeps prior v
     expect($labels)->not->toContain('Weight');
     expect(app(CatalogReader::class)->staffProduct($product['id'])['attributes']['sensor.megapixels'])->toBe('24.2');
     $this->get('/products/studio-lamp')->assertOk()->assertSee('24.2');
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
 });
 
 it('CatalogSchemaMigration rejects an incompatible type change and leaves the prior version intact', function (): void {
@@ -178,7 +178,7 @@ it('CatalogSchemaMigration HTTP previews and applies an additive field for autho
         ->post('/admin/schemas/'.$schema['id'].'/migration', ['schema' => catalogMigrationInput($schema)])
         ->assertRedirect('/admin/schemas/'.$schema['id']);
     expect((int) DB::table('product_schema_versions')->where('product_schema_id', $schema['id'])->max('version'))->toBe(2);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('CatalogSchemaMigration HTTP denies guests customers and staff without catalog write', function (): void {

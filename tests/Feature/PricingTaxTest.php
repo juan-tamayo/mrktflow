@@ -68,7 +68,7 @@ it('PricingTax lets merchants configure classes destination rates and exclusive 
     expect($loaded['price_mode'])->toBe('exclusive')
         ->and($loaded['shipping_tax_class_key'])->toBe('standard')
         ->and($loaded['rules'][0]['name'])->toBe('California standard');
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingTax rejects equal-specificity overlapping destination rules', function (): void {
@@ -208,7 +208,7 @@ it('PricingTax calculates documented exclusive mixed-cart totals and fails close
         null,
         'standard',
     )))->toThrow(PricingTaxCoverageMissing::class);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingTax calculates inclusive totals and uses physical shipping versus digital billing destinations', function (): void {
@@ -292,7 +292,7 @@ it('PricingTax calculates inclusive totals and uses physical shipping versus dig
     ));
     $kwdTax = app(CalculateTax::class)->apply($kwdQuote, pricingTaxContext([pricingTaxable(pricingTaxUuid('7'))]));
     expect($kwdTax->tax->amount)->toBe(100);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingTax HTTP keeps privileged staff behind two-factor and rejects customers', function (): void {
@@ -309,7 +309,7 @@ it('PricingTax HTTP keeps privileged staff behind two-factor and rejects custome
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/taxes', ['rules' => pricingTaxRulesInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingTax HTTP lets authorized staff save and preview rules and denies other roles', function (): void {
@@ -365,7 +365,7 @@ it('PricingTax HTTP lets authorized staff save and preview rules and denies othe
             ->postJson('/admin/taxes', ['rules' => pricingTaxRulesInput()])
             ->assertForbidden();
     }
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('PricingTax HTTP rejects forged tax saves', function (): void {

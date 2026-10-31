@@ -69,7 +69,7 @@ it('ShippingQuote quotes digital-only carts at zero without an address or method
         ->and($quote->pickupInstructions)->toBeNull()
         ->and($quote->physicalSubtotal)->toBe(0)
         ->and($quote->fingerprint)->toHaveLength(64);
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });
 
 it('ShippingQuote ignores digital lines for mixed-cart charges and free thresholds', function (): void {
@@ -335,5 +335,5 @@ it('ShippingQuote rejects invalid snapshots and keeps privileged shipping admin 
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/shipping', ['rules' => shippingRulesInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertStatus(503);
+    $this->get('/')->assertOk();
 });

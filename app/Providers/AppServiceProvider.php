@@ -15,6 +15,8 @@ use App\Domain\Pricing\Actions\CalculatePrice;
 use App\Domain\Pricing\Contracts\PriceCalculator;
 use App\Domain\Shipping\Actions\QuoteShipping;
 use App\Domain\Shipping\Contracts\ShippingQuoter;
+use App\Domain\ThemesContent\Actions\RegisterTheme;
+use App\Domain\ThemesContent\Contracts\ThemeRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Application;
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PriceCalculator::class, CalculatePrice::class);
         $this->app->singleton(ShippingQuoter::class, QuoteShipping::class);
         $this->app->singleton(PaymentGateway::class, StripeGateway::class);
+        $this->app->singleton(ThemeRegistry::class, RegisterTheme::class);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace App\Domain\Catalog\Actions;
 
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
+use App\Domain\ShoppingTools\Actions\EvaluateWatchEvent;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +116,17 @@ final class AdjustStock
                     'reason' => 'adjust',
                     'created_at' => $now,
                 ]);
+                // SHOP-04: a merchant receipt/restock that moves the
+                // committed available position (on_hand − reserved)
+                // from none to some is a back-in-stock source. An
+                // untracked variant was already sellable, so turning
+                // tracking on with stock is not a transition.
+                $wasAvailable = ! (bool) $variant->tracks_inventory
+                    || ($balance !== null && ((int) $balance->on_hand - (int) $balance->reserved) > 0);
+                $nowAvailable = ($onHand - ($balance !== null ? (int) $balance->reserved : 0)) > 0;
+                if (! $wasAvailable && $nowAvailable) {
+                    app(EvaluateWatchEvent::class)->stock($data['variant_id'], 'adjust:'.$data['operation_key']);
+                }
             } else {
                 if ($balance !== null) {
                     DB::table('inventory_balances')->where('variant_id', $data['variant_id'])->delete();

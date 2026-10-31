@@ -1,17 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Orders · MRKTFlow</title>
-    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
-    @vite(['resources/css/app.css', 'themes/default/src/theme.css'])
-</head>
-<body>
-    <a class="skip-link" href="#orders-main">Skip to orders</a>
-    <div class="page-shell theme-shell">
-        <header class="masthead"><a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a><a class="text-link" href="/account">Account</a></header>
-        <main id="orders-main" class="theme-checkout">
+@extends('default-theme::layout', [
+    'pageKey' => 'account-orders',
+    'pageTitle' => 'Orders · MRKTFlow',
+    'pageAssets' => ['resources/css/app.css', 'themes/default/src/theme.css'],
+    'mainId' => 'orders-main',
+    'mainClass' => 'theme-checkout',
+    'skipLabel' => 'Skip to orders',
+    'footerLabel' => 'Account',
+])
+@section('content')
             <h1>Your orders<span class="accent">.</span></h1>
             @if(count($orders) === 0)
                 <p class="theme-purchase-note">You have no orders yet.</p>
@@ -24,8 +20,4 @@
                     @endforeach
                 </ul>
             @endif
-        </main>
-        <footer class="footer"><span>Account</span><span>MRKTFlow</span></footer>
-    </div>
-</body>
-</html>
+@endsection

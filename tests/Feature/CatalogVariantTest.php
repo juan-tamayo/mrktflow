@@ -51,7 +51,7 @@ it('CatalogVariant saves unique combinations and lets a shopper see the selected
     expect($pine['image']['url'])->toMatch('#^/storage/media/[0-9a-f-]{36}/[a-f0-9]{64}\.png$#D');
     expect($unavailable['available'])->toBeFalse();
     expect(json_encode($public))->not->toContain('original_key', $owner->password);
-    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
+    $this->get('/')->assertOk()->assertSee('Studio Lamp');
     $page = $this->get('/products/studio-lamp?variant='.$pine['id']);
     $page->assertOk()->assertSee('Studio Lamp')->assertSee('USD 24.99')->assertSee('Pine / S')->assertSee('Add to cart');
     $unavailablePage = $this->get('/products/studio-lamp?variant='.$unavailable['id']);
