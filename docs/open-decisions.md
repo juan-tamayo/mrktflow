@@ -45,7 +45,7 @@ Expanded direction confirmed: native abandoned-cart recovery, urgency and social
 
 ## D08: T012 provider/schema findings (October 10, 2026)
 
-Working adapter direction: tool-free **OpenAI Responses with strict Structured Outputs**, store-owned key, owner-approved model and budget. The local spike emits a Responses-shaped request and decodes fixture envelopes; it installs no SDK, makes no provider request and enables no account integration. Provider selection remains proposed until the merchant's availability, data terms, budget and exact model smoke test pass T074.
+Working adapter direction: tool-free **OpenAI Responses with strict Structured Outputs**, store-owned key, owner-approved model and budget. T074 queues that payload through `SelectedProvider` against `api.openai.com` with fixture-only HTTP in tests; it installs no SDK. Exact-model live compatibility, cost and data-term smoke remain pending until opt-in test credentials exist.
 
 | Evaluated option | Finding / next evidence |
 | --- | --- |
