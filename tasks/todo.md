@@ -1352,13 +1352,14 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T075: AI output validation and repair limits
 
-- [ ] Complete T075.
+- [x] Complete T075 locally; GitHub Quality is the hosted CI evidence. Did not merge. Did not start T076.
 - **Module / requirements:** `ai-authoring` · AI-04.
 - **Depends on:** T074, T069.
 - **Acceptance:** Reuse import validators; unknown IDs/code/malformed output rejected; at most two repairs consume same budget reservation.
 - **Verify:** Run `php artisan test --filter=AiAuthoringValidation`; inject malicious instructions and code into catalog context/output.
 - **Likely files:** `app/Domain/AiAuthoring/Actions/ValidateCandidate.php`, `app/Domain/AiAuthoring/Actions/RepairCandidate.php`, `tests/Feature/AiAuthoringValidationTest.php`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
+- **Evidence (November 12, 2026):** `ValidateCandidate` reuses T069 `TemplatePackage::rejectExecutable`, T012 `PageDraft`, and T063 `ValidateSections`. Unknown product IDs, PHP/script markup, Vue `{{` expressions and malformed JSON cannot become drafts. Jailbreak copy in selected public catalog text stays inert (`tools: []`, no store-owned secret, no publish). `RepairCandidate` persists `repair_attempt` so at most two repairs share the original reservation (`estimated_tokens = max_output_tokens * 3`); a third HTTP call is refused and job replay is a no-op. Timeout/429 still are not auto-repaired. Privileged staff without TOTP go to `/admin/two-factor`. `GET /` stays HTTP 503. Focused `AiAuthoringValidation`: 4 passed / 57 assertions. Full PHP: 755 passed / 7933 assertions (isolated MySQL 8.4, TestDatabaseGuard). Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (173 passed)/`bin/npm run build` green. Playwright Chromium: 22 passed. Composer audit --locked: no advisories. npm audit: 0 vulnerabilities; 238 signatures / 97 attestations. Opt-in capped live-provider smoke remains pending (no test credentials). Hosted Quality is the PR check. Did not merge. Did not start T076.
 
 #### Checkpoint after T073, T074, T075
 

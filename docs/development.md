@@ -288,11 +288,15 @@ No payment credentials are needed for the local spike. Run `bin/php artisan test
 
 ## AI authoring configuration and budget holds
 
-Owners configure built-in AI at `/admin/ai`: store-owned OpenAI secret (encrypted, never returned), a permitted model, daily and monthly token budgets, and staff authors who already have `ai.use`. Managers, editors and customers cannot change the secret. Reservations lock `ai_settings` and count reserved, pending-unknown estimates and committed actual tokens so two last-budget holds cannot both succeed. Disabled AI is the default and does not block manual pages, imports, checkout or updates. Validation and apply remain T075–T076. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoringBudget`.
+Owners configure built-in AI at `/admin/ai`: store-owned OpenAI secret (encrypted, never returned), a permitted model, daily and monthly token budgets, and staff authors who already have `ai.use`. Managers, editors and customers cannot change the secret. Reservations lock `ai_settings` and count reserved, pending-unknown estimates and committed actual tokens so two last-budget holds cannot both succeed. Disabled AI is the default and does not block manual pages, imports, checkout or updates. Apply remains T076. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoringBudget`.
 
 ## AI authoring queued generation
 
 Authorized authors queue a page-draft run after a budget hold. `BuildPublicContext` accepts only selected published products. `SelectedProvider` sends the T012 public-context payload and strict schema to the store-owned OpenAI Responses endpoint; customer records, staff secrets, prices and unpublished products stay out of the request body. `GenerateAuthoringDraft` is encrypted and ID-only, one try, 60-second timeout, default queue. Known usage is recorded on success; timeout and cancel keep a pending estimate or release an unused queued hold, and neither retries the provider automatically. Replay of a finished run is a no-op. There is still no apply/publish path. Opt-in capped live-provider smoke remains pending until test credentials exist. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoringRun`.
+
+## AI output validation and repair limits
+
+`ValidateCandidate` reuses T069 `TemplatePackage` executable-content refusal, the T012 `PageDraft` contract, and T063 `ValidateSections` reference checks. Unknown product IDs, PHP/Vue/script payloads and malformed JSON cannot become drafts. Jailbreak text in selected public catalog copy stays inert: requests still have no tools, credentials or publish capability. `RepairCandidate` persists the repair index so at most two schema repairs share the original reservation (estimated as the initial call plus two repairs); job replay cannot reset that count or add HTTP calls. Timeout and rate-limit outcomes are not auto-repaired. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoringValidation`.
 
 ## AI authoring contract spike
 

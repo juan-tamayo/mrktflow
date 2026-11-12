@@ -209,6 +209,11 @@ final class TemplatePackage
         }
     }
 
+    public static function rejectExecutable(mixed $value): void
+    {
+        self::assertSafeValue($value);
+    }
+
     private static function assertSafePayload(string $json): void
     {
         if (preg_match('/<\?php|<script|javascript:|v-html|v-on:|@php|@include|\{\{|<\/script|data:text\/html|<iframe/i', $json) === 1) {

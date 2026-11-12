@@ -45,6 +45,11 @@ final readonly class AiAuthoringResult
         return $this->inputTokens !== null && $this->outputTokens !== null;
     }
 
+    public function rejectCandidate(): self
+    {
+        return new self('invalid_output', null, $this->providerResponseId, $this->inputTokens, $this->outputTokens);
+    }
+
     public static function fromResponsesJson(AiAuthoringRequest $request, string $json): self
     {
         if (strlen($json) > 262144) {
