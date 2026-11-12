@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 final class QueueStoreExport
 {
@@ -31,10 +31,16 @@ final class QueueStoreExport
             'dataset' => ['required', 'string', Rule::in(['customers', 'orders', 'products'])],
         ])->validate();
         $dataset = $data['dataset'];
+        if (! is_string($dataset)) {
+            throw new InvalidArgumentException('Unknown export dataset.');
+        }
+        if ($dataset !== 'customers' && $dataset !== 'orders' && $dataset !== 'products') {
+            throw new InvalidArgumentException('Unknown export dataset.');
+        }
         $ability = match ($dataset) {
             'customers' => 'customers.read',
             'orders' => 'orders.read',
-            default => 'catalog.read',
+            'products' => 'catalog.read',
         };
         if (! $actor->hasPermission($ability)) {
             throw new AuthorizationException;
