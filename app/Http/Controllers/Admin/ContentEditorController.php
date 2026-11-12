@@ -37,7 +37,13 @@ final class ContentEditorController
         Gate::authorize('content.read');
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
-        $draft = $read->read('home', 'content');
+        $page = is_string($request->query('page')) ? $request->query('page') : 'home';
+        $slot = is_string($request->query('slot')) ? $request->query('slot') : 'content';
+        if (! SectionDraftTargets::isEditable($page, $slot)) {
+            $page = 'home';
+            $slot = 'content';
+        }
+        $draft = $read->read($page, $slot);
 
         return Inertia::render('ContentEditor', [
             'definitions' => array_map(
@@ -53,14 +59,15 @@ final class ContentEditorController
             ),
             'targets' => SectionDraftTargets::all(),
             'initial' => [
-                'page' => 'home',
-                'slot' => 'content',
+                'page' => $page,
+                'slot' => $slot,
                 'version' => $draft['version'],
                 'publishedRevision' => $draft['publishedRevision'],
                 'sections' => $draft['sections'],
             ],
             'canWrite' => $staff->hasPermission('content.write'),
             'canPublish' => $staff->hasPermission('content.publish'),
+            'published' => (bool) $request->session()->pull('content_published', false),
         ]);
     }
 
@@ -156,7 +163,10 @@ final class ContentEditorController
             return $this->validationFailed($failure);
         }
 
-        return redirect('/admin/content-editor')->with('content_published', true);
+        return redirect('/admin/content-editor?'.http_build_query([
+            'page' => $data['page'],
+            'slot' => $data['slot'],
+        ]))->with('content_published', true);
     }
 
     private function invalidTarget(string $page, string $slot): JsonResponse

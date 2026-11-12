@@ -3,15 +3,20 @@ import { expect, it, vi } from 'vitest'
 import PublishPanel from './PublishPanel.vue'
 
 const post = vi.fn()
+const payloads: unknown[] = []
 vi.mock('@inertiajs/vue3', () => ({
-  useForm: (data: unknown) => ({
-    ...((data as object) ?? {}),
-    processing: false,
-    transform: (callback: (data: unknown) => unknown) => {
-      callback({ version: 2, revision: 1 })
-      return { post }
-    },
-  }),
+  useForm: (data: unknown) => {
+    payloads.push(data)
+    return {
+      ...((data as object) ?? {}),
+      processing: false,
+      transform: (callback: (data: unknown) => unknown) => {
+        callback({ version: 2, revision: 1 })
+        return { post }
+      },
+      post,
+    }
+  },
 }))
 
 it('publishes a page through a uniquely labelled native control', async () => {
@@ -67,6 +72,29 @@ it('retargets the preview link when the draft page changes', async () => {
   )
   expect(wrapper.get('button[aria-label="Publish search content sections"]').text()).toBe(
     'Publish search content sections',
+  )
+  await wrapper.get('form').trigger('submit')
+  expect(payloads.at(-1)).toEqual({ page: 'search', slot: 'content', version: 1 })
+})
+
+it('names the live revision for the current draft after a successful publish', () => {
+  const wrapper = mount(PublishPanel, {
+    props: {
+      kind: 'section_draft',
+      page: 'search',
+      slotName: 'content',
+      version: 2,
+      publishedRevision: 2,
+      label: 'search content sections',
+      canPublish: true,
+      justPublished: true,
+    },
+  })
+  expect(wrapper.get('[role="status"][aria-label="Publish result"]').text()).toBe(
+    'Published search content sections.',
+  )
+  expect(wrapper.get('[aria-label="Publication status for search content sections"]').text()).toBe(
+    'Live revision 2 of search content sections',
   )
 })
 

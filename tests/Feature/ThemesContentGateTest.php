@@ -119,7 +119,7 @@ it('ThemesContentGate walks import edit preview publish and rollback as one cont
         'page' => 'search',
         'slot' => 'content',
         'version' => 2,
-    ])->assertRedirect('/admin/content-editor');
+    ])->assertRedirect('/admin/content-editor?page=search&slot=content');
     expect((int) DB::table('content_drafts')->where('page_key', 'search')->where('slot', 'content')->value('published_revision'))->toBe(2);
 
     $this->post('/admin/content/pages', [

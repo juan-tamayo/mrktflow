@@ -38,6 +38,7 @@ const props = defineProps<{
   }
   canWrite: boolean
   canPublish?: boolean
+  published?: boolean
 }>()
 
 const definitionByType = computed(
@@ -328,6 +329,7 @@ async function refreshPreview() {
         :published-revision="publishedRevision"
         :label="`${page} ${slot} sections`"
         :can-publish="canPublish === true"
+        :just-published="published === true"
       />
 
       <DevicePreview :html="previewHtml" :loading="previewing" @refresh="refreshPreview" />

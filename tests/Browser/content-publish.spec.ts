@@ -123,7 +123,12 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
   ).toContainText('Content preview')
   await openSearchContentDraft(page)
   await page.getByRole('button', { name: 'Publish search content sections', exact: true }).click()
-  await expect(page.getByText(/Live revision/)).toBeVisible()
+  await expect(page.getByRole('status', { name: 'Publish result', exact: true })).toContainText(
+    'Published search content sections',
+  )
+  await expect(
+    page.getByLabel('Publication status for search content sections', { exact: true }),
+  ).toContainText('Live revision')
 
   await page.goto('/admin/content')
   await page.locator('#page-title').fill('Gate studio')
