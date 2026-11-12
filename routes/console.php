@@ -1,7 +1,7 @@
 <?php
 
-use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Identity\Actions\PruneExpiredData;
+use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Operations\Actions\PruneExpiredExports;
 use App\Domain\Operations\Actions\PublishNotification;
 use App\Domain\Platform\Actions\CleanMedia;
@@ -140,7 +140,7 @@ Artisan::command('identity:prune-expired', function (PruneExpiredData $prune): i
     $this->info('Pruned '.$prune->prune().' expired operational record(s).');
 
     return 0;
-})->purpose('Prune expired guest carts, privacy exports, unpublished AI prompts, and export files without deleting retained orders');
+})->purpose('Prune expired guest carts, privacy exports and AI prompts without deleting retained orders');
 
 Schedule::command('identity:prune-expired')->everyMinute()->withoutOverlapping(2);
 

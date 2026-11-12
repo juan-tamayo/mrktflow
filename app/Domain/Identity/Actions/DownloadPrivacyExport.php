@@ -7,7 +7,6 @@ namespace App\Domain\Identity\Actions;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Identity\Support\CustomerAccountAccess;
 use App\Domain\Platform\Support\MediaStoragePolicy;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
