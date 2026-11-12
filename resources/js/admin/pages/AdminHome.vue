@@ -14,6 +14,7 @@ defineProps<{
   canConfigureAi: boolean
   canUseAi: boolean
   canManageEmail: boolean
+  canReadReports: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -156,8 +157,19 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canManageStaff" class="workspace-tool">
+          <div v-if="canReadReports" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">10</span>
+            <div>
+              <a class="tool-link" href="/admin/reports">Sales reports</a>
+              <p>
+                Paid live captures, merchandise discounts and refunds, tax, shipping, and average
+                order value in the store timezone.
+              </p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageStaff" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">11</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -165,7 +177,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">11</span>
+            <span class="tool-number" aria-hidden="true">12</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>

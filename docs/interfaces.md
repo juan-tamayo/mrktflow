@@ -35,6 +35,7 @@ Version 1 proposal. HTTP examples are same-origin application endpoints, not a p
 | POST `/admin/orders/{id}/shipments` | Fulfill permission; quantities/carrier/tracking; key | Shipment with atomically applied quantities/stock movement |
 | POST `/admin/content/{kind}/{id}/publications` | Publish permission, revision | Atomic publish result or conflict |
 | POST `/admin/template-imports` | Content-edit permission; data package | Validation report and draft import |
+| GET `/admin/reports` | Reports permission; store-timezone from/to dates | Paid live sales/refund dashboard with explicit inclusion rules and activity plus order-cohort totals |
 | GET `/admin/ai` | Owner staff; 2FA | Redacted AI settings (no secret), permitted models and author candidates |
 | POST `/admin/ai` | Owner staff; 2FA | Encrypted provider secret, model, daily/monthly token budgets and author list |
 | POST `/admin/ai-runs` | AI-author permission; bounded prompt/context/base revision/key | 202 run ID and polling URL |
