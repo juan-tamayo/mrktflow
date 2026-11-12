@@ -21,7 +21,7 @@
 @section('content')
             <div class="theme-product-image"><img id="product-hero" src="{{ ($selectionState === 'selected' ? $selected['image']['url'] : $product->image['url']) }}" alt="{{ ($selectionState === 'selected' ? $selected['image']['alt'] : $product->image['alt']) }}" width="640" height="720"></div>
             <section class="theme-product-detail" aria-labelledby="product-title">
-                <p class="eyebrow">{{ $preview ? 'A considered everyday' : data_get(collect($product->attributes)->firstWhere('label', 'Delivery'), 'value', 'Physical product') }}</p>
+                <p class="eyebrow">{{ $preview ? 'A considered everyday' : (data_get(collect($product->attributes)->firstWhere('label', 'Delivery'), 'value') === 'Digital download' ? 'Downloadable' : 'Physical product') }}</p>
                 <h1 id="product-title">{{ $product->title }}<span class="accent">.</span></h1>
                 <p class="theme-description">{{ $product->description }}</p>
                 <div id="variant-picker" data-variants="{{ json_encode($preview
@@ -41,6 +41,7 @@
                             <div class="setup-field"><label for="native-variant">Finish</label><select id="native-variant" name="variant">@foreach($product->variants as $variant)<option value="{{ $variant['id'] }}" @selected($variant['id'] === $selected['id'])>{{ $variant['label'] }}</option>@endforeach</select></div>
                         @endif
                         @if($selectionState === 'missing')
+                            <p class="theme-price"><span>Price</span><strong>{{ $selected['money']['formatted'] }}</strong></p>
                             <p class="theme-variant-prompt" role="status">Choose a finish and size to see the current price.</p>
                         @elseif($selectionState === 'unavailable')
                             <p class="theme-variant-prompt" role="status">This combination is unavailable.</p>

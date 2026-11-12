@@ -508,5 +508,5 @@ it('FulfillmentShipment HTTP requires fulfillment permission and fresh 2FA and r
             'lines' => [['id' => $lineId, 'quantity' => 1]],
             'idempotency_key' => (string) Str::uuid(),
         ])->assertForbidden();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });

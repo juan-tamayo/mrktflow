@@ -86,6 +86,7 @@ describe('ProductActions', () => {
       },
     })
     const button = wrapper.get('button')
+    expect(wrapper.get('label').text()).toBe('Item to compare')
     expect(button.attributes('disabled')).toBeDefined()
     await wrapper.get('select').setValue(alphaVariant)
     expect(button.attributes('disabled')).toBeUndefined()
@@ -131,7 +132,7 @@ describe('ProductActions', () => {
     })
     await wrapper.get('button').trigger('click')
     expect(store.tray.value).toEqual(full)
-    expect(wrapper.get('[role="status"]').text()).toContain('up to four items')
-    expect(wrapper.get('[role="status"]').text()).toContain('Remove an item')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(store.announcement.value).toContain('up to four items')
   })
 })

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 beforeEach(function (): void {
+    $this->withoutVite();
     Carbon::setTestNow(Carbon::parse('2026-10-16T18:00:00Z')->utc());
     config(['app.url' => 'http://127.0.0.1:8000']);
 });

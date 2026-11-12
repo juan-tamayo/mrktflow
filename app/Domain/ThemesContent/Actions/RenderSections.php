@@ -23,6 +23,7 @@ final class RenderSections
     public function __construct(
         private readonly ValidateSections $validate,
         private readonly ComposePage $compose,
+        private readonly ListArticles $articles,
     ) {}
 
     /**
@@ -32,9 +33,17 @@ final class RenderSections
     {
         $validated = $this->validate->validate($sections);
         $composed = $this->compose->compose($page, [$slot => 'default-theme::sections']);
+        $rendered = [];
+        foreach ($validated as $section) {
+            if ($section['type'] === 'article-list') {
+                $limit = $section['settings']['limit'] ?? 3;
+                $section['articles'] = $this->articles->published(is_int($limit) ? $limit : 3);
+            }
+            $rendered[] = $section;
+        }
 
         return view('default-theme::sections', [
-            'sections' => $validated,
+            'sections' => $rendered,
             'composedPage' => $composed,
             'sectionSlot' => $slot,
         ]);

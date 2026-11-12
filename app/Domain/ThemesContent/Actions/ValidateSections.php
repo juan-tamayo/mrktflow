@@ -191,7 +191,17 @@ final class ValidateSections
         $type = (string) ($field['type'] ?? '');
         if ($type === 'text') {
             $max = (int) $field['maxLength'];
-            if (! is_string($value) || trim($value) === '' || mb_strlen($value) > $max
+            if (! is_string($value) || trim($value) === '') {
+                if (($field['required'] ?? false) === true) {
+                    $errors[] = "{$label} is missing the required {$path}.";
+
+                    return null;
+                }
+                $errors[] = "{$label} {$path} must be plain text of at most {$max} characters, without markup or control characters.";
+
+                return null;
+            }
+            if (mb_strlen($value) > $max
                 || preg_match('/[<>\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/u', $value) === 1) {
                 $errors[] = "{$label} {$path} must be plain text of at most {$max} characters, without markup or control characters.";
 

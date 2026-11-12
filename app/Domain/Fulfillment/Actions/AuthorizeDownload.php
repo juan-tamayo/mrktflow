@@ -7,6 +7,8 @@ namespace App\Domain\Fulfillment\Actions;
 use App\Domain\CheckoutOrders\Actions\RecordOrderEvent;
 use App\Domain\Fulfillment\Data\DownloadPrincipal;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -219,7 +221,7 @@ final class AuthorizeDownload
                 'media_key' => $this->string($context, 'media_key'),
                 'content_type' => $this->string($context, 'content_type'),
                 'bytes' => $this->int($context, 'version_bytes'),
-                'filename' => $this->string($context, 'original_name'),
+                'filename' => $this->originalFilename($this->string($context, 'original_name')),
             ];
         });
     }
@@ -314,6 +316,18 @@ final class AuthorizeDownload
         return $this->string($context, 'entitlement_status') === 'active'
             && $this->string($context, 'version_status') === 'ready'
             && $this->string($context, 'download_status') === 'entitled';
+    }
+
+    private function originalFilename(string $ciphertext): string
+    {
+        try {
+            $name = Crypt::decryptString($ciphertext);
+        } catch (DecryptException) {
+            return 'download';
+        }
+        $base = basename($name);
+
+        return $base !== '' && $base !== '.' && $base !== '..' ? $base : 'download';
     }
 
     private function string(object $row, string $key): string

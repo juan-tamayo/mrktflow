@@ -107,6 +107,9 @@ describe('ContentEditor', () => {
     await wrapper.get('[data-action="add"]').trigger('click')
     expect(wrapper.find('[data-section-id="hero"]').exists()).toBe(true)
     expect(wrapper.get('[role="status"]').text()).toContain('Hero added as section hero.')
+    await wrapper.get('[data-action="add-type"]').setValue('rich-text')
+    await wrapper.get('[data-action="add"]').trigger('click')
+    expect(wrapper.find('[data-section-id="rich-text"]').exists()).toBe(true)
 
     await wrapper.get('[data-action="save-draft"]').trigger('click')
     await flushPromises()
@@ -118,14 +121,21 @@ describe('ContentEditor', () => {
       'Your changes are still here — fix them and save again.',
     )
 
+    await wrapper.get('[data-section-id="hero"] [data-action="configure"]').trigger('click')
     await wrapper.get('#section-hero-heading').setValue('Find your camera')
     await wrapper.get('[data-action="save-draft"]').trigger('click')
     await flushPromises()
 
     const saves = calls.filter((call) => call.method === 'PUT')
     expect(saves).toHaveLength(2)
-    const secondPayload = saves[1]?.body.sections as { settings: Record<string, unknown> }[]
-    expect(secondPayload[0]?.settings.heading).toBe('Find your camera')
+    const secondPayload = saves[1]?.body.sections as {
+      type: string
+      settings: Record<string, unknown>
+    }[]
+    const heroSave = secondPayload.find((section) => section.type === 'hero')
+    const copySave = secondPayload.find((section) => section.type === 'rich-text')
+    expect(heroSave?.settings.heading).toBe('Find your camera')
+    expect(copySave?.settings.text).toBe('Rich text.')
     expect(wrapper.get('[role="status"]').text()).toContain('Draft saved (version 1).')
     expect(wrapper.text()).toContain('Draft version 1')
     expect(wrapper.text()).not.toContain('problems to fix')

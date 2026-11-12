@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import CompareTray from './CompareTray.vue'
 import {
+  COMPARE_FULL_MESSAGE,
   createCompareTrayStore,
   type CompareTrayEntry,
   type CompareTrayPersistence,
@@ -59,6 +60,25 @@ describe('CompareTray', () => {
     const items = wrapper.findAll('li')
     expect(items).toHaveLength(1)
     expect(items[0]!.text()).toContain('Beta Camera')
+  })
+
+  it('announces the four-item cap in the tray status region', () => {
+    const full: CompareTrayEntry[] = [1, 2, 3, 4].map((n) => ({
+      productId: `10000000-0000-4000-8000-00000000000${n}`,
+      variantId: null,
+      title: `Product ${n}`,
+      variantLabel: 'Standard',
+    }))
+    const store = memoryStore(full)
+    store.add({
+      productId: '10000000-0000-4000-8000-000000000009',
+      variantId: null,
+      title: 'Product 9',
+      variantLabel: 'Standard',
+    })
+    const wrapper = mount(CompareTray, { props: { store } })
+    expect(wrapper.get('[role="status"]').text()).toBe(COMPARE_FULL_MESSAGE)
+    expect(wrapper.text()).toContain('4 of 4')
   })
 
   it('labels a non-standard variant on its entry', () => {

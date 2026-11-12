@@ -21,7 +21,7 @@ const form = useForm({
   tracking_number: '',
   tracking_url: '',
   idempotency_key: crypto.randomUUID(),
-  lines: shippable.map((line) => ({ id: line.id, quantity: 0 })),
+  lines: shippable.map((line) => ({ id: line.id, quantity: line.shippable_quantity })),
 })
 const submit = () => {
   form.idempotency_key = crypto.randomUUID()
@@ -37,17 +37,20 @@ const catalogLine = (id: string): Line | undefined => props.lines.find((line) =>
     <p v-if="shippable.length === 0" class="workspace-note">Nothing left to ship.</p>
     <template v-else>
       <fieldset v-for="item in form.lines" :key="item.id">
-        <label>
+        <p>
           {{ catalogLine(item.id)?.title }} ({{ catalogLine(item.id)?.sku }}) unshipped
           {{ catalogLine(item.id)?.shippable_quantity }}
-          <input
-            v-model.number="item.quantity"
-            type="number"
-            min="0"
-            :max="catalogLine(item.id)?.shippable_quantity ?? 0"
-            :name="`lines-${item.id}`"
-          />
-        </label>
+        </p>
+        <label :for="`ship-qty-${item.id}`">Quantity to ship</label>
+        <input
+          :id="`ship-qty-${item.id}`"
+          v-model.number="item.quantity"
+          type="number"
+          min="0"
+          :max="catalogLine(item.id)?.shippable_quantity ?? 0"
+          :name="`lines-${item.id}`"
+          :aria-label="`Quantity to ship (${catalogLine(item.id)?.sku ?? ''})`"
+        />
       </fieldset>
       <label>
         Carrier

@@ -35,6 +35,7 @@ const quote = {
 describe('default theme checkout quote', () => {
   it('shows itemized totals without payment authority', () => {
     const wrapper = mount(CheckoutForm, { props: { quote } })
+    expect(wrapper.attributes('data-platform-slot')).toBe('checkout.summary')
     expect(wrapper.text()).toContain('USD 28.05')
     expect(wrapper.text()).toContain('Confirm these totals before payment')
     expect(wrapper.text()).not.toContain('Pay now')

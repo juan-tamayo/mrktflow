@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import settings from '../Fixtures/store-settings.json' with { type: 'json' }
 import { exerciseCustomerAccount } from './customer-account-flow'
 import { exerciseCatalogBrowse } from './catalog-browse-flow'
@@ -140,6 +140,12 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
   await expect(page).toHaveURL(/\/admin\/two-factor$/)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Protect this account.')
   const authenticatorSecret = await page.getByLabel('Authenticator secret').inputValue()
+  writeFileSync('.runtime/browser-owner-totp', authenticatorSecret, {
+    encoding: 'utf8',
+    mode: 0o600,
+  })
+  process.env.BROWSER_OWNER_TOTP_SECRET = authenticatorSecret
+  process.env.MRKTFLOW_BROWSER_TOTP_SECRET = authenticatorSecret
   await page.getByLabel('Authentication code').fill(totpCode(authenticatorSecret))
   await page.getByRole('button', { name: 'Confirm authenticator' }).click()
   await expect(page.getByRole('status')).toContainText('Recovery codes are shown once')
@@ -303,5 +309,22 @@ test('owner can unlock, save and reload interrupted store setup', async ({ page,
   await expect(lostPage).toHaveURL(/\/admin\/two-factor$/)
   await expect(lostPage.getByRole('heading', { level: 1 })).toHaveText('Protect this account.')
   await lostDevice.close()
+  const enroll = await browser.newContext()
+  const enrollPage = await enroll.newPage()
+  await enrollPage.goto('/admin/login')
+  await enrollPage.getByLabel('Email', { exact: true }).fill('owner@example.test')
+  await enrollPage.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
+  await enrollPage.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(enrollPage.getByRole('heading', { level: 1 })).toHaveText('Protect this account.')
+  const nextSecret = await enrollPage.getByLabel('Authenticator secret').inputValue()
+  writeFileSync('.runtime/browser-owner-totp', nextSecret, { encoding: 'utf8', mode: 0o600 })
+  process.env.BROWSER_OWNER_TOTP_SECRET = nextSecret
+  process.env.MRKTFLOW_BROWSER_TOTP_SECRET = nextSecret
+  await enrollPage.getByLabel('Authentication code').fill(totpCode(nextSecret))
+  await enrollPage.getByRole('button', { name: 'Confirm authenticator' }).click()
+  await expect(enrollPage.getByRole('heading', { level: 1 })).toHaveText(
+    'Save these recovery codes.',
+  )
+  await enroll.close()
   expect(errors).toEqual([])
 })

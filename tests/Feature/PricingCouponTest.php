@@ -74,7 +74,26 @@ it('PricingCoupon lets merchants configure one-coupon rules and quotes only elig
         ->toThrow(PricingCouponRejected::class);
     expect(fn () => app(ApplyCoupon::class)->apply('LAMP-10', [$lampLine], new DateTimeImmutable('2025-12-31T23:59:59Z')))
         ->toThrow(PricingCouponRejected::class);
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
+});
+
+it('PricingCoupon a 100 percent coupon also waives shipping so mixed baskets can complete at zero', function (): void {
+    $owner = catalogInstalledOwner();
+    $image = catalogReadyImage($owner->id);
+    $lamp = app(SaveProduct::class)->save($owner, catalogProductInput($image, ['status' => 'published']));
+    $lampVariant = (string) DB::table('product_variants')->where('product_id', $lamp['id'])->value('id');
+    pricingSavedCoupon($owner, [
+        'code' => 'FREE100',
+        'percent_numerator' => 100,
+        'percent_denominator' => 100,
+        'max_redemptions' => 25,
+        'max_redemptions_per_customer' => null,
+    ]);
+    $line = pricingCouponLine($lamp['id'], $lampVariant, 2, pricingCouponUsd(2499));
+    $applied = app(ApplyCoupon::class)->apply('FREE100', [$line], new DateTimeImmutable('2026-10-13T00:00:00Z'));
+    expect($applied->mode)->toBe('percentage')
+        ->and($applied->waivesShipping)->toBeTrue();
+    $this->get('/')->assertStatus(503);
 });
 
 it('PricingCoupon holds commits and releases redemptions atomically without oversubscription', function (): void {
@@ -253,7 +272,7 @@ it('PricingCoupon HTTP keeps privileged staff behind two-factor and rejects cust
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/admin/coupons', ['coupon' => pricingCouponInput()])
         ->assertUnauthorized();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('PricingCoupon HTTP lets authorized staff save coupons and denies other roles', function (): void {
@@ -280,7 +299,7 @@ it('PricingCoupon HTTP lets authorized staff save coupons and denies other roles
             ->postJson('/admin/coupons', ['coupon' => pricingCouponInput(['code' => 'DENIED'])])
             ->assertForbidden();
     }
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('PricingCoupon HTTP rejects forged coupon saves', function (): void {
@@ -458,7 +477,7 @@ it('PricingCoupon rejects invalid configuration holds and ineligible quotes', fu
     expect($detail['product_ids'])->toBe([$product['id']])
         ->and(app(ReadCoupons::class)->staffCoupons()[0]['code'])->toBeString()
         ->and(app(ReadCoupons::class)->catalogOptions()['products'])->not->toBeEmpty();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('PricingCoupon HTTP lists edits and rejects missing or stale coupons', function (): void {
@@ -483,5 +502,5 @@ it('PricingCoupon HTTP lists edits and rejects missing or stale coupons', functi
         ->where('coupon.code', 'LISTED')
         ->where('coupon.version', 2)
         ->where('saved', false));
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });

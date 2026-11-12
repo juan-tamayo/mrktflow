@@ -387,7 +387,13 @@ final class CreateQuote
         }
         $billing = $this->address($input['billing'] ?? null, 'billing');
         $shippingInput = $input['shipping'] ?? null;
-        $shipping = $shippingInput === null ? null : $this->address($shippingInput, 'shipping');
+        if ($shippingInput === null) {
+            $shipping = null;
+        } elseif ($this->unusedAddress($shippingInput)) {
+            $shipping = $billing;
+        } else {
+            $shipping = $this->address($shippingInput, 'shipping');
+        }
 
         return [
             'expected_revision' => $revision,
@@ -397,6 +403,21 @@ final class CreateQuote
             'billing' => $billing,
             'shipping' => $shipping,
         ];
+    }
+
+    private function unusedAddress(mixed $input): bool
+    {
+        if (! is_array($input)) {
+            return false;
+        }
+        foreach (['recipient', 'line1', 'city', 'country_code', 'countryCode'] as $key) {
+            $value = $input[$key] ?? null;
+            if (is_string($value) && trim($value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

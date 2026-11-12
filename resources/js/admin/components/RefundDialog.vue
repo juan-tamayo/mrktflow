@@ -34,22 +34,24 @@ const catalogLine = (id: string): Line | undefined => props.lines.find((line) =>
 
 <template>
   <form class="setup-form" @submit.prevent="submit">
-    <h2>Refund</h2>
+    <h2 role="presentation">Refund</h2>
     <p class="workspace-note">
       Remaining {{ refundable.money.formatted }}. Quantity refunds hold unshipped units.
     </p>
     <fieldset v-for="item in form.lines" :key="item.id">
-      <label>
+      <label :for="`refund-qty-${item.id}`">
         {{ catalogLine(item.id)?.title }} ({{ catalogLine(item.id)?.sku }}) unshipped
         {{ catalogLine(item.id)?.refundable_quantity }}
-        <input
-          v-model.number="item.quantity"
-          type="number"
-          min="0"
-          :max="catalogLine(item.id)?.refundable_quantity ?? 0"
-          :name="`lines-${item.id}`"
-        />
       </label>
+      <input
+        :id="`refund-qty-${item.id}`"
+        v-model.number="item.quantity"
+        type="number"
+        min="0"
+        :max="catalogLine(item.id)?.refundable_quantity ?? 0"
+        :name="`lines-${item.id}`"
+        :aria-label="`${catalogLine(item.id)?.title ?? ''} (${catalogLine(item.id)?.sku ?? ''}) unshipped ${catalogLine(item.id)?.refundable_quantity ?? 0}`"
+      />
     </fieldset>
     <label>
       Goodwill amount

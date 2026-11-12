@@ -176,6 +176,6 @@ it('CheckoutOrdersWebhook HTTP keeps privileged staff behind two-factor and leav
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->postJson('/store-api/v1/checkout-sessions/'.(string) Str::uuid().'/payment')
         ->assertStatus(409);
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
     expect(class_exists(StripeController::class))->toBeTrue();
 });

@@ -133,10 +133,9 @@ it('CheckoutOrdersReceipt queues one event-derived receipt and shows the owner f
         ->and(DB::table('order_events')->where('order_id', $paid['order_id'])->where('type', 'receipt_queued')->count())->toBe(1);
     Mail::assertNothingOutgoing();
     $timeline = app(ReadAdminOrders::class)->detail($catalog['owner'], $paid['order_id'])['timeline'];
-    expect($timeline)->toHaveCount(2)
-        ->and($timeline[0]['type'])->toBe('paid')
-        ->and($timeline[1]['type'])->toBe('receipt_queued')
-        ->and($timeline[0]['amount']['amount'] ?? 0)->toBe(0);
+    expect($timeline)->toHaveCount(3)
+        ->and(array_column($timeline, 'type'))->toBe(['entitlements_issued', 'paid', 'receipt_queued'])
+        ->and($timeline[1]['amount']['amount'] ?? 0)->toBe(0);
     $own = app(ReadCustomerOrders::class)->detail($alice, $paid['order_id']);
     expect($own['number'])->toBe($paid['number'])
         ->and($own['email'])->toBe('alice@example.test')
@@ -144,7 +143,8 @@ it('CheckoutOrdersReceipt queues one event-derived receipt and shows the owner f
         ->and($own['totals']['grand_total']['amount'])->toBe(0)
         ->and($own['lines'][0]['sku'])->toBe('GUIDE-001')
         ->and($own['receipt']['template'])->toBe('order-receipt')
-        ->and($own['timeline'][0]['type'])->toBe('paid')
+        ->and($own['timeline'][0]['type'])->toBe('entitlements_issued')
+        ->and(array_column($own['timeline'], 'type'))->toContain('paid')
         ->and($own)->not->toHaveKey('payload')
         ->and($own)->not->toHaveKey('notes');
     $list = app(ReadCustomerOrders::class)->list($alice);
@@ -153,7 +153,9 @@ it('CheckoutOrdersReceipt queues one event-derived receipt and shows the owner f
         ->toThrow(NotFoundHttpException::class);
     expect(app(ReadCustomerOrders::class)->list($bob)['data'])->toBe([]);
     $this->actingAs($alice, 'customer')->withSession(['customer_session_version' => 1]);
-    $this->get('/account/orders')->assertOk()->assertSee($paid['number'])->assertSee('alice@example.test');
+    $this->get('/account/orders')->assertOk()
+        ->assertSee('>Order '.$paid['number'].'</a>', false)
+        ->assertSee('alice@example.test');
     $this->get('/account/orders/'.$paid['order_id'])->assertOk()
         ->assertSee($paid['number'])
         ->assertSee('GUIDE-001')
@@ -161,7 +163,7 @@ it('CheckoutOrdersReceipt queues one event-derived receipt and shows the owner f
         ->assertDontSee('guest_token_hash');
     $this->actingAs($bob, 'customer')->withSession(['customer_session_version' => 1]);
     $this->get('/account/orders/'.$paid['order_id'])->assertNotFound();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('CheckoutOrdersReceipt resends only with an explicit audited staff action', function (): void {
@@ -193,7 +195,8 @@ it('CheckoutOrdersReceipt resends only with an explicit audited staff action', f
     $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
     $this->get('/admin/orders/'.$paid['order_id'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->component('OrderDetail')
-        ->where('order.timeline.0.type', 'paid')
+        ->where('order.timeline.0.type', 'entitlements_issued')
+        ->where('order.timeline.1.type', 'paid')
         ->where('canResendReceipt', true));
     $this->from('/admin/orders/'.$paid['order_id'])
         ->post('/admin/orders/'.$paid['order_id'].'/receipt', ['idempotency_key' => (string) Str::uuid()])
@@ -210,5 +213,5 @@ it('CheckoutOrdersReceipt resends only with an explicit audited staff action', f
     $this->actingAs($fulfillment, 'staff')->withSession(catalogStaffSession($fulfillment))
         ->postJson('/admin/orders/'.$paid['order_id'].'/receipt', ['idempotency_key' => (string) Str::uuid()])
         ->assertForbidden();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });

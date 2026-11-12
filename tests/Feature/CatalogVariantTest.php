@@ -51,14 +51,19 @@ it('CatalogVariant saves unique combinations and lets a shopper see the selected
     expect($pine['image']['url'])->toMatch('#^/storage/media/[0-9a-f-]{36}/[a-f0-9]{64}\.png$#D');
     expect($unavailable['available'])->toBeFalse();
     expect(json_encode($public))->not->toContain('original_key', $owner->password);
-    $this->get('/')->assertOk()->assertSee('Studio Lamp');
+    $this->get('/search')->assertOk()->assertSee('Studio Lamp');
     $page = $this->get('/products/studio-lamp?variant='.$pine['id']);
     $page->assertOk()->assertSee('Studio Lamp')->assertSee('USD 24.99')->assertSee('Pine / S')->assertSee('Add to cart');
     $unavailablePage = $this->get('/products/studio-lamp?variant='.$unavailable['id']);
     $unavailablePage->assertOk()->assertSee('This combination is unavailable')->assertDontSee('<strong>USD 25.99</strong>', false);
     $this->getJson('/products/studio-lamp?variant=not-a-variant')->assertUnprocessable();
     $missing = $this->get('/products/studio-lamp');
-    $missing->assertOk()->assertSee('Choose a finish and size to see the current price');
+    $missing->assertOk()->assertSee('Choose a finish and size to see the current price')
+        ->assertSee('USD 24.99')
+        ->assertSee('<label for="cart-variant">Variant</label>', false)
+        ->assertSee('<label for="wishlist-variant">Item to save</label>', false)
+        ->assertSee('<label for="watch-variant">Item for alerts</label>', false);
+    expect(substr_count($missing->getContent(), '>Variant</label>'))->toBe(1);
 });
 
 it('CatalogVariant HTTP keeps privileged staff behind two-factor and rejects customers', function (): void {

@@ -127,6 +127,9 @@ it('CheckoutOrdersAdmin lets permitted staff search frozen orders with independe
         ->and($byNumber['data'][0]['grand_total']['amount'])->toBe(2805);
     $byEmail = $reader->search($catalog['owner'], ['q' => 'alex@example.test', 'from' => '2026-10-16', 'to' => '2026-10-16']);
     expect(array_column($byEmail['data'], 'id'))->toEqualCanonicalizing([$pending['order_id'], $paid['order_id']]);
+    $listed = $reader->search($catalog['owner'], []);
+    expect($listed['data'][0]['id'])->toBe($pending['order_id'])
+        ->and($listed['data'][0]['fulfillment_status'])->toBe('unfulfilled');
     $detail = $reader->detail($catalog['owner'], $pending['order_id']);
     expect($detail['email'])->toBe('alex@example.test')
         ->and($detail['status'])->toBe('pending')
@@ -150,7 +153,7 @@ it('CheckoutOrdersAdmin lets permitted staff search frozen orders with independe
     $empty = $reader->search($catalog['owner'], ['q' => 'nobody@example.test']);
     expect($empty['data'])->toBe([]);
     expect(fn () => $reader->detail($catalog['owner'], (string) Str::uuid()))->toThrow(NotFoundHttpException::class);
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('CheckoutOrdersAdmin HTTP allows owner and fulfillment staff and denies content editors', function (): void {
@@ -214,7 +217,7 @@ it('CheckoutOrdersAdmin HTTP allows owner and fulfillment staff and denies conte
         ->getJson('/admin/orders')->assertForbidden();
     $this->actingAs($editor, 'staff')->withSession(catalogStaffSession($editor))
         ->getJson('/admin/orders/'.$intent['order_id'])->assertForbidden();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('CheckoutOrdersAdmin records internal notes with an audit fact and rejects unauthorized writers', function (): void {
@@ -252,5 +255,5 @@ it('CheckoutOrdersAdmin records internal notes with an audit fact and rejects un
     $this->actingAs($editor->fresh(), 'staff')->withSession(catalogStaffSession($editor->fresh()))
         ->postJson('/admin/orders/'.$intent['order_id'].'/notes', ['note' => 'Nope.'])
         ->assertForbidden();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });

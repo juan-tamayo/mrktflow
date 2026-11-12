@@ -68,7 +68,7 @@ defineProps<{
       <p v-if="orders.data.length === 0" class="workspace-note">No orders match this search.</p>
       <ul v-else class="product-list">
         <li v-for="order in orders.data" :key="order.id">
-          <a class="tool-link" :href="`/admin/orders/${order.id}`">{{ order.number }}</a>
+          <a class="tool-link" :href="`/admin/orders/${order.id}`">Order {{ order.number }}</a>
           <p>
             {{ order.email }} · {{ order.grand_total.formatted }} · {{ order.status }} · financial
             {{ order.financial_status }} · fulfillment {{ order.fulfillment_status }} · downloads

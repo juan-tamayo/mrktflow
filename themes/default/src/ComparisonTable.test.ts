@@ -166,6 +166,39 @@ describe('ComparisonTable', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('1 of 2')
   })
 
+  it('moves keyboard focus to a remaining remove control after a column is removed', async () => {
+    const store = memoryStore()
+    const fetcher = vi.fn<(url: string) => Promise<FetcherResult>>(async () => ({
+      ok: true,
+      json: async () => comparison([alpha, beta]),
+    }))
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const wrapper = mount(ComparisonTable, {
+      attachTo: host,
+      props: {
+        comparison: comparison([alpha, beta, pro]),
+        candidates,
+        endpoint: '/store-api/v1/compare',
+        csrfToken: 'csrf-token',
+        cartRevision: 1,
+        store,
+        fetcher,
+        navigate: vi.fn(),
+      },
+    })
+    const remove = wrapper.get('button[aria-label="Remove Pro Camera from comparison"]')
+      .element as HTMLButtonElement
+    remove.focus()
+    await remove.click()
+    await flushPromises()
+    await Promise.resolve()
+    const focused = document.activeElement as HTMLElement | null
+    expect(focused?.getAttribute('aria-label') ?? '').toMatch(/^Remove .+ from comparison$/)
+    wrapper.unmount()
+    host.remove()
+  })
+
   it('removes a column through the read model and syncs the tray', async () => {
     const { wrapper, store, fetcher } = mountTable()
     await wrapper.get('button[aria-label="Remove Pro Camera from comparison"]').trigger('click')

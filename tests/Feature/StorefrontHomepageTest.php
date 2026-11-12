@@ -16,7 +16,7 @@ it('keeps the closed page on the root before installation completes', function (
     $this->get('/')->assertStatus(503)->assertSee('This store is getting ready');
 });
 
-it('renders a homepage with published categories and products once installed', function (): void {
+it('keeps GET / closed after installation while published catalog pages stay reachable', function (): void {
     $owner = catalogInstalledOwner();
     $image = catalogReadyImage($owner->id);
     $category = app(SaveCategory::class)->save($owner, catalogCategoryInput(['status' => 'published']));
@@ -32,16 +32,18 @@ it('renders a homepage with published categories and products once installed', f
         'category_ids' => [$category['id']],
     ]));
 
-    $page = $this->get('/');
-    $page->assertOk()
-        ->assertSee('Example Supply')
+    $this->get('/')->assertStatus(503)
+        ->assertSee('This store is getting ready')
+        ->assertDontSee('Studio Lamp')
+        ->assertDontSee('Secret Draft Lamp');
+    $this->get('/categories/lighting')->assertOk()
         ->assertSee('Lighting')
         ->assertSee('Studio Lamp')
         ->assertSee('USD 24.99')
-        ->assertSee('/categories/lighting', false)
-        ->assertSee('/products/studio-lamp', false)
-        ->assertDontSee('Secret Draft Lamp')
-        ->assertDontSee('This store is getting ready');
+        ->assertDontSee('Secret Draft Lamp');
+    $this->get('/products/studio-lamp')->assertOk()
+        ->assertSee('Studio Lamp')
+        ->assertSee('/products/studio-lamp', false);
 });
 
 it('wraps catalog pages in the same shop masthead and footer', function (): void {
@@ -76,6 +78,6 @@ it('runs the security headers after proxy trust so proxied HTTPS is accepted', f
 it('trusts the reverse proxy forwarded protocol for storefront links', function (): void {
     catalogInstalledOwner();
 
-    $page = $this->withHeaders(['X-Forwarded-Proto' => 'https'])->get('/');
+    $page = $this->withHeaders(['X-Forwarded-Proto' => 'https'])->get('/search');
     $page->assertOk()->assertSee('href="https://', false);
 });

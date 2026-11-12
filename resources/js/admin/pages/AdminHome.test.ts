@@ -17,6 +17,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       canManageShipping: true,
       canReadOrders: true,
       canPreviewTheme: true,
+      canManageContent: true,
     },
   })
   expect(wrapper.get('section[aria-labelledby="launch-heading"]').text()).toContain(
@@ -35,6 +36,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       .map((link) => link.attributes('href')),
   ).toEqual(['/admin/coupons', '/admin/taxes', '/admin/pricing-preview'])
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/content"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
@@ -45,6 +47,7 @@ it('shows the closed launch status and only authorized workspace actions', async
     canManageShipping: false,
     canReadOrders: false,
     canPreviewTheme: false,
+    canManageContent: false,
   })
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(false)
@@ -53,6 +56,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/taxes"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/pricing-preview"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/content"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
@@ -70,6 +74,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/taxes',
           '/admin/pricing-preview',
           '/admin/shipping',
+          '/admin/content',
           '/admin/orders',
           '/admin/staff',
           '/admin/two-factor',
@@ -90,6 +95,7 @@ it('escapes staff names in the branded workspace', () => {
       canManageShipping: false,
       canReadOrders: false,
       canPreviewTheme: false,
+      canManageContent: false,
     },
   })
   expect(wrapper.find('script').exists()).toBe(false)

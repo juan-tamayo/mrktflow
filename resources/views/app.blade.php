@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta property="csp-nonce" nonce="{{ Vite::cspNonce() }}">
     <title>Store administration · MRKTFlow</title>
     @vite(['resources/css/app.css', 'resources/js/app.ts'])

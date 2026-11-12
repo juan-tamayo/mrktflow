@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue'
 import {
+  COMPARE_FULL_MESSAGE,
   sharedCompareTrayStore,
   type CompareTrayStore,
   type ProductActionsInput,
@@ -38,14 +39,14 @@ function toggle(): void {
     title: props.title,
     variantLabel: variant?.label ?? 'Standard',
   })
-  status.value = store.announcement.value
+  status.value = store.announcement.value === COMPARE_FULL_MESSAGE ? '' : store.announcement.value
 }
 </script>
 
 <template>
   <div class="theme-compare-actions">
     <div v-if="props.variants.length > 1" class="setup-field">
-      <label :for="selectId">Variant</label>
+      <label :for="selectId">Item to compare</label>
       <select :id="selectId" v-model="chosenVariantId">
         <option value="">Choose a combination</option>
         <option v-for="variant in props.variants" :key="variant.id" :value="variant.id">

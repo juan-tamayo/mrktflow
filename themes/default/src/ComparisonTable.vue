@@ -85,6 +85,7 @@ async function refresh(variantIds: string[], message: string, focusIndex: number
     remainingSingle.value = null
     store.syncSelections(parsed.selections)
     status.value = message
+    busy.value = false
     await nextTick()
     focusRemoveAt(focusIndex)
   } catch {

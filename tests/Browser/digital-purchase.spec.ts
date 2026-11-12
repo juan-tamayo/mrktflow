@@ -55,7 +55,10 @@ test('digital purchase completes at zero total and the file downloads from the a
   await page.getByLabel('Coupon (optional)').fill('FREE100')
   await page.getByRole('button', { name: 'Review totals' }).click()
   await expect(page.getByRole('heading', { name: 'Itemized total' })).toBeVisible()
-  await page.getByRole('button', { name: 'Place order' }).click()
+  const actions = page.locator('[data-platform-slot="checkout.actions"]')
+  await actions.getByLabel(/I acknowledge the store policies/).check()
+  await actions.getByRole('button', { name: 'Confirm these totals' }).click()
+  await actions.getByRole('button', { name: 'Place order' }).click()
   await expect(page.getByText('Order confirmed.')).toBeVisible()
   await expect(page.getByText('No charge was taken for a zero total.')).toBeVisible()
 

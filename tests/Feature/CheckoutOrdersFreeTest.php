@@ -147,7 +147,7 @@ it('CheckoutOrdersFree completes a zero-total order through the local confirmati
 
 it('CheckoutOrdersFree confirmation screen recovers pending status and ignores a forged success URL', function (): void {
     $catalog = freeCatalog();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
     $this->postJson('/store-api/v1/cart/lines', [
         'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => 1,
     ])->assertOk();
@@ -230,6 +230,130 @@ it('CheckoutOrdersFree confirmation screen recovers pending status and ignores a
     expect(class_exists(OrderStatusController::class))->toBeTrue();
 });
 
+it('CheckoutOrdersFree mixed FREE100 quote is zero-total so checkout.actions offers Place order after confirm', function (): void {
+    $catalog = freeCatalog();
+    $this->get('/')->assertStatus(503);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['physical_variant'], 'quantity' => 2, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => $cart['revision'],
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => 'guest@example.test',
+        'coupon' => 'FREE100',
+        'billing' => checkoutAddress(),
+        'shipping' => checkoutAddress(),
+    ])->assertOk()->json('data');
+    expect($quote['grandTotal']['amount'])->toBe(0)
+        ->and($quote['shipping']['amount'])->toBe(0)
+        ->and($quote['discount']['amount'])->toBeGreaterThan(0);
+    $this->post('/checkout/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policy_acknowledged' => '1',
+    ])->assertRedirect('/checkout/'.$quote['id']);
+    $this->get('/checkout/'.$quote['id'])->assertOk()
+        ->assertSee('data-platform-slot="checkout.actions"', false)
+        ->assertSee('Place order')
+        ->assertDontSee('Pay now')
+        ->assertSee('action="/checkout/'.$quote['id'].'/pay"', false);
+});
+
+it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads after outbox entitlements', function (): void {
+    $catalog = freeCatalog();
+    $customer = new CustomerAccount;
+    $customer->forceFill([
+        'name' => 'Mixed Shopper',
+        'email' => 'mixed-free@example.test',
+        'password' => Hash::make('Fictional shopper passphrase 471!'),
+        'is_active' => true,
+        'session_version' => 1,
+        'email_verified_at' => now(),
+    ])->save();
+    $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1]);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['physical_variant'], 'quantity' => 2, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => $cart['revision'],
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => $customer->email,
+        'coupon' => 'FREE100',
+        'billing' => checkoutAddress(),
+        'shipping' => checkoutAddress(),
+    ])->assertOk()->json('data');
+    $this->post('/checkout/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policy_acknowledged' => '1',
+    ])->assertRedirect('/checkout/'.$quote['id']);
+    $this->post('/checkout/'.$quote['id'].'/pay', [
+        'fingerprint' => $quote['fingerprint'],
+    ])->assertRedirect();
+    $this->get('/account/downloads')->assertOk()
+        ->assertSee('<h1>Downloads', false)
+        ->assertSee('Lighting guide')
+        ->assertSee('5 of 5 downloads remaining');
+    $entitlementId = (string) DB::table('entitlements')->where('customer_id', $customer->id)->value('id');
+    expect($entitlementId)->not->toBe('');
+    $this->post('/account/downloads/'.$entitlementId.'/grants')->assertRedirect();
+    $grantId = (string) DB::table('download_grants')->where('entitlement_id', $entitlementId)->value('id');
+    $grantUrl = '/account/download-grants/'.$grantId;
+    $status = $this->get($grantUrl)->assertOk();
+    preg_match('/name="token" value="([a-f0-9]{64})"/', (string) $status->getContent(), $match);
+    expect($match[1] ?? null)->not->toBeNull();
+    $this->post($grantUrl.'/start', ['token' => $match[1]])->assertRedirect($grantUrl);
+    $transferId = (string) DB::table('download_transfers')->where('grant_id', $grantId)->value('id');
+    $stream = $this->get('/account/download-transfers/'.$transferId);
+    $stream->assertOk()
+        ->assertHeader('Content-Disposition', 'attachment; filename="studio-guide.txt"');
+    expect($stream->headers->get('Content-Disposition'))->not->toContain('eyJpdiI');
+    $order = DB::table('orders')->where('customer_id', $customer->id)->first();
+    expect($order)->not->toBeNull();
+    $this->get('/account/orders')->assertOk()
+        ->assertSee('>Order '.$order->number.'</a>', false);
+    $this->get('/account/orders/'.$order->id)->assertOk()
+        ->assertSee('<h2>Shipments</h2>', false)
+        ->assertSee('Nothing shipped yet.')
+        ->assertDontSee('No shipments yet.')
+        ->assertDontSee('Track this shipment');
+});
+
+it('CheckoutOrdersFree HTML shows Place order only after checkout.actions confirms totals', function (): void {
+    $catalog = freeCatalog();
+    $this->get('/')->assertStatus(503);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => 'guest@example.test',
+        'coupon' => 'FREE100',
+        'billing' => checkoutAddress(),
+        'shipping' => null,
+    ])->assertOk()->json('data');
+    $this->get('/checkout/'.$quote['id'])->assertOk()
+        ->assertSee('data-platform-slot="checkout.actions"', false)
+        ->assertSee('Confirm these totals')
+        ->assertSee('I acknowledge the store policies')
+        ->assertDontSee('Place order');
+    $this->post('/checkout/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policy_acknowledged' => '1',
+    ])->assertRedirect('/checkout/'.$quote['id']);
+    $this->get('/checkout/'.$quote['id'])->assertOk()
+        ->assertSee('data-platform-slot="checkout.actions"', false)
+        ->assertSee('Place order')
+        ->assertSee('action="/checkout/'.$quote['id'].'/pay"', false);
+});
+
 it('CheckoutOrdersFree HTTP keeps privileged staff behind two-factor and leaves the storefront closed', function (): void {
     $owner = catalogInstalledOwner();
     $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1]);
@@ -244,5 +368,5 @@ it('CheckoutOrdersFree HTTP keeps privileged staff behind two-factor and leaves 
     $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1])
         ->get('/checkout/orders/'.(string) Str::uuid())
         ->assertNotFound();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });

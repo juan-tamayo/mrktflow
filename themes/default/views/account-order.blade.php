@@ -20,8 +20,10 @@
                 @endforeach
             </ul>
             <p>Merchandise {{ $order['totals']['merchandise']['formatted'] }} · discount {{ $order['totals']['discount']['formatted'] }} · shipping {{ $order['totals']['shipping']['formatted'] }} · tax {{ $order['totals']['tax']['formatted'] }} · {{ $order['totals']['grand_total']['formatted'] }}</p>
-            @if($order['shipments'] !== [])
-                <h2>Shipments</h2>
+            <h2>Shipments</h2>
+            @if($order['shipments'] === [])
+                <p class="theme-purchase-note">Nothing shipped yet.</p>
+            @else
                 <ul class="product-list">
                     @foreach($order['shipments'] as $shipment)
                         <li>
@@ -31,6 +33,8 @@
                             @endforeach
                             @if($shipment['tracking_url'] !== null)
                                 <p><a class="text-link" href="{{ $shipment['tracking_url'] }}" target="_blank" rel="noopener noreferrer">Track this shipment</a></p>
+                            @else
+                                <p>Track this shipment</p>
                             @endif
                         </li>
                     @endforeach

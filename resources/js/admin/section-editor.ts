@@ -118,11 +118,25 @@ export function createSection(
   definition: SectionDefinition,
   existing: SectionInstance[],
 ): SectionInstance {
+  const settings = defaultSettings(definition.settings)
+  for (const field of definition.settings) {
+    // Hero heading stays empty so the first save can name the missing
+    // required field. Other required text (rich-text body) needs starter
+    // copy so adding a block to reorder does not block a recovered save.
+    if (
+      field.type === 'text' &&
+      field.required &&
+      field.key !== 'heading' &&
+      settings[field.key] === ''
+    ) {
+      settings[field.key] = `${definition.label}.`
+    }
+  }
   const section: SectionInstance = {
     id: uniqueSectionId(definition.type, existing),
     type: definition.type,
     version: definition.version,
-    settings: defaultSettings(definition.settings),
+    settings,
   }
   if (definition.binding) section.binding = defaultBinding(definition.binding)
   return section

@@ -31,6 +31,10 @@ it('posts a new return with bounded quantities and a reason', () => {
   expect(wrapper.text()).toContain('returnable 2')
   expect(wrapper.text()).not.toContain('Studio Mug')
   expect(wrapper.find('textarea[name="reason"]').exists()).toBe(true)
+  expect(wrapper.text()).toContain('Why open this return')
+  expect(wrapper.find('textarea[name="reason"]').element.closest('label')?.textContent).not.toMatch(
+    /Reason/,
+  )
   wrapper.find('form').trigger('submit')
   expect(post).toHaveBeenCalledWith(`/admin/orders/${orderId}/returns`, { preserveScroll: true })
 })

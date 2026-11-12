@@ -206,6 +206,21 @@ it('ThemesContentSection rejects constraint violations naming the section field 
     'heading with markup' => [fn (array &$s) => $s['settings']['heading'] = 'Sale <b>now</b>', 'heading'],
 ]);
 
+it('ThemesContentSection reports a blank required heading as missing, not a plain-text length rule', function (): void {
+    foreach (['', '   '] as $heading) {
+        try {
+            app(ValidateSections::class)->validate([
+                ['id' => 'hero', 'type' => 'hero', 'version' => 1, 'settings' => ['heading' => $heading]],
+            ]);
+            $this->fail('Section validation should have failed for a blank required heading.');
+        } catch (SectionValidationFailed $exception) {
+            $errors = implode("\n", $exception->errors());
+            expect($errors)->toContain("missing the required setting 'heading'")
+                ->and($errors)->not->toContain('plain text of at most');
+        }
+    }
+});
+
 it('ThemesContentSection rejects missing required settings and unsafe paths', function (): void {
     $ids = t063Catalog();
     $cases = [
