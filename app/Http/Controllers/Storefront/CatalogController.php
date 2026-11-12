@@ -11,6 +11,7 @@ use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
 use App\Domain\CheckoutOrders\Actions\ReadCart;
 use App\Domain\CheckoutOrders\Support\CartOwner;
+use App\Domain\ThemesContent\Actions\ResolveLayout;
 use App\Domain\ThemesContent\Data\CategoryView;
 use App\Domain\ThemesContent\Data\ProductView;
 use App\Domain\ThemesContent\Rendering\DefaultThemeRenderer;
@@ -103,7 +104,9 @@ final class CatalogController
             }
         }
 
-        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision, $cartItemCount);
+        $templateKey = app(ResolveLayout::class)->templateKey('product', $snapshot['id']);
+
+        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision, $cartItemCount, $templateKey);
     }
 
     public function category(string $path, CatalogReader $catalog, DefaultThemeRenderer $renderer): View|RedirectResponse
@@ -143,6 +146,8 @@ final class CatalogController
             ];
         }
 
+        $templateKey = app(ResolveLayout::class)->templateKey('category', $snapshot['id']);
+
         return $renderer->category(CategoryView::from([
             'id' => $snapshot['id'],
             'url' => '/categories/'.$snapshot['path'],
@@ -150,7 +155,7 @@ final class CatalogController
             'description' => $snapshot['description'],
             'breadcrumbs' => $snapshot['breadcrumbs'],
             'products' => $products,
-        ]));
+        ]), $templateKey);
     }
 
     private function selectionState(string $availability): string

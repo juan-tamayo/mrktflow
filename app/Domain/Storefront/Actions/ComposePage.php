@@ -7,6 +7,7 @@ namespace App\Domain\Storefront\Actions;
 use App\Domain\Storefront\Data\ComposedPage;
 use App\Domain\Storefront\Exceptions\SlotCompositionRefused;
 use App\Domain\Storefront\Support\SystemSlots;
+use App\Domain\ThemesContent\Support\VisualTemplates;
 
 /**
  * Resolves a storefront page against the SystemSlots contract.
@@ -23,9 +24,18 @@ final class ComposePage
     /**
      * @param  array<string, string>  $themeSlotViews  Slot name => theme view name.
      */
-    public function compose(string $page, array $themeSlotViews = []): ComposedPage
+    public function compose(string $page, array $themeSlotViews = [], ?string $templateKey = null): ComposedPage
     {
         $slots = SystemSlots::forPage($page);
+        $template = SystemSlots::template($page);
+        if ($templateKey !== null) {
+            $template = VisualTemplates::view(VisualTemplates::subjectForPage($page), $templateKey);
+            foreach ($slots as $index => $slot) {
+                if ($slot['name'] === 'content') {
+                    $slots[$index]['view'] = $template;
+                }
+            }
+        }
         foreach ($themeSlotViews as $name => $view) {
             $index = null;
             foreach ($slots as $candidate => $slot) {
@@ -43,6 +53,6 @@ final class ComposePage
             $slots[$index]['view'] = $view;
         }
 
-        return new ComposedPage($page, SystemSlots::template($page), $slots);
+        return new ComposedPage($page, $template, $slots);
     }
 }

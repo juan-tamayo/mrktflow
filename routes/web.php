@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\EntitlementController;
 use App\Http\Controllers\Admin\InstallController;
+use App\Http\Controllers\Admin\LayoutAssignmentController;
 use App\Http\Controllers\Admin\OrderCancellationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderReceiptController;
@@ -165,6 +166,7 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/content/pages', [ContentController::class, 'storePage'])->middleware('throttle:30,1,content-page:');
         Route::post('/admin/content/articles', [ContentController::class, 'storeArticle'])->middleware('throttle:30,1,content-article:');
         Route::post('/admin/content/menus', [ContentController::class, 'storeMenu'])->middleware('throttle:30,1,content-menu:');
+        Route::put('/admin/layouts', [LayoutAssignmentController::class, 'update'])->middleware('throttle:30,1,content-layout:');
         Route::get('/admin/content-editor', [ContentEditorController::class, 'show']);
         Route::get('/admin/content-editor/draft', [ContentEditorController::class, 'draft']);
         Route::put('/admin/content-editor/draft', [ContentEditorController::class, 'save'])->middleware('throttle:30,1,content-draft:');

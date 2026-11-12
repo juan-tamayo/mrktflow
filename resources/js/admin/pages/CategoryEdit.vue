@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import TemplatePicker from '../components/TemplatePicker.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { nextTick, ref } from 'vue'
 
@@ -18,6 +19,12 @@ const props = defineProps<{
   } | null
   parents: Parent[]
   saved: boolean
+  layout?: {
+    templateKey: string
+    options: { key: string; label: string }[]
+    canAssign: boolean
+  } | null
+  layoutSaved?: boolean
 }>()
 const errors = ref<HTMLElement | null>(null)
 const form = useForm({
@@ -62,6 +69,16 @@ function submit(status: 'draft' | 'published') {
         are blocked.
       </p>
       <p v-if="saved" role="status" class="success-notice">Category saved.</p>
+      <TemplatePicker
+        v-if="category && layout"
+        subject-type="category"
+        :subject-id="category.id"
+        :subject-label="category.title"
+        :template-key="layout.templateKey"
+        :options="layout.options"
+        :can-assign="layout.canAssign"
+        :saved="layoutSaved ?? false"
+      />
       <form class="setup-form" @submit.prevent="submit('draft')">
         <div
           v-if="Object.keys(form.errors).length"

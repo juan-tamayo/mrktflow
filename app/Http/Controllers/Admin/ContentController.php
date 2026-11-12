@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\ThemesContent\Actions\ReadContent;
+use App\Domain\ThemesContent\Actions\ResolveLayout;
 use App\Domain\ThemesContent\Actions\SaveContent;
+use App\Domain\ThemesContent\Support\VisualTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -22,20 +24,26 @@ use Inertia\Response;
  */
 final class ContentController
 {
-    public function show(Request $request, ReadContent $content): Response
+    public function show(Request $request, ReadContent $content, ResolveLayout $layouts): Response
     {
         Gate::authorize('content.read');
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
+        $pages = [];
+        foreach ($content->pages() as $page) {
+            $pages[] = $page + ['template_key' => $layouts->templateKey('page', $page['id'])];
+        }
 
         return Inertia::render('ContentNavigation', [
-            'pages' => $content->pages(),
+            'pages' => $pages,
             'articles' => $content->articles(),
             'menus' => $content->menus(),
+            'layoutOptions' => VisualTemplates::options('page'),
             'canWrite' => $staff->hasPermission('content.write'),
             'pageSaved' => session()->get('content_page_saved', false),
             'articleSaved' => session()->get('content_article_saved', false),
             'menuSaved' => session()->get('content_menu_saved', false),
+            'layoutSaved' => session()->get('layout_saved', false),
         ]);
     }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import TemplatePicker from '../components/TemplatePicker.vue'
 import AttributeFields, { type SchemaField } from '../components/AttributeFields.vue'
 import DigitalAssets from '../components/DigitalAssets.vue'
 import StockEditor from '../components/StockEditor.vue'
@@ -60,8 +61,14 @@ const props = withDefaults(
       attributes: SchemaField[]
     }[]
     saved: boolean
+    layout?: {
+      templateKey: string
+      options: { key: string; label: string }[]
+      canAssign: boolean
+    } | null
+    layoutSaved?: boolean
   }>(),
-  { schemas: () => [] },
+  { schemas: () => [], layout: null, layoutSaved: false },
 )
 const errors = ref<HTMLElement | null>(null)
 const archiveForm = useForm({
@@ -135,6 +142,16 @@ function submit(status: 'draft' | 'published') {
         published products and categories can be browsed.
       </p>
       <p v-if="saved" role="status" class="success-notice">Product saved.</p>
+      <TemplatePicker
+        v-if="product && layout"
+        subject-type="product"
+        :subject-id="product.id"
+        :subject-label="product.title"
+        :template-key="layout.templateKey"
+        :options="layout.options"
+        :can-assign="layout.canAssign"
+        :saved="layoutSaved"
+      />
       <form class="setup-form" @submit.prevent="submit('draft')">
         <div
           v-if="Object.keys(form.errors).length"
