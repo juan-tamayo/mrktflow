@@ -96,9 +96,15 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
 
   await page.goto('/admin/content-editor')
   await page.locator('#editor-page').selectOption('search')
-  await page.locator('#editor-slot').selectOption('content')
-  await expect(page.locator('[data-section-id="hero"]')).toBeVisible()
-  await page.locator('[data-section-id="hero"] [data-action="configure"]').click()
+  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
+  const editorSlot = page.locator('#editor-slot')
+  if ((await editorSlot.inputValue()) !== 'content') {
+    await editorSlot.selectOption('content')
+  }
+  await expect(page.getByRole('status')).toContainText('Loaded the search content draft')
+  const configure = page.locator('[data-section-id="intro"] [data-action="configure"]')
+  await expect(configure).toHaveText('Hero · intro')
+  await configure.click()
   await page.getByLabel('Heading (required)', { exact: true }).fill('Edited search banner')
   await page.getByRole('button', { name: 'Save draft', exact: true }).click()
   await expect(page.locator('[role="status"]')).toContainText('Draft saved')
@@ -111,6 +117,7 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
   await expect(page.getByText('Content preview')).toBeVisible()
   await page.goto('/admin/content-editor')
   await page.locator('#editor-page').selectOption('search')
+  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
   await page.getByRole('button', { name: 'Publish search content sections', exact: true }).click()
   await expect(page.getByText(/Live revision/)).toBeVisible()
 
@@ -129,6 +136,7 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
 
   await page.goto('/admin/content-editor')
   await page.locator('#editor-page').selectOption('search')
+  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
   await page
     .getByRole('button', {
       name: 'Restore prior published revision of search content sections',
