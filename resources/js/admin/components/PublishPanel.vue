@@ -40,10 +40,9 @@ function submit() {
 
 <template>
   <div class="publish-panel">
-    <p>
-      Draft version {{ version }}
-      <span v-if="publishedRevision > 0"> · live revision {{ publishedRevision }}</span>
-      <span v-else> · not live</span>
+    <p :aria-label="`Publication status for ${label}`">
+      <template v-if="publishedRevision > 0">Live revision {{ publishedRevision }}</template>
+      <template v-else>Not published</template>
     </p>
     <p>
       <a class="text-link" :href="previewHref">{{ previewName }}</a>

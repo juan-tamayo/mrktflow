@@ -256,7 +256,7 @@ async function refreshPreview() {
           </select>
         </div>
       </div>
-      <p>
+      <p data-draft-version>
         Draft version {{ savedVersion }}{{ dirty ? ' · unsaved changes' : '' }}
         <button
           v-if="canWrite"
