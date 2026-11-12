@@ -77,6 +77,25 @@ it('PricingCoupon lets merchants configure one-coupon rules and quotes only elig
     $this->get('/')->assertStatus(503);
 });
 
+it('PricingCoupon a 100 percent coupon also waives shipping so mixed baskets can complete at zero', function (): void {
+    $owner = catalogInstalledOwner();
+    $image = catalogReadyImage($owner->id);
+    $lamp = app(SaveProduct::class)->save($owner, catalogProductInput($image, ['status' => 'published']));
+    $lampVariant = (string) DB::table('product_variants')->where('product_id', $lamp['id'])->value('id');
+    pricingSavedCoupon($owner, [
+        'code' => 'FREE100',
+        'percent_numerator' => 100,
+        'percent_denominator' => 100,
+        'max_redemptions' => 25,
+        'max_redemptions_per_customer' => null,
+    ]);
+    $line = pricingCouponLine($lamp['id'], $lampVariant, 2, pricingCouponUsd(2499));
+    $applied = app(ApplyCoupon::class)->apply('FREE100', [$line], new DateTimeImmutable('2026-10-13T00:00:00Z'));
+    expect($applied->mode)->toBe('percentage')
+        ->and($applied->waivesShipping)->toBeTrue();
+    $this->get('/')->assertStatus(503);
+});
+
 it('PricingCoupon holds commits and releases redemptions atomically without oversubscription', function (): void {
     $owner = catalogInstalledOwner();
     $image = catalogReadyImage($owner->id);

@@ -96,13 +96,17 @@ final class ApplyCoupon
             throw new PricingCouponRejected;
         }
 
+        $fullPercent = $mode === 'percentage'
+            && $this->int($coupon, 'percent_numerator') > 0
+            && $this->int($coupon, 'percent_numerator') === $this->int($coupon, 'percent_denominator');
+
         return new AppliedCoupon(
             $this->string($coupon, 'id'),
             $this->int($coupon, 'revision'),
             $normalized,
             $mode,
             $discount,
-            $mode === 'free_shipping',
+            $mode === 'free_shipping' || $fullPercent,
             $ids,
         );
     }

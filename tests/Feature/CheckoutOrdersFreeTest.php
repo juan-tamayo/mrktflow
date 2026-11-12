@@ -230,6 +230,38 @@ it('CheckoutOrdersFree confirmation screen recovers pending status and ignores a
     expect(class_exists(OrderStatusController::class))->toBeTrue();
 });
 
+it('CheckoutOrdersFree mixed FREE100 quote is zero-total so checkout.actions offers Place order after confirm', function (): void {
+    $catalog = freeCatalog();
+    $this->get('/')->assertStatus(503);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['physical_variant'], 'quantity' => 2, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => $cart['revision'],
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => 'guest@example.test',
+        'coupon' => 'FREE100',
+        'billing' => checkoutAddress(),
+        'shipping' => checkoutAddress(),
+    ])->assertOk()->json('data');
+    expect($quote['grandTotal']['amount'])->toBe(0)
+        ->and($quote['shipping']['amount'])->toBe(0)
+        ->and($quote['discount']['amount'])->toBeGreaterThan(0);
+    $this->post('/checkout/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policy_acknowledged' => '1',
+    ])->assertRedirect('/checkout/'.$quote['id']);
+    $this->get('/checkout/'.$quote['id'])->assertOk()
+        ->assertSee('data-platform-slot="checkout.actions"', false)
+        ->assertSee('Place order')
+        ->assertDontSee('Pay now')
+        ->assertSee('action="/checkout/'.$quote['id'].'/pay"', false);
+});
+
 it('CheckoutOrdersFree HTML shows Place order only after checkout.actions confirms totals', function (): void {
     $catalog = freeCatalog();
     $this->get('/')->assertStatus(503);
