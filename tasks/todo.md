@@ -1824,7 +1824,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T084: Reference-host installation runbook
 
-- [ ] Complete T084.
+- [x] Complete T084.
+- **Evidence (November 12, 2026):** Failing `OperationsInstall` tests first, then `ReadInstallationRunbook`, `operations:install-check`, [installation](../docs/installation.md), [hosting](../docs/hosting.md), [release evidence](../docs/release-evidence.md), and `.env.example` (empty secrets, array mail, debug off). Rehearsal covers CLI-secret owner lock, `GET /` 503, anonymous private-file 404, and physical/digital/mixed `FREE100` local completions under the 1800-second SPEC budget. Frontend: typecheck/lint/format, Vitest 188/188, production build, npm audit 0. Hosted Quality [run 43324795125](https://github.com/juan-tamayo/mrktflow/actions/runs/43324795125) failed Pint (`class_definition`, `fully_qualified_strict_types`) before PHP tests; that style is corrected on this branch. Isolated MySQL 8.4 via TestDatabaseGuard when Quality reruns. Did not merge. Did not start T085. `GET /` stays HTTP 503.
 - **Module / requirements:** `operations` · OPS-05, PLAT-01, PLAT-02.
 - **Depends on:** T083.
 - **Acceptance:** Document supported host/services/permissions and secure owner setup; a new operator completes sandbox purchase within target time.

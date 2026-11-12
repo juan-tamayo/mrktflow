@@ -11,6 +11,7 @@ A free, open-source, self-hosted commerce platform built with Laravel and Vue. O
 3. Read [architecture](docs/architecture.md), [data model](docs/data-model.md), and [template contracts](docs/template-contracts.md).
 4. Follow [the implementation plan](tasks/plan.md) and [ordered backlog](tasks/todo.md).
 5. Read [the readiness audit](docs/readiness-audit.md) for evidence and remaining setup, then use [the coding handoff](docs/coding-handoff.md) when implementation is requested.
+6. Operators installing a store: [installation](docs/installation.md) and [hosting](docs/hosting.md).
 
 ## Confirmed direction
 
@@ -37,6 +38,9 @@ A free, open-source, self-hosted commerce platform built with Laravel and Vue. O
 | [Template contracts](docs/template-contracts.md) | Themes, sections, content, product schemas, AI output |
 | [Experience map](docs/experience-map.md) | Admin and customer screens, journeys, state requirements |
 | [Quality and operations](docs/quality-and-operations.md) | Security, tests, performance, installation, recovery |
+| [Installation](docs/installation.md) | Reference-host clean install, owner setup, sandbox purchase |
+| [Hosting](docs/hosting.md) | Supported host, services, permissions |
+| [Release evidence](docs/release-evidence.md) | Measured rehearsals and pending live-host proof |
 | [Decision records](docs/decisions/README.md) | Reasons behind the architecture choices |
 | [Readiness audit](docs/readiness-audit.md) | Audit findings, local environment evidence and phase gates |
 | [Open decisions](docs/open-decisions.md) | Assumptions, defaults, and deadlines for remaining choices |

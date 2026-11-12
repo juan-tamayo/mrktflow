@@ -52,6 +52,8 @@ Owner health page highlights an unavailable worker, missed scheduler (>3 minutes
 
 ## Install and update runbook requirements
 
+T084 documents the clean-install path in [installation](installation.md) and the supported host in [hosting](hosting.md). Measured rehearsal notes live in [release evidence](release-evidence.md). Update, package and restore remain T085–T087.
+
 1. Verify package checksum and supported runtime; provision TLS/database/storage/worker/scheduler. Serve only Laravel's public directory. Keep debug off in production.
 2. Set application environment/key and credentials, run migrations, create installation secret, complete owner setup, configure sender/provider rules and perform sandbox physical/digital/mixed orders.
 3. Check private-file denial, scheduler/queue health, policy pages, country/tax/payment availability and backup freshness before opening sales.
