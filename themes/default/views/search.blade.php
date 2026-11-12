@@ -1,5 +1,6 @@
 @extends('default-theme::layout', [
     'pageKey' => 'search',
+    'pageRobots' => 'noindex, nofollow',
     'pageTitle' => 'Search · MRKTFlow',
     'pageAssets' => ['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/search.ts', 'themes/default/src/compareTray.ts', 'themes/default/src/compareActions.ts'],
     'mainId' => 'search-main',

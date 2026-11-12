@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\ThemesContent\Rendering;
 
 use App\Domain\ThemesContent\Data\CategoryView;
+use App\Domain\ThemesContent\Data\PageMetadata;
 use App\Domain\ThemesContent\Data\ProductView;
 use App\Domain\ThemesContent\Data\SearchView;
 use App\Domain\ThemesContent\Support\VisualTemplates;
@@ -14,7 +15,7 @@ use InvalidArgumentException;
 final class DefaultThemeRenderer
 {
     /** @param list<array{title: string, url: string}> $breadcrumbs */
-    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected', int $cartRevision = 1, int $cartItemCount = 0, string $templateKey = 'product.default'): View
+    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected', int $cartRevision = 1, int $cartItemCount = 0, string $templateKey = 'product.default', ?PageMetadata $metadata = null): View
     {
         $selected = null;
         foreach ($product->variants as $variant) {
@@ -45,7 +46,26 @@ final class DefaultThemeRenderer
             'cartRevision' => $cartRevision,
             'cartItemCount' => $cartItemCount,
             'assignedTemplateKey' => $templateKey,
+            'metadata' => $metadata,
         ]);
+    }
+
+    public function document(string $kind, string $title, string $excerpt, string $templateKey, PageMetadata $metadata): View
+    {
+        $view = $kind === 'article'
+            ? 'default-theme::article'
+            : VisualTemplates::view('page', $templateKey);
+
+        $data = [
+            'title' => $title,
+            'excerpt' => $excerpt,
+            'metadata' => $metadata,
+        ];
+        if ($kind === 'page') {
+            $data['assignedTemplateKey'] = $templateKey;
+        }
+
+        return view($view, $data);
     }
 
     /**
@@ -91,11 +111,12 @@ final class DefaultThemeRenderer
         ]);
     }
 
-    public function category(CategoryView $category, string $templateKey = 'category.default'): View
+    public function category(CategoryView $category, string $templateKey = 'category.default', ?PageMetadata $metadata = null): View
     {
         return view(VisualTemplates::view('category', $templateKey), [
             'category' => $category,
             'assignedTemplateKey' => $templateKey,
+            'metadata' => $metadata,
         ]);
     }
 

@@ -63,6 +63,13 @@ final class PublishContent
         abort_unless((int) $row->version === $expected, 409, 'This '.$kind.' changed. Reload before publishing.');
         $payload = ContentRevisions::payload($kind, $id, (int) $row->draft_revision);
         abort_unless(is_array($payload), 404);
+        $previousPath = null;
+        if ($row->published_revision !== null) {
+            $previous = ContentRevisions::payload($kind, $id, (int) $row->published_revision);
+            if (is_array($previous)) {
+                $previousPath = (string) ($previous['path'] ?? '');
+            }
+        }
         $now = now();
         DB::table($table)->where('id', $id)->update([
             'status' => 'published',
@@ -78,6 +85,7 @@ final class PublishContent
             'actor_id' => $actor->id,
             'metadata' => ['path' => (string) ($payload['path'] ?? ''), 'version' => (int) $row->version, 'published_revision' => (int) $row->draft_revision],
         ]);
+        app(SaveRedirect::class)->recordPublishedPathChange($previousPath, (string) ($payload['path'] ?? ''));
 
         return ['kind' => $kind, 'id' => $id, 'version' => (int) $row->version, 'published_revision' => (int) $row->draft_revision];
     }

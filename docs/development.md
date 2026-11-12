@@ -110,7 +110,7 @@ Staff with `content.read` open `/admin/content-editor`; saving a draft requires 
 
 ## Pages, articles and navigation
 
-Staff with `content.read` open `/admin/content`; creating records requires `content.write`. `SaveContent` stores pages at `pages/{slug}`, articles at `journal/{slug}`, and named menus with ordered local links. Slugs cannot collide with reserved routes (`admin`, `cart`, `categories`, …) or the category tree. Invalid menu URLs (remote, `javascript:`, traversal, `/admin`, `/setup`) persist nothing. The article-list section lists published articles and shows “No articles yet.” when the list is empty. Draft articles stay out of that list. Creating these records does not open a CMS homepage; after installation `GET /` still renders the catalog home, not page titles. Privileged staff still must pass 2FA. Public page/article routes, revisions and sitemap rules remain later tasks. Run `bin/php artisan test --filter=ThemesContentPage`.
+Staff with `content.read` open `/admin/content`; creating records requires `content.write`. `SaveContent` stores pages at `pages/{slug}`, articles at `journal/{slug}`, and named menus with ordered local links. Slugs cannot collide with reserved routes (`admin`, `cart`, `categories`, …) or the category tree. Invalid menu URLs (remote, `javascript:`, traversal, `/admin`, `/setup`) persist nothing. The article-list section lists published articles and shows “No articles yet.” when the list is empty. Draft articles stay out of that list. Creating these records does not open a CMS homepage. Published pages and articles are public at `/pages/{slug}` and `/journal/{slug}` (T070); drafts stay 404. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=ThemesContentPage`.
 
 ## Content revisions and explicit publication
 
@@ -123,6 +123,10 @@ Saves write a new draft revision for pages, articles and section drafts; they do
 ## Safe merchant template import
 
 Staff with `content.write` stage a data-only ZIP at `/admin/content/import`. `ValidateImport` keeps the archive private, bounds entry count and uncompressed size, refuses traversal/symlinks/encrypted entries, allows only `manifest.json` plus JPEG/PNG/WebP under `media/`, and scans JSON for PHP, Vue expressions and script payloads. Section documents reuse T063 `ValidateSections`; unknown blocks persist nothing. `ApplyImport` maps `ref:` product/category aliases, stores package images through `StoreMedia`/`ProcessMedia`, remaps `/media/...` paths to `/storage/media/...`, and saves section drafts only. Replaying the same import intent returns the stored result. Live published revisions are unchanged. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=ThemesContentImport`.
+
+## SEO, redirects and public cache
+
+Published products, categories, pages and articles expose canonical URLs, Open Graph tags and JSON-LD that match live facts — product structured data includes Offer price/availability and breadcrumbs, and never invents reviews or ratings. `GET /sitemap.xml` lists those live URLs only. Search, cart, checkout, account and draft/preview URLs stay noindex. Changing a published page or article slug records a 301 after the new path is published; product slug changes record `product_redirects`. Redirects cannot loop or target cart/checkout/account. Guest catalog/content HTML may be shared (`Cache-Control: public`); a cart, a customer or staff session, checkout, account and `/admin/preview/*` stay `private, no-store`. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=StorefrontSeo`.
 
 ## Product and category visual assignments
 

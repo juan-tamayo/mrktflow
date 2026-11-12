@@ -33,6 +33,7 @@ final class VisualTemplates
     private const PAGE_SUBJECTS = [
         'product' => 'product',
         'category' => 'category',
+        'page' => 'page',
     ];
 
     /** @return list<string> */
