@@ -28,19 +28,31 @@ final class ValidateCandidate
         if ($result->status !== 'candidate' || $result->candidate === null) {
             return $result;
         }
-        $document = $result->candidate->jsonSerialize();
         try {
-            TemplatePackage::rejectExecutable($document);
-            PageDraft::fromJson(json_encode($document, JSON_THROW_ON_ERROR), $request->productIds());
-            $sections = $document['sections'] ?? null;
-            if (! is_array($sections)) {
-                throw new InvalidArgumentException('Page draft sections must be a list.');
-            }
-            $this->sections->validate($sections);
+            $this->document($result->candidate->jsonSerialize(), $request->productIds());
         } catch (InvalidArgumentException|JsonException|SectionValidationFailed|ValidationException) {
             return $result->rejectCandidate();
         }
 
         return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @param  list<string>  $productIds
+     * @return array<string, mixed>
+     */
+    public function document(array $document, array $productIds): array
+    {
+        TemplatePackage::rejectExecutable($document);
+        $page = PageDraft::fromJson(json_encode($document, JSON_THROW_ON_ERROR), $productIds);
+        $payload = $page->jsonSerialize();
+        $sections = $payload['sections'] ?? null;
+        if (! is_array($sections)) {
+            throw new InvalidArgumentException('Page draft sections must be a list.');
+        }
+        $this->sections->validate($sections);
+
+        return $payload;
     }
 }

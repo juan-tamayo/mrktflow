@@ -12,6 +12,7 @@ defineProps<{
   canPreviewTheme: boolean
   canManageContent: boolean
   canConfigureAi: boolean
+  canUseAi: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -126,11 +127,17 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canConfigureAi" class="workspace-tool">
+          <div v-if="canUseAi || canConfigureAi" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">08</span>
             <div>
-              <a class="tool-link" href="/admin/ai">AI authoring</a>
-              <p>Owner-only provider secret, model, budget, and author permissions.</p>
+              <div class="tool-links">
+                <a v-if="canUseAi" class="tool-link" href="/admin/ai/studio">AI studio</a>
+                <a v-if="canConfigureAi" class="tool-link" href="/admin/ai">AI authoring</a>
+              </div>
+              <p>
+                Review validated drafts, usage, and diffs. Owner-only settings stay on the
+                credentials screen. Publishing stays a separate action.
+              </p>
             </div>
             <span aria-hidden="true">↗</span>
           </div>
