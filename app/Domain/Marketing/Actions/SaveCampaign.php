@@ -31,6 +31,9 @@ final class SaveCampaign
             }
         }
         $audience = is_array($input['audience'] ?? null) ? $input['audience'] : [];
+        if (! array_key_exists('category_ids', $audience) || $audience['category_ids'] === null) {
+            $audience['category_ids'] = [];
+        }
         foreach (['purchased_after', 'purchased_before', 'previous_campaign_id'] as $empty) {
             if (($audience[$empty] ?? null) === '') {
                 $audience[$empty] = null;
@@ -47,7 +50,7 @@ final class SaveCampaign
             'campaign.purpose' => ['required', Rule::in(['newsletter'])],
             'campaign.audience' => ['required', 'array:customer_status,category_ids,purchased_after,purchased_before,previous_campaign_id,previous_campaign_mode'],
             'campaign.audience.customer_status' => ['required', Rule::in(['any', 'customer', 'guest', 'new_customer'])],
-            'campaign.audience.category_ids' => ['present', 'array', 'max:50'],
+            'campaign.audience.category_ids' => ['sometimes', 'array', 'max:50'],
             'campaign.audience.category_ids.*' => ['uuid', 'distinct:strict'],
             'campaign.audience.purchased_after' => ['nullable', 'date'],
             'campaign.audience.purchased_before' => ['nullable', 'date'],

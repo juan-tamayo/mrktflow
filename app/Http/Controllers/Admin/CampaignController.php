@@ -164,6 +164,8 @@ final class CampaignController
             $saved = $save->save($staff, $input);
         } catch (HttpException $exception) {
             $this->conflict($request, $exception, $fallback);
+        } catch (ValidationException $exception) {
+            throw $exception->redirectTo($fallback);
         }
 
         return redirect('/admin/marketing/campaigns/'.$saved['id'])->with('campaign_saved', true);
