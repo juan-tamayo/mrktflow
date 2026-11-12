@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import PublishPanel from '../components/PublishPanel.vue'
 import TemplatePicker from '../components/TemplatePicker.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { nextTick, ref } from 'vue'
@@ -13,6 +14,7 @@ type PageRecord = {
   path: string
   status: string
   version: number
+  published_revision?: number
   template_key?: string
 }
 type ArticleRecord = PageRecord & { excerpt: string }
@@ -29,6 +31,7 @@ defineProps<{
   articles: ArticleRecord[]
   menus: MenuRecord[]
   canWrite: boolean
+  canPublish?: boolean
   pageSaved: boolean
   articleSaved: boolean
   menuSaved: boolean
@@ -96,7 +99,8 @@ function saveMenu() {
       <h1>Pages, articles and menus<span class="accent">.</span></h1>
       <p class="lede">
         Paths cannot reuse reserved routes or the category tree. Menu links stay on this store.
-        Publication history arrives later; the storefront homepage stays closed to CMS pages.
+        Saves keep drafts; publish switches a validated revision. The storefront homepage stays
+        closed.
       </p>
 
       <section aria-labelledby="pages-heading">
@@ -107,6 +111,14 @@ function saveMenu() {
           <li v-for="page in pages" :key="page.id">
             <p class="tool-link">{{ page.title }}</p>
             <p>/{{ page.path }} · {{ page.status }}</p>
+            <PublishPanel
+              kind="page"
+              :subject-id="page.id"
+              :version="page.version"
+              :published-revision="page.published_revision ?? 0"
+              :label="`page ${page.title}`"
+              :can-publish="canPublish === true"
+            />
             <TemplatePicker
               v-if="canWrite && (layoutOptions?.length ?? 0) > 0"
               subject-type="page"
@@ -158,6 +170,14 @@ function saveMenu() {
           <li v-for="article in articles" :key="article.id">
             <p class="tool-link">{{ article.title }}</p>
             <p>/{{ article.path }} · {{ article.status }}</p>
+            <PublishPanel
+              kind="article"
+              :subject-id="article.id"
+              :version="article.version"
+              :published-revision="article.published_revision ?? 0"
+              :label="`article ${article.title}`"
+              :can-publish="canPublish === true"
+            />
           </li>
         </ul>
         <form v-if="canWrite" class="setup-form" @submit.prevent="saveArticle">

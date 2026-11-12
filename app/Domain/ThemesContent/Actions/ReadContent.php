@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 final class ReadContent
 {
     /**
-     * @return list<array{id: string, title: string, slug: string, path: string, status: string, version: int}>
+     * @return list<array{id: string, title: string, slug: string, path: string, status: string, version: int, published_revision: int}>
      */
     public function pages(): array
     {
@@ -26,6 +26,7 @@ final class ReadContent
                 'path' => (string) $row->path,
                 'status' => (string) $row->status,
                 'version' => (int) $row->version,
+                'published_revision' => $row->published_revision === null ? 0 : (int) $row->published_revision,
             ];
         }
 
@@ -33,7 +34,7 @@ final class ReadContent
     }
 
     /**
-     * @return list<array{id: string, title: string, slug: string, path: string, excerpt: string, status: string, version: int}>
+     * @return list<array{id: string, title: string, slug: string, path: string, excerpt: string, status: string, version: int, published_revision: int}>
      */
     public function articles(): array
     {
@@ -48,6 +49,7 @@ final class ReadContent
                 'excerpt' => (string) $row->excerpt,
                 'status' => (string) $row->status,
                 'version' => (int) $row->version,
+                'published_revision' => $row->published_revision === null ? 0 : (int) $row->published_revision,
             ];
         }
 

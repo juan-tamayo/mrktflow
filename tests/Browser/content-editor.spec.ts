@@ -97,7 +97,7 @@ test('staff edit, reorder by keyboard, recover from a refused save and preview a
   await page.getByLabel('Heading (required)').fill('Find your camera')
   await page.getByRole('button', { name: 'Save draft' }).click()
   await expect(page.locator('[role="status"]')).toContainText('Draft saved (version 1).')
-  await expect(page.getByText('Draft version 1')).toBeVisible()
+  await expect(page.locator('[data-draft-version]')).toHaveText(/Draft version 1/)
 
   // The preview is the server-rendered fragment; Mobile narrows it.
   await page.getByRole('button', { name: 'Refresh preview' }).click()
@@ -109,5 +109,5 @@ test('staff edit, reorder by keyboard, recover from a refused save and preview a
   // A reload reads the persisted draft back.
   await page.reload()
   await expect(page.locator('[data-section-id="hero"]')).toBeVisible()
-  await expect(page.getByText('Draft version 1')).toBeVisible()
+  await expect(page.locator('[data-draft-version]')).toHaveText(/Draft version 1/)
 })

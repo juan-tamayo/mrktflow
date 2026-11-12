@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\DB;
  */
 final class ReadSectionDraft
 {
-    /** @return array{version: int, sections: list<array<string, mixed>>, updatedAt: string|null} */
+    /** @return array{version: int, publishedRevision: int, sections: list<array<string, mixed>>, updatedAt: string|null} */
     public function read(string $page, string $slot): array
     {
         $row = DB::table('content_drafts')->where('page_key', $page)->where('slot', $slot)->first();
         if ($row === null) {
-            return ['version' => 0, 'sections' => [], 'updatedAt' => null];
+            return ['version' => 0, 'publishedRevision' => 0, 'sections' => [], 'updatedAt' => null];
         }
         $decoded = json_decode((string) $row->sections, true, flags: JSON_THROW_ON_ERROR);
         $sections = [];
@@ -32,6 +32,7 @@ final class ReadSectionDraft
 
         return [
             'version' => (int) $row->version,
+            'publishedRevision' => $row->published_revision === null ? 0 : (int) $row->published_revision,
             'sections' => $sections,
             'updatedAt' => $row->updated_at === null ? null : (string) $row->updated_at,
         ];

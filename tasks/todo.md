@@ -1251,6 +1251,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 ### T067: Revisions and explicit publication
 
 - [ ] Complete T067.
+- **Progress:** Implemented on `cursor/t067-content-revisions-b581`. Focused `ThemesContentPublish`: 8 passed. Concurrent MySQL saves of one article serialize to 200/409; the winner's draft is stored and live published copy stays on revision 1. Preview requires `content.read`, is noindex/no-store, and does not publish. `content_editor` cannot publish; owner without TOTP is redirected to `/admin/two-factor`. `GET /` stays HTTP 503. Hosted Quality evidence is the PR check, not claimed here.
 - **Module / requirements:** `themes-content` · THEME-03.
 - **Depends on:** T065.
 - **Acceptance:** Saves preserve drafts; publish atomically switches validated revision with optimistic locking; preview is authorized/noindex/no-store.
