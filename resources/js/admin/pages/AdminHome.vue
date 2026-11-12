@@ -11,6 +11,7 @@ defineProps<{
   canReadOrders: boolean
   canPreviewTheme: boolean
   canManageContent: boolean
+  canConfigureAi: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -125,8 +126,16 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canManageStaff" class="workspace-tool">
+          <div v-if="canConfigureAi" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">08</span>
+            <div>
+              <a class="tool-link" href="/admin/ai">AI authoring</a>
+              <p>Owner-only provider secret, model, budget, and author permissions.</p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageStaff" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">09</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -134,7 +143,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">09</span>
+            <span class="tool-number" aria-hidden="true">10</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>

@@ -36,5 +36,18 @@ trait RestoresMigratedSingletons
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+        DB::table('ai_settings')->insert([
+            'id' => 1,
+            'enabled' => false,
+            'provider' => 'openai',
+            'model' => 'gpt-4o-mini-2024-07-18',
+            'secret_payload' => null,
+            'secret_hint' => null,
+            'daily_token_budget' => 0,
+            'monthly_token_budget' => 0,
+            'revision' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
     }
 }
