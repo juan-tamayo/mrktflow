@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domain\Catalog\Actions\ArchiveProduct;
 use App\Domain\Catalog\Actions\SaveCategory;
 use App\Domain\Catalog\Actions\SaveProduct;
+use App\Domain\Catalog\Actions\SaveProductSchema;
 use Database\Seeders\BrowserShopCatalogSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -19,9 +20,31 @@ it('republishes the archived studio lamp and leaves comparison products on catal
     $owner = catalogInstalledOwner();
     $image = catalogReadyImage($owner->id);
     $category = app(SaveCategory::class)->save($owner, catalogCategoryInput(['status' => 'published']));
+    $camera = app(SaveProductSchema::class)->save($owner, [
+        'key' => 'camera',
+        'label' => 'Camera',
+        'comparison_group' => 'cameras',
+        'default_template_key' => 'product.default',
+        'attributes' => [
+            [
+                'key' => 'sensor.megapixels', 'type' => 'decimal', 'unit' => 'MP', 'required' => true,
+                'comparable' => true, 'filterable' => true, 'label' => 'Megapixels',
+            ],
+            [
+                'key' => 'lens.mount', 'type' => 'enum', 'required' => true, 'comparable' => true,
+                'filterable' => true, 'label' => 'Lens mount', 'options' => ['rf', 'e'],
+            ],
+            [
+                'key' => 'body.weight', 'type' => 'integer', 'unit' => 'g', 'required' => false,
+                'comparable' => true, 'filterable' => true, 'label' => 'Weight',
+            ],
+        ],
+    ]);
     $lamp = app(SaveProduct::class)->save($owner, catalogProductInput($image, [
         'status' => 'published',
         'category_ids' => [$category['id']],
+        'schema_id' => $camera['id'],
+        'attributes' => ['sensor.megapixels' => '24.2', 'lens.mount' => 'rf'],
     ]));
     app(ArchiveProduct::class)->archive($owner, ['id' => $lamp['id'], 'version' => $lamp['version']]);
 

@@ -161,13 +161,52 @@ final class BrowserShopCatalogSeeder extends Seeder
             return ['id' => (string) $existing->id];
         }
 
+        $aligned = [];
+        foreach ($attributes as $attribute) {
+            $aligned[] = $this->alignAttribute($attribute);
+        }
+
         return app(SaveProductSchema::class)->save($owner, [
             'key' => $key,
             'label' => $label,
             'comparison_group' => $group,
             'default_template_key' => 'product.default',
-            'attributes' => $attributes,
+            'attributes' => $aligned,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attribute
+     * @return array<string, mixed>
+     */
+    private function alignAttribute(array $attribute): array
+    {
+        $existing = DB::table('attribute_definitions')->where('semantic_key', $attribute['key'])->first();
+        if ($existing === null) {
+            return $attribute;
+        }
+        $options = [];
+        if ((string) $existing->type === 'enum') {
+            foreach (DB::table('attribute_enum_options')->where('attribute_definition_id', $existing->id)->orderBy('sort_order')->pluck('option_value') as $option) {
+                if (is_string($option)) {
+                    $options[] = $option;
+                }
+            }
+        }
+        $aligned = [
+            'key' => $attribute['key'],
+            'type' => (string) $existing->type,
+            'unit' => is_string($existing->unit) ? $existing->unit : null,
+            'required' => (bool) ($attribute['required'] ?? false),
+            'comparable' => (bool) $existing->comparable,
+            'filterable' => (bool) $existing->filterable,
+            'label' => is_string($attribute['label'] ?? null) ? $attribute['label'] : (string) $attribute['key'],
+        ];
+        if ($aligned['type'] === 'enum') {
+            $aligned['options'] = $options;
+        }
+
+        return $aligned;
     }
 
     /**
