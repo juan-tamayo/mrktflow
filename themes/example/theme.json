@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "id": "mrktflow/example",
+  "version": "1.0.0",
+  "name": "Example technical sheet",
+  "requires": { "core": ">=1.0.0 <2.0.0", "themeApi": "1" },
+  "templates": {
+    "product.default": "views/product.blade.php"
+  },
+  "sections": [
+    "hero",
+    "rich-text",
+    "image-text",
+    "gallery",
+    "category-grid",
+    "product-grid",
+    "featured-product",
+    "specifications",
+    "comparison-link",
+    "faq",
+    "call-to-action",
+    "article-list"
+  ],
+  "assets": {
+    "entry": "themes/example/src/product.ts",
+    "style": "themes/example/src/theme.css"
+  }
+}

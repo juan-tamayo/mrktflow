@@ -8,7 +8,7 @@ Merchants need AI/imported templates; developers need executable PHP/Vue customi
 
 ## Decision
 
-Admin/AI uses validated data-only section documents and typed style settings. Developer-installed themes may execute PHP/Blade and compiled JavaScript after normal code review/deployment. The application does not claim to sandbox trusted theme code.
+Admin/AI uses validated data-only section documents and typed style settings. Developer-installed themes may execute PHP/Blade and compiled JavaScript after normal code review/deployment. The application does not claim to sandbox trusted theme code. T071 records that split on every `theme:validate` run (`trust: trusted-developer-code`, `sandbox: none`, `admin_upload: refused`) and documents the format in [theme development](../theme-development.md).
 
 ## Alternatives
 

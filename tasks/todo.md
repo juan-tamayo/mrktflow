@@ -1300,7 +1300,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T071: Developer theme tooling and guide
 
-- [ ] Complete T071.
+- [x] Complete T071 locally.
+- **Evidence:** Focused `ThemesContentDeveloper`: 6 passed / 78 assertions. `theme:validate themes/example` registers `mrktflow/example` as valid with `trust: trusted-developer-code`, `sandbox: none`, `admin_upload: refused`, and `activatable: no` (coverage incomplete). Command writes `installed_themes` only — no `theme_activations`, products, orders or import files. Merchant ZIP with Blade/Vue is still refused. Invalid fixture records `invalid` without activation. Example product Blade renders public ProductView text escaped; Vite entries come from theme.json and stay under `themes/`. Privileged staff without TOTP redirected to `/admin/two-factor`. `GET /` stays HTTP 503. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (164 passed)/`bin/npm run build` green (example CSS/JS in `public/build`). Playwright e2e was not run here (no isolated browser database). GitHub Quality CI evidence follows the PR.
 - **Module / requirements:** `themes-content` · THEME-01, THEME-04.
 - **Depends on:** T068, T069.
 - **Acceptance:** Document/package a reviewed custom Blade/CSS/Vue template; tooling validates/builds it without editing commerce core; trust level explicit.

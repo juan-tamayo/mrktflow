@@ -45,6 +45,8 @@ Vue explicitly warns against treating untrusted strings as component templates; 
 
 The planned installed registry stores theme ID/version/checksum/path. Theme source entries are compiled at release/deployment build time into the application Vite manifest under `public/build`; do not treat that output path as a merchant-controlled source path. All paths are normalized and constrained to the theme directory; reject traversal, symlinks escaping the root, missing files, incompatible API versions, duplicate IDs, remote executable asset entries and unknown critical manifest fields. A checksum proves integrity against a recorded value, not trustworthiness of the author.
 
+T071 ships `themes/example` as a reviewed custom product Blade/CSS/Vue template and `bin/php artisan theme:validate` as the trusted install/validate command. Trust is explicit (`trusted-developer-code`, sandbox none, admin upload refused). See [theme development](theme-development.md).
+
 Core owns checkout/payment/download authorization routes and system forms. Themes may supply documented visual slots and tokens around these screens, but cannot replace the authoritative commerce actions. Default fallbacks remain available when a theme omits a required view.
 
 ## Section definition and document
