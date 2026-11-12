@@ -154,6 +154,22 @@ it('ThemesContentEditor rejects an invalid payload with errors grouped per secti
     ])->assertOk()->assertJsonPath('version', 1);
 });
 
+it('ThemesContentEditor reports a blank required hero heading as missing', function (): void {
+    $owner = catalogInstalledOwner();
+    $editor = t064StaffAs($owner, 'content_editor');
+    $this->actingAs($editor, 'staff')->withSession(catalogStaffSession($editor));
+
+    $response = $this->putJson('/admin/content-editor/draft', [
+        'page' => 'home',
+        'slot' => 'content',
+        'version' => 0,
+        'sections' => [t064Hero(['heading' => ''])],
+    ])->assertStatus(422);
+
+    expect($response->json('errors.sections.intro.0'))->toContain("missing the required setting 'heading'")
+        ->and($response->json('errors.sections.intro.0'))->not->toContain('plain text of at most');
+});
+
 it('ThemesContentEditor refuses unknown pages and non-section slots', function (): void {
     $owner = catalogInstalledOwner();
     $editor = t064StaffAs($owner, 'content_editor');

@@ -33,6 +33,8 @@ it('posts quantity and goodwill refund fields with a stable key', () => {
       ],
     },
   })
+  expect(wrapper.get('h2').text()).toBe('Refund')
+  expect(wrapper.get('h2').attributes('role')).toBe('presentation')
   expect(wrapper.text()).toContain('Remaining USD 28.05')
   expect(wrapper.find('textarea[name="reason"]').exists()).toBe(true)
   expect(wrapper.find('input[name="amount"]').exists()).toBe(true)

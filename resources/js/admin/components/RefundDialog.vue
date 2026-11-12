@@ -34,7 +34,7 @@ const catalogLine = (id: string): Line | undefined => props.lines.find((line) =>
 
 <template>
   <form class="setup-form" @submit.prevent="submit">
-    <h2>Refund</h2>
+    <h2 role="presentation">Refund</h2>
     <p class="workspace-note">
       Remaining {{ refundable.money.formatted }}. Quantity refunds hold unshipped units.
     </p>
