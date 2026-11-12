@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import DevicePreview from '../components/DevicePreview.vue'
+import PublishPanel from '../components/PublishPanel.vue'
 import SectionList from '../components/SectionList.vue'
 import SectionSettings from '../components/SectionSettings.vue'
 import {
@@ -20,6 +21,7 @@ defineOptions({ name: 'ContentEditor' })
 type Target = { page: string; slots: string[] }
 type DraftResponse = {
   version: number
+  publishedRevision?: number
   sections: SectionInstance[]
   currentVersion?: number
 }
@@ -27,8 +29,15 @@ type DraftResponse = {
 const props = defineProps<{
   definitions: SectionDefinition[]
   targets: Target[]
-  initial: { page: string; slot: string; version: number; sections: SectionInstance[] }
+  initial: {
+    page: string
+    slot: string
+    version: number
+    publishedRevision?: number
+    sections: SectionInstance[]
+  }
   canWrite: boolean
+  canPublish?: boolean
 }>()
 
 const definitionByType = computed(
@@ -44,6 +53,7 @@ const page = ref(props.initial.page)
 const slot = ref(props.initial.slot)
 const sections = ref<SectionInstance[]>(deepClone(props.initial.sections))
 const savedVersion = ref(props.initial.version)
+const publishedRevision = ref(props.initial.publishedRevision ?? 0)
 const savedSnapshot = ref(JSON.stringify(props.initial.sections))
 const selectedId = ref<string | null>(props.initial.sections[0]?.id ?? null)
 const errors = ref<GroupedSectionErrors>(EMPTY_ERRORS)
@@ -92,6 +102,7 @@ async function api(
 function applyDraft(data: DraftResponse) {
   sections.value = deepClone(data.sections)
   savedVersion.value = data.version
+  publishedRevision.value = data.publishedRevision ?? publishedRevision.value
   savedSnapshot.value = JSON.stringify(data.sections)
   selectedId.value = data.sections[0]?.id ?? null
   errors.value = EMPTY_ERRORS
@@ -306,6 +317,16 @@ async function refreshPreview() {
         "
         :can-write="canWrite"
         @update="updateSection"
+      />
+
+      <PublishPanel
+        kind="section_draft"
+        :page="page"
+        :slot-name="slot"
+        :version="savedVersion"
+        :published-revision="publishedRevision"
+        :label="`${page} ${slot} sections`"
+        :can-publish="canPublish === true"
       />
 
       <DevicePreview :html="previewHtml" :loading="previewing" @refresh="refreshPreview" />

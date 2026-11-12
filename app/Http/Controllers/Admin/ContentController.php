@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Identity\Models\StaffAccount;
+use App\Domain\ThemesContent\Actions\PublishContent;
 use App\Domain\ThemesContent\Actions\ReadContent;
 use App\Domain\ThemesContent\Actions\ResolveLayout;
 use App\Domain\ThemesContent\Actions\SaveContent;
+use App\Domain\ThemesContent\Exceptions\SectionValidationFailed;
 use App\Domain\ThemesContent\Support\VisualTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +42,7 @@ final class ContentController
             'menus' => $content->menus(),
             'layoutOptions' => VisualTemplates::options('page'),
             'canWrite' => $staff->hasPermission('content.write'),
+            'canPublish' => $staff->hasPermission('content.publish'),
             'pageSaved' => session()->get('content_page_saved', false),
             'articleSaved' => session()->get('content_article_saved', false),
             'menuSaved' => session()->get('content_menu_saved', false),
@@ -59,6 +62,25 @@ final class ContentController
         return $this->persist($request, function (StaffAccount $staff, array $input) use ($save): void {
             $save->saveArticle($staff, $input);
         }, 'article', 'content_article_saved');
+    }
+
+    public function publish(Request $request, PublishContent $publish): RedirectResponse
+    {
+        Gate::authorize('content.publish');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        $input = $request->validate([
+            'kind' => ['required', 'string'],
+            'id' => ['required', 'uuid'],
+            'version' => ['required', 'integer', 'min:1'],
+        ]);
+        try {
+            $publish->publish($staff, $input);
+        } catch (SectionValidationFailed $failure) {
+            throw ValidationException::withMessages(['publish' => $failure->getMessage()])->redirectTo('/admin/content');
+        }
+
+        return redirect('/admin/content')->with('content_published', true);
     }
 
     public function storeMenu(Request $request, SaveContent $save): RedirectResponse

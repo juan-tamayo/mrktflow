@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\ThemesContent\Actions;
 
+use App\Domain\ThemesContent\Support\ContentRevisions;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,17 +23,26 @@ final class ListArticles
     {
         $cap = max(1, min($limit, 24));
         $rows = DB::table('articles')
-            ->where('status', 'published')
-            ->orderByDesc('published_at')
-            ->orderBy('id')
+            ->join('content_revisions', function (JoinClause $join): void {
+                $join->on('content_revisions.subject_id', '=', 'articles.id')
+                    ->where('content_revisions.subject_type', '=', ContentRevisions::ARTICLE)
+                    ->whereColumn('content_revisions.revision', 'articles.published_revision');
+            })
+            ->whereNotNull('articles.published_revision')
+            ->orderByDesc('articles.published_at')
+            ->orderBy('articles.id')
             ->limit($cap)
-            ->get(['title', 'path', 'excerpt']);
+            ->get(['content_revisions.payload']);
         $articles = [];
         foreach ($rows as $row) {
+            $payload = json_decode((string) $row->payload, true, flags: JSON_THROW_ON_ERROR);
+            if (! is_array($payload)) {
+                continue;
+            }
             $articles[] = [
-                'title' => (string) $row->title,
-                'url' => '/'.$row->path,
-                'excerpt' => (string) $row->excerpt,
+                'title' => (string) ($payload['title'] ?? ''),
+                'url' => '/'.(string) ($payload['path'] ?? ''),
+                'excerpt' => (string) ($payload['excerpt'] ?? ''),
             ];
         }
 

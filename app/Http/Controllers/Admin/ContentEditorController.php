@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Identity\Models\StaffAccount;
+use App\Domain\ThemesContent\Actions\PublishContent;
 use App\Domain\ThemesContent\Actions\ReadSectionDraft;
 use App\Domain\ThemesContent\Actions\RenderSections;
 use App\Domain\ThemesContent\Actions\SaveSectionDraft;
@@ -15,6 +16,7 @@ use App\Domain\ThemesContent\Support\SectionDraftTargets;
 use App\Domain\ThemesContent\Support\SectionRegistry;
 use App\Domain\ThemesContent\Support\SectionValidationErrors;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -54,9 +56,11 @@ final class ContentEditorController
                 'page' => 'home',
                 'slot' => 'content',
                 'version' => $draft['version'],
+                'publishedRevision' => $draft['publishedRevision'],
                 'sections' => $draft['sections'],
             ],
             'canWrite' => $staff->hasPermission('content.write'),
+            'canPublish' => $staff->hasPermission('content.publish'),
         ]);
     }
 
@@ -76,6 +80,7 @@ final class ContentEditorController
             'page' => $data['page'],
             'slot' => $data['slot'],
             'version' => $draft['version'],
+            'publishedRevision' => $draft['publishedRevision'],
             'sections' => $draft['sections'],
             'updatedAt' => $draft['updatedAt'],
         ]);
@@ -133,6 +138,25 @@ final class ContentEditorController
         }
 
         return response()->json(['html' => $html]);
+    }
+
+    public function publish(Request $request, PublishContent $publish): RedirectResponse|JsonResponse
+    {
+        Gate::authorize('content.publish');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        $data = $request->validate([
+            'page' => ['required', 'string', 'max:64'],
+            'slot' => ['required', 'string', 'max:64'],
+            'version' => ['required', 'integer', 'min:1'],
+        ]);
+        try {
+            $publish->publish($staff, $data + ['kind' => 'section_draft']);
+        } catch (SectionValidationFailed $failure) {
+            return $this->validationFailed($failure);
+        }
+
+        return redirect('/admin/content-editor')->with('content_published', true);
     }
 
     private function invalidTarget(string $page, string $slot): JsonResponse

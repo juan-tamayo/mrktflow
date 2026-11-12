@@ -6,6 +6,7 @@ namespace App\Domain\ThemesContent\Actions;
 
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
+use App\Domain\ThemesContent\Support\ContentRevisions;
 use App\Domain\ThemesContent\Support\ReservedContentPaths;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -20,8 +21,9 @@ use Illuminate\Validation\ValidationException;
  *
  * Slugs cannot collide with reserved storefront routes or the category tree.
  * Menu URLs must be local paths outside administration/installer namespaces.
- * Publication revisions remain T067 — this slice stores one working record
- * per slug/handle with an explicit draft or published status.
+ * Saves write a new draft revision. Creating with status=published also
+ * points the first published revision at that snapshot; later saves keep
+ * the live pointer until PublishContent switches it (T067).
  */
 final class SaveContent
 {
@@ -193,15 +195,31 @@ final class SaveContent
         }
         $id = isset($data['id']) ? (string) $data['id'] : (string) Str::uuid();
         $version = $existing === null ? 1 : ((int) $existing->version) + 1;
-        $publishedAt = $data['status'] === 'published'
-            ? ($existing !== null && $existing->status === 'published' ? $existing->published_at : $now)
-            : null;
+        $payload = [
+            'title' => $data['title'],
+            'slug' => $data['slug'],
+            'path' => $path,
+        ];
+        if ($excerpt !== null) {
+            $payload['excerpt'] = $excerpt;
+        }
+        ContentRevisions::record($kind, $id, $version, $payload, $actor->id);
+        $publishedRevision = $existing === null ? null : ($existing->published_revision !== null ? (int) $existing->published_revision : null);
+        $publishedAt = $existing === null ? null : $existing->published_at;
+        $status = $publishedRevision !== null ? 'published' : 'draft';
+        if ($existing === null && $data['status'] === 'published') {
+            $publishedRevision = $version;
+            $publishedAt = $now;
+            $status = 'published';
+        }
         $row = [
             'title' => $data['title'],
             'slug' => $data['slug'],
             'path' => $path,
-            'status' => $data['status'],
+            'status' => $status,
             'version' => $version,
+            'draft_revision' => $version,
+            'published_revision' => $publishedRevision,
             'updated_by' => $actor->id,
             'published_at' => $publishedAt,
             'updated_at' => $now,
@@ -214,16 +232,18 @@ final class SaveContent
         } else {
             DB::table($table)->where('id', $id)->update($row);
         }
-        $action = $data['status'] === 'published' ? 'content.'.$kind.'.published' : 'content.'.$kind.'.saved';
+        $action = $status === 'published' && $existing === null
+            ? 'content.'.$kind.'.published'
+            : 'content.'.$kind.'.saved';
         app(RecordEvent::class)->record('platform.audit.recorded', 'content:'.$kind.':'.$id.':'.$version, [
             'action' => $action,
             'subject_type' => $kind,
             'subject_id' => $id,
             'actor_type' => 'staff',
             'actor_id' => $actor->id,
-            'metadata' => ['path' => $path, 'version' => $version],
+            'metadata' => ['path' => $path, 'version' => $version, 'published_revision' => $publishedRevision],
         ]);
 
-        return ['id' => $id, 'path' => $path, 'version' => $version, 'status' => $data['status']];
+        return ['id' => $id, 'path' => $path, 'version' => $version, 'status' => $status];
     }
 }

@@ -7,6 +7,7 @@ namespace App\Domain\ThemesContent\Actions;
 use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\ThemesContent\Exceptions\SectionDraftConflict;
+use App\Domain\ThemesContent\Support\ContentRevisions;
 use App\Domain\ThemesContent\Support\SectionDraftTargets;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,7 +24,7 @@ use InvalidArgumentException;
  * document version, and refuses a stale expected version with a
  * SectionDraftConflict carrying the current state. One platform audit
  * records the save; payloads themselves are never audited. Revisions and
- * publication are T067 — this is the single working draft per target.
+ * publication (T067) switches a separate published_revision pointer.
  */
 final class SaveSectionDraft
 {
@@ -79,6 +80,13 @@ final class SaveSectionDraft
             } else {
                 DB::table('content_drafts')->where('id', $row->id)->update($values);
             }
+            ContentRevisions::record(
+                ContentRevisions::SECTION_DRAFT,
+                ContentRevisions::sectionSubject($page, $slot),
+                $version,
+                ['page' => $page, 'slot' => $slot, 'sections' => $stored],
+                $actor->id,
+            );
             app(RecordEvent::class)->record('platform.audit.recorded', "audit:content-draft:{$page}:{$slot}:{$version}", [
                 'action' => 'content.draft.saved',
                 'subject_type' => 'content_draft',

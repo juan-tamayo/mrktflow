@@ -5,6 +5,11 @@ import ContentEditor from './ContentEditor.vue'
 
 vi.mock('@inertiajs/vue3', () => ({
   Head: { name: 'Head', render: () => null },
+  useForm: (data: unknown) => ({
+    ...((data as object) ?? {}),
+    processing: false,
+    transform: () => ({ post: vi.fn() }),
+  }),
 }))
 
 const definitions: SectionDefinition[] = [
