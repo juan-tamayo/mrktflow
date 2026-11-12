@@ -25,6 +25,8 @@ final class DispatchAuthoringRun
     public function __construct(
         private BuildPublicContext $context,
         private ReserveUsage $usage,
+        private ValidateCandidate $validate,
+        private RepairCandidate $repair,
     ) {}
 
     /**
@@ -152,14 +154,50 @@ final class DispatchAuthoringRun
         if ($prepared === null) {
             return;
         }
-        try {
-            $result = $provider->generate($this->request($prepared));
-        } catch (Throwable) {
-            $this->abandon($runId);
+        $input = 0;
+        $output = 0;
+        $known = true;
+        $run = $prepared;
+        while (true) {
+            try {
+                $result = $provider->generate($this->request($run));
+            } catch (Throwable) {
+                $this->abandon($runId);
 
-            return;
+                return;
+            }
+            $measuredInput = $result->inputTokens;
+            $measuredOutput = $result->outputTokens;
+            if ($measuredInput !== null && $measuredOutput !== null) {
+                $input += $measuredInput;
+                $output += $measuredOutput;
+            } else {
+                $known = false;
+            }
+            $result = $this->validate->validate($this->request($run), $result);
+            $snapshot = DB::table('ai_runs')->where('id', $runId)->first();
+            if ($snapshot === null) {
+                throw new AiAuthoringRejected;
+            }
+            $cancelled = $this->flag($snapshot, 'cancel_requested');
+            $repairAttempt = (int) $this->string($snapshot, 'repair_attempt');
+            if ($result->status === 'candidate' && $result->candidate !== null && ! $cancelled) {
+                $this->complete($snapshot, $result, $known ? $input : null, $known ? $output : null);
+
+                return;
+            }
+            if ($cancelled || ! $this->repair->canRepair($repairAttempt, $result)) {
+                $this->complete($snapshot, $result, $known ? $input : null, $known ? $output : null);
+
+                return;
+            }
+            $this->repair->advance($runId);
+            $next = DB::table('ai_runs')->where('id', $runId)->first();
+            if ($next === null) {
+                throw new AiAuthoringRejected;
+            }
+            $run = $next;
         }
-        $this->complete($prepared, $result);
     }
 
     public function abandon(string $runId): void
@@ -174,9 +212,9 @@ final class DispatchAuthoringRun
         });
     }
 
-    private function complete(object $prepared, AiAuthoringResult $result): void
+    private function complete(object $prepared, AiAuthoringResult $result, ?int $inputTokens, ?int $outputTokens): void
     {
-        DB::transaction(function () use ($prepared, $result): void {
+        DB::transaction(function () use ($prepared, $result, $inputTokens, $outputTokens): void {
             $run = $this->lockRun($this->string($prepared, 'id'));
             if ($this->terminal($this->string($run, 'status'))) {
                 return;
@@ -189,8 +227,8 @@ final class DispatchAuthoringRun
                 $staff,
                 $this->string($run, 'intent_id'),
                 $this->string($run, 'record_operation_key'),
-                $result->inputTokens,
-                $result->outputTokens,
+                $inputTokens,
+                $outputTokens,
             );
             $cancelled = $this->flag($run, 'cancel_requested');
             if ($result->status === 'candidate' && $result->candidate !== null && ! $cancelled) {
