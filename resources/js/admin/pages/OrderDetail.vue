@@ -260,7 +260,14 @@ const formatAddress = (address: Address) =>
       />
       <CancelOrderDialog v-if="canCancel" :order-id="order.id" :cancellable="order.cancellable" />
       <ResendReceiptDialog v-if="canResendReceipt" :order-id="order.id" />
-      <ShipmentDialog v-if="canShip" :order-id="order.id" :lines="order.lines" />
+      <ShipmentDialog
+        v-if="canShip"
+        :key="`${order.id}-${order.financial_status}-${order.lines
+          .map((line) => line.shippable_quantity)
+          .join('.')}`"
+        :order-id="order.id"
+        :lines="order.lines"
+      />
       <h2>Shipments</h2>
       <p v-if="order.shipments.length === 0" class="workspace-note">No shipments yet.</p>
       <ul v-else class="product-list">

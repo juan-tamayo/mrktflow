@@ -20,7 +20,11 @@ final class ReadCustomerOrders
     public function list(CustomerAccount $actor): array
     {
         $data = [];
-        foreach (DB::table('orders')->where('customer_id', $actor->id)->orderByDesc('created_at')->orderByDesc('id')->get() as $row) {
+        foreach (DB::table('orders')->where('customer_id', $actor->id)
+            ->orderBy('zero_total')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get() as $row) {
             $currency = $this->string($row, 'currency');
             $exponent = $this->int($row, 'exponent');
             $data[] = [

@@ -21,7 +21,7 @@ const form = useForm({
   tracking_number: '',
   tracking_url: '',
   idempotency_key: crypto.randomUUID(),
-  lines: shippable.map((line) => ({ id: line.id, quantity: 0 })),
+  lines: shippable.map((line) => ({ id: line.id, quantity: line.shippable_quantity })),
 })
 const submit = () => {
   form.idempotency_key = crypto.randomUUID()

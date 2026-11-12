@@ -27,6 +27,7 @@ final class ReadAdminOrders
         $to = $this->day($filters['to'] ?? null, true);
         $query = DB::table('orders')
             ->orderByRaw("CASE WHEN fulfillment_status = 'unfulfilled' THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN zero_total = 0 AND financial_status IN ('paid', 'partially_refunded') THEN 0 ELSE 1 END")
             ->orderByDesc('created_at')
             ->orderByDesc('id');
         if ($q !== '') {

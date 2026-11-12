@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\CheckoutOrders\Actions\AddOrderNote;
+use App\Domain\CheckoutOrders\Actions\EnsureBrowserCapturedMixedOrder;
 use App\Domain\CheckoutOrders\Actions\ReadAdminOrders;
 use App\Domain\CheckoutOrders\Actions\RequestRefund;
 use App\Domain\Identity\Models\StaffAccount;
@@ -24,6 +25,7 @@ final class OrderController
         Gate::authorize('orders.read');
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
+        app(EnsureBrowserCapturedMixedOrder::class)->ensure();
 
         return Inertia::render('Orders', [
             'orders' => $orders->search($staff, [
