@@ -61,6 +61,10 @@ Finish the frontend build before starting browser verification: both use `public
 
 The local PHP runtime has no coverage driver. CI configures PCOV and checks `scripts/coverage-gate.php` after producing Clover. See [continuous integration](continuous-integration.md) for coverage and remote evidence status.
 
+## Reference-host installation
+
+Operator install, supported host/services/permissions, the 30-minute sandbox-purchase target, and private-file denial are in [installation](installation.md) and [hosting](hosting.md). Evidence and remaining live-host/Stripe stopwatch work are in [release evidence](release-evidence.md). `bin/php artisan operations:install-check` confirms those documents and required `setup:check` items without printing secrets. `GET /` stays HTTP 503. Production installation does not seed demo customers.
+
 ## Protected setup
 
 After migrations and required prerequisite checks, `bin/php artisan setup:check` reports configuration needs. `bin/php artisan setup:secret` issues or rotates the 24-hour secret; enter it at `/setup`. Do not put it in a URL, publish command output or commit it. Setup access lasts at most 15 minutes. Save the store details to reach pending-owner state, then create the first owner through the protected form. That atomically completes installation and permanently closes the setup wizard. Staff can sign in at `/admin/login`; owners manage staff and directly shared invitation links at `/admin/staff`. Customer registration/sign-in are separate at `/account/register` and `/account/login`, with a private account at `/account`; these server-rendered forms work without JavaScript. Automatic invitation email, customer email verification/recovery and commerce actions remain pending in their respective milestones.

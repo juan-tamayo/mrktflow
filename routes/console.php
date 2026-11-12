@@ -3,6 +3,7 @@
 use App\Domain\Identity\Actions\PruneExpiredData;
 use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Operations\Actions\InspectHealth;
+use App\Domain\Operations\Actions\ReadInstallationRunbook;
 use App\Domain\Operations\Actions\PruneExpiredExports;
 use App\Domain\Operations\Actions\PublishNotification;
 use App\Domain\Operations\Actions\RecordBackupObservation;
@@ -163,6 +164,24 @@ Artisan::command('operations:backup-observed', function (RecordBackupObservation
 
     return 0;
 })->purpose('Record that an off-host backup completed, without storing backup contents');
+
+Artisan::command('operations:install-check', function (ReadInstallationRunbook $runbook, InstallationPrerequisites $prerequisites): int {
+    $guide = $runbook->read();
+    $this->line('target_setup_seconds: '.$guide['target_setup_seconds']);
+    foreach ($guide['documents'] as $id => $document) {
+        $this->line($id.': '.($document['exists'] && $document['missing_headings'] === [] ? 'ready' : 'incomplete'));
+    }
+    $this->line('environment_example_secrets: '.($guide['environment']['forbids_secrets'] ? 'absent' : 'refused'));
+    $blocked = false;
+    foreach ($prerequisites->report() as $check) {
+        $state = $check['passed'] ? 'PASS' : ($check['required'] ? 'BLOCKED' : 'PENDING');
+        $this->line($state.' '.$check['id'].': '.$check['message']);
+        $blocked = $blocked || ($check['required'] && ! $check['passed']);
+    }
+    $this->line('homepage: HTTP 503 until the storefront-open slice');
+
+    return ($guide['complete'] && ! $blocked) ? 0 : 1;
+})->purpose('Check the installation runbook and required host prerequisites without printing secrets');
 
 Artisan::command('identity:prune-expired', function (PruneExpiredData $prune): int {
     $this->info('Pruned '.$prune->prune().' expired operational record(s).');
