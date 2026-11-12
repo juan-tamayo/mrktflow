@@ -97,13 +97,24 @@ it('OperationsReports reconciles activity and cohort figures to the captured and
     expect((string) DB::table('orders')->where('id', $zero['order_id'])->value('financial_status'))->toBe('paid')
         ->and((int) DB::table('orders')->where('id', $zero['order_id'])->value('grand_total_amount'))->toBe(0);
 
-    fakeStripeRefund('failed', 're_report_failed', 2475, 'pi_report_live');
-    $failed = app(RequestRefund::class)->request($owner, $fixture['order_id'], [
-        'lines' => [['id' => $fixture['line_id'], 'quantity' => 1]],
+    $paymentId = (string) DB::table('payments')->where('order_id', $fixture['order_id'])->value('id');
+    DB::table('refunds')->insert([
+        'id' => (string) Str::uuid(),
+        'order_id' => $fixture['order_id'],
+        'payment_id' => $paymentId,
+        'staff_id' => $owner->id,
+        'amount' => 2475,
         'shipping_amount' => 0,
-        'reason' => 'Provider declined the first refund.',
-    ], (string) Str::uuid());
-    expect($failed['status'])->toBe('failed');
+        'currency' => 'USD',
+        'exponent' => 2,
+        'kind' => 'quantity',
+        'status' => 'failed',
+        'reason' => 'Provider declined a same-day refund.',
+        'capture_id' => 'pi_report_live',
+        'provider_refund_id' => 're_report_failed',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
     Carbon::setTestNow(Carbon::parse('2026-10-18T15:00:00Z')->utc());
     fakeStripeRefund('succeeded', 're_report_ok', 2475, 'pi_report_live');
