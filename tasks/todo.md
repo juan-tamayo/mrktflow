@@ -1222,13 +1222,14 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T065: Pages, articles and navigation
 
-- [ ] Complete T065.
+- [x] Complete T065 locally.
 - **Module / requirements:** `themes-content` · THEME-02, THEME-05.
 - **Depends on:** T064.
 - **Acceptance:** Create page/article/menu records with validated paths/links; no collision with reserved routes or category tree.
 - **Verify:** Run `php artisan test --filter=ThemesContentPage`; test path collision, invalid menu URL and empty article list.
 - **Likely files:** `database/migrations/create_content_tables.php`, `app/Domain/ThemesContent/Actions/SaveContent.php`, `app/Http/Controllers/Admin/ContentController.php`, `resources/js/admin/pages/Navigation.vue`, `tests/Feature/ThemesContentPageTest.php`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
+- **Evidence (2026-11-12):** Failing `ThemesContentPage` tests were written first, then migration `000060` (`pages`, `articles`, `menus`, `menu_items`), `SaveContent`/`ReadContent`/`ListArticles`, staff `/admin/content` (`ContentNavigation`), and article-list empty/published rendering. Focused suite: 8 passed / 123 assertions (path collision with reserved slugs and the category tree, invalid menu URLs persist nothing, article-list empty until a published article exists, guest/customer/role/2FA denial). ThemesContent group 73 passed / 437 assertions. Full PHP suite: 680 passed / 6,718 assertions. Pint PASS, PHPStan level 8 no errors. Frontend typecheck/lint/format, unit 148 passed, production build OK. Playwright: 10 passed / 10 failed in this cloud image (product 404s and 120s timeouts on existing journeys; no T065 browser spec). Composer audit on the locked tree reports existing Symfony advisories (not patched blindly). npm audit 15 moderate (dev tooling); 237 registry signatures / 95 attestations. Live provider checks were not run. Hosted Quality for this branch is pending. Privileged staff still require 2FA. Creating CMS records does not replace the catalog homepage.
 
 ### T066: Product and category visual assignments
 

@@ -108,7 +108,21 @@
         @case('article-list')
             <section class="section section-article-list" data-section-type="article-list" data-section-id="{{ $section['id'] }}">
                 @isset($settings['heading'])<h2>{{ $settings['heading'] }}</h2>@endisset
-                <p class="section-empty">No articles yet.</p>
+                @php($articles = $section['articles'] ?? [])
+                @if ($articles === [])
+                    <p class="section-empty">No articles yet.</p>
+                @else
+                    <ul class="section-article-list-items">
+                        @foreach ($articles as $article)
+                            <li>
+                                <a href="{{ $article['url'] }}">{{ $article['title'] }}</a>
+                                @if (($article['excerpt'] ?? '') !== '')
+                                    <p>{{ $article['excerpt'] }}</p>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
             </section>
             @break
     @endswitch

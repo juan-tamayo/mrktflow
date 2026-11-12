@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\ContentEditorController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
@@ -160,6 +161,10 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/orders/{orderId}/returns/{returnId}/restock', [ReturnController::class, 'restock'])->whereUuid('orderId')->whereUuid('returnId')->middleware('throttle:30,1,order-return-steps:');
         Route::post('/admin/orders/{orderId}/entitlements/{entitlementId}/update', [EntitlementController::class, 'update'])->whereUuid('orderId')->whereUuid('entitlementId')->middleware('throttle:30,1,order-downloads:');
         Route::post('/admin/orders/{orderId}/entitlements/{entitlementId}/reset-limit', [EntitlementController::class, 'resetLimit'])->whereUuid('orderId')->whereUuid('entitlementId')->middleware('throttle:30,1,order-downloads:');
+        Route::get('/admin/content', [ContentController::class, 'show']);
+        Route::post('/admin/content/pages', [ContentController::class, 'storePage'])->middleware('throttle:30,1,content-page:');
+        Route::post('/admin/content/articles', [ContentController::class, 'storeArticle'])->middleware('throttle:30,1,content-article:');
+        Route::post('/admin/content/menus', [ContentController::class, 'storeMenu'])->middleware('throttle:30,1,content-menu:');
         Route::get('/admin/content-editor', [ContentEditorController::class, 'show']);
         Route::get('/admin/content-editor/draft', [ContentEditorController::class, 'draft']);
         Route::put('/admin/content-editor/draft', [ContentEditorController::class, 'save'])->middleware('throttle:30,1,content-draft:');

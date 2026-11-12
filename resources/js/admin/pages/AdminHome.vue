@@ -10,6 +10,7 @@ defineProps<{
   canManageShipping: boolean
   canReadOrders: boolean
   canPreviewTheme: boolean
+  canManageContent: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -101,8 +102,16 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canReadOrders" class="workspace-tool">
+          <div v-if="canManageContent" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">06</span>
+            <div>
+              <a class="tool-link" href="/admin/content">Pages, articles, menus</a>
+              <p>Create content records with validated paths and navigation links.</p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canReadOrders" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">07</span>
             <div>
               <a class="tool-link" href="/admin/orders">Orders</a>
               <p>Search frozen orders, independent states, and internal notes.</p>
@@ -110,7 +119,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div v-if="canManageStaff" class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">07</span>
+            <span class="tool-number" aria-hidden="true">08</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -118,7 +127,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">08</span>
+            <span class="tool-number" aria-hidden="true">09</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>
