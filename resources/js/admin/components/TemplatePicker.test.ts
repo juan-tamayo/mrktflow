@@ -44,6 +44,23 @@ it('assigns a product layout through a uniquely labelled control', async () => {
   )
 })
 
+it('names the assignment result separately from other status regions', () => {
+  const wrapper = mount(TemplatePicker, {
+    props: {
+      subjectType: 'product',
+      subjectId: '11111111-1111-4111-8111-111111111111',
+      subjectLabel: 'Studio Lamp',
+      templateKey: 'product.compact',
+      options: [{ key: 'product.compact', label: 'Compact product layout' }],
+      canAssign: true,
+      saved: true,
+    },
+  })
+  expect(
+    wrapper.get('[role="status"][aria-label="Visual template assignment result"]').text(),
+  ).toBe('Visual template assigned.')
+})
+
 it('hides the assign action when staff cannot write', () => {
   const wrapper = mount(TemplatePicker, {
     props: {

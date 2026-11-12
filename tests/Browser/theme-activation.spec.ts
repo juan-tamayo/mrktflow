@@ -89,7 +89,9 @@ test('staff activate the default theme, assign custom templates, and keep checko
   await page
     .getByRole('button', { name: 'Assign visual template for Studio Lamp', exact: true })
     .click()
-  await expect(page.getByRole('status')).toContainText('Visual template assigned')
+  await expect(
+    page.getByRole('status', { name: 'Visual template assignment result', exact: true }),
+  ).toContainText('Visual template assigned')
 
   await page.goto('/admin/categories')
   await page.getByRole('link', { name: 'Lighting', exact: true }).click()
@@ -99,7 +101,9 @@ test('staff activate the default theme, assign custom templates, and keep checko
   await page
     .getByRole('button', { name: 'Assign visual template for Lighting', exact: true })
     .click()
-  await expect(page.getByRole('status')).toContainText('Visual template assigned')
+  await expect(
+    page.getByRole('status', { name: 'Visual template assignment result', exact: true }),
+  ).toContainText('Visual template assigned')
 
   await page.goto('/products/studio-lamp')
   await expect(page.locator('[data-visual-template="product.compact"]')).toBeVisible()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3'
+import { computed, watch } from 'vue'
 
 defineOptions({ name: 'PublishPanel' })
 
@@ -14,44 +15,76 @@ const props = defineProps<{
   canPublish: boolean
 }>()
 
-const form = useForm(
-  props.kind === 'section_draft'
-    ? { page: props.page ?? '', slot: props.slotName ?? '', version: props.version }
-    : { kind: props.kind, id: props.subjectId ?? '', version: props.version },
-)
+function sectionDraftFields() {
+  return { page: props.page ?? '', slot: props.slotName ?? '', version: props.version }
+}
+
+function documentFields() {
+  return { kind: props.kind, id: props.subjectId ?? '', version: props.version }
+}
+
+const form = useForm(props.kind === 'section_draft' ? sectionDraftFields() : documentFields())
 const restoreForm = useForm(
   props.kind === 'section_draft'
     ? {
         kind: 'section_draft',
-        page: props.page ?? '',
-        slot: props.slotName ?? '',
+        ...sectionDraftFields(),
         revision: Math.max(1, props.publishedRevision - 1),
-        version: props.version,
       }
     : {
-        kind: props.kind,
-        id: props.subjectId ?? '',
+        ...documentFields(),
         revision: Math.max(1, props.publishedRevision - 1),
-        version: props.version,
       },
 )
 
-const action =
-  props.kind === 'section_draft' ? '/admin/content-editor/publish' : '/admin/content/publish'
-const previewHref =
-  props.kind === 'page'
-    ? `/admin/preview/pages/${props.subjectId ?? ''}`
-    : props.kind === 'article'
-      ? `/admin/preview/articles/${props.subjectId ?? ''}`
-      : `/admin/preview/sections?page=${encodeURIComponent(props.page ?? '')}&slot=${encodeURIComponent(props.slotName ?? '')}`
-const previewName = `Preview ${props.label}`
-const publishName = `Publish ${props.label}`
-const restoreName = `Restore prior published revision of ${props.label}`
+watch(
+  () => [
+    props.kind,
+    props.page,
+    props.slotName,
+    props.subjectId,
+    props.version,
+    props.publishedRevision,
+  ],
+  () => {
+    Object.assign(form, props.kind === 'section_draft' ? sectionDraftFields() : documentFields())
+    Object.assign(
+      restoreForm,
+      props.kind === 'section_draft'
+        ? {
+            kind: 'section_draft',
+            ...sectionDraftFields(),
+            revision: Math.max(1, props.publishedRevision - 1),
+          }
+        : {
+            ...documentFields(),
+            revision: Math.max(1, props.publishedRevision - 1),
+          },
+    )
+  },
+)
+
+const action = computed(() =>
+  props.kind === 'section_draft' ? '/admin/content-editor/publish' : '/admin/content/publish',
+)
+const previewHref = computed(() => {
+  if (props.kind === 'page') {
+    return `/admin/preview/pages/${props.subjectId ?? ''}`
+  }
+  if (props.kind === 'article') {
+    return `/admin/preview/articles/${props.subjectId ?? ''}`
+  }
+
+  return `/admin/preview/sections?page=${encodeURIComponent(props.page ?? '')}&slot=${encodeURIComponent(props.slotName ?? '')}`
+})
+const previewName = computed(() => `Preview ${props.label}`)
+const publishName = computed(() => `Publish ${props.label}`)
+const restoreName = computed(() => `Restore prior published revision of ${props.label}`)
 
 function submit() {
   form
     .transform((data) => ({ ...data, version: props.version }))
-    .post(action, { preserveScroll: true })
+    .post(action.value, { preserveScroll: true })
 }
 
 function restore() {
@@ -72,7 +105,7 @@ function restore() {
       <template v-else>Not published</template>
     </p>
     <p>
-      <a class="text-link" :href="previewHref">{{ previewName }}</a>
+      <a class="text-link" :href="previewHref" :aria-label="previewName">{{ previewName }}</a>
     </p>
     <form v-if="canPublish && version > 0" @submit.prevent="submit">
       <button
