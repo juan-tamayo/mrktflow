@@ -25,6 +25,21 @@ final readonly class AiAuthoringResult
         return new self('unknown', null, null, null, null);
     }
 
+    public static function timeout(): self
+    {
+        return new self('timeout', null, null, null, null);
+    }
+
+    public static function rateLimited(): self
+    {
+        return new self('rate_limited', null, null, null, null);
+    }
+
+    public static function unavailable(): self
+    {
+        return new self('unavailable', null, null, null, null);
+    }
+
     public function usageKnown(): bool
     {
         return $this->inputTokens !== null && $this->outputTokens !== null;

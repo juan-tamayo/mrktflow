@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\AiAuthoring\Adapters\SelectedProvider;
+use App\Domain\AiAuthoring\Contracts\AiAuthoringProvider;
 use App\Domain\Catalog\Actions\AllocateInventory;
 use App\Domain\Catalog\Actions\ReadCatalog;
 use App\Domain\Catalog\Contracts\CatalogReader;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ShippingQuoter::class, QuoteShipping::class);
         $this->app->singleton(PaymentGateway::class, StripeGateway::class);
         $this->app->singleton(ThemeRegistry::class, RegisterTheme::class);
+        $this->app->singleton(AiAuthoringProvider::class, SelectedProvider::class);
     }
 
     /**
