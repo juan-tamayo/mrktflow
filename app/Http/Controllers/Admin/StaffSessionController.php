@@ -72,6 +72,7 @@ final class StaffSessionController
             'canUseAi' => $staff->hasPermission('ai.use'),
             'canManageEmail' => $staff->hasPermission('settings.manage'),
             'canReadReports' => $staff->hasPermission('reports.read'),
+            'canExport' => $staff->hasPermission('exports.read'),
         ]);
     }
 }

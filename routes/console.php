@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
+use App\Domain\Operations\Actions\PruneExpiredExports;
 use App\Domain\Operations\Actions\PublishNotification;
 use App\Domain\Platform\Actions\CleanMedia;
 use App\Domain\Platform\Actions\InstallationPrerequisites;
@@ -125,6 +126,14 @@ Artisan::command('operations:mail-recover', function (PublishNotification $queue
 })->purpose('Recover bounded transactional and marketing notification work and purge expired payloads');
 
 Schedule::command('operations:mail-recover')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('operations:export-prune', function (PruneExpiredExports $prune): int {
+    $this->info('Expired '.$prune->prune().' export file(s).');
+
+    return 0;
+})->purpose('Delete expired private export files and mark jobs expired');
+
+Schedule::command('operations:export-prune')->everyMinute()->withoutOverlapping(2);
 
 Artisan::command('operations:mail-health', function (): int {
     $pending = DB::table('notification_deliveries')->whereIn('status', ['pending', 'sending'])->count();
