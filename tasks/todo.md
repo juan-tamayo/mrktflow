@@ -1763,7 +1763,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T079: Transactional email configuration and failures
 
-- [ ] Complete T079.
+- [x] Complete T079.
+- **Evidence (November 12, 2026):** Failing `OperationsMail` tests first, then `notification_deliveries` + `/admin/email` preview/test-send and `/admin/notifications` failure/retry. Transactional vs marketing honor separate `DeliveryPolicy` suppression/purpose; unique `intent_key` dedupes; transport outage then recovery and unsubscribe-before-retry simulated with the array mailer only. `bin/php artisan test --filter=OperationsMail` 11 passed / 138 assertions. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (180 passed)/`bin/npm run build` green. Playwright Chromium `operations-mail.spec.ts` passed (GET / stays HTTP 503; privileged staff TOTP). Isolated MySQL 8.4 via TestDatabaseGuard. Composer/npm audits locked, no force-fix. Did not merge. Did not start T080.
 - **Module / requirements:** `operations` · OPS-01, PLAT-05.
 - **Depends on:** T043, T047, T057, T078, T120.
 - **Acceptance:** Transactional and marketing templates honor separate suppression/purpose policies and have preview/test sender, deduplicated delivery intent and visible failure/retry; no exactly-once SMTP claim.

@@ -7,9 +7,11 @@ use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\ContentEditorController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
+use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\EntitlementController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\LayoutAssignmentController;
+use App\Http\Controllers\Admin\NotificationFailureController;
 use App\Http\Controllers\Admin\OrderCancellationController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderReceiptController;
@@ -111,6 +113,10 @@ Route::middleware(Middleware::class)->group(function (): void {
     Route::post('/admin/login', [StaffSessionController::class, 'login'])->middleware('throttle:staff-login');
     Route::middleware(RequireStaffSession::class)->group(function (): void {
         Route::get('/admin', [StaffSessionController::class, 'home']);
+        Route::get('/admin/email', [EmailSettingsController::class, 'show']);
+        Route::post('/admin/email/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1,email-test:');
+        Route::get('/admin/notifications', [NotificationFailureController::class, 'index']);
+        Route::post('/admin/notifications/{deliveryId}/retry', [NotificationFailureController::class, 'retry'])->whereUuid('deliveryId')->middleware('throttle:30,1,notification-retry:');
         Route::get('/admin/ai', [AiSettingsController::class, 'show']);
         Route::post('/admin/ai', [AiSettingsController::class, 'update'])->middleware('throttle:30,1,ai-settings:');
         Route::get('/admin/ai/studio', [AiStudioController::class, 'index']);

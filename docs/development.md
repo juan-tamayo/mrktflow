@@ -306,7 +306,9 @@ Authorized authors open `/admin/ai/studio/{run}` to review an editable candidate
 
 Authorized catalog authors with `ai.use` open the product editor AI panel. `DraftProductContent` proposes title and description only; applying those fields never writes price or stock. `SuggestProductSchema` proposes typed fields against installed schema definitions. Merchants review semantic-key conflicts and migration previews before apply; an existing key such as `sensor.megapixels` cannot change type or comparison meaning, and incompatible camera suggestions stay unapplied. Price, stock, SKU and inventory remain core catalog fields outside the schema. Publication of products stays the existing catalog save. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoringProduct`.
 
-## AI authoring contract spike
+## Transactional email configuration and failures
+
+Staff with `settings.manage` open `/admin/email` to preview classified templates and send a test to their own staff address. Transactional templates (`order-receipt`, `shipment`, `download-access`, `refund`, `customer-challenge`) stay deliverable under marketing suppression. Marketing templates (`newsletter`, `watch-alert`, `cart_recovery`) recheck `DeliveryPolicy` immediately before send, so an unsubscribe after a transport outage cancels the retry. Durable `notification_deliveries` rows use unique intent keys, encrypted payloads, bounded retries, and ID-only jobs on `transactional-mail` or `marketing` via `database-outbox`. Failures are listed at `/admin/notifications` with public error codes and an explicit retry. Ordinary SMTP is at-least-once; a crash after transport acceptance can duplicate a message. Array/log transports are not production delivery. Tests use the array mailer only. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=OperationsMail`. Recover with `operations:mail-recover` and `queue:work database-outbox --queue=transactional-mail,marketing --timeout=60 --tries=1`.
 
 ## AI authoring integration gate
 
