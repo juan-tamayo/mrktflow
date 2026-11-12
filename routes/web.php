@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AiSettingsController;
 use App\Http\Controllers\Admin\AiStudioController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\CampaignController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\ContentEditorController;
@@ -174,6 +175,15 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::patch('/admin/schemas/{schemaId}', [ProductSchemaController::class, 'update'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema:');
         Route::post('/admin/schemas/{schemaId}/migration/preview', [ProductSchemaController::class, 'previewMigration'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema-migration:');
         Route::post('/admin/schemas/{schemaId}/migration', [ProductSchemaController::class, 'applyMigration'])->whereUuid('schemaId')->middleware('throttle:30,1,catalog-schema-migration:');
+        Route::get('/admin/marketing/campaigns', [CampaignController::class, 'index']);
+        Route::get('/admin/marketing/campaigns/create', [CampaignController::class, 'create']);
+        Route::post('/admin/marketing/campaigns', [CampaignController::class, 'store'])->middleware('throttle:30,1,marketing-campaign:');
+        Route::get('/admin/marketing/campaigns/{campaignId}', [CampaignController::class, 'edit'])->whereUuid('campaignId');
+        Route::patch('/admin/marketing/campaigns/{campaignId}', [CampaignController::class, 'update'])->whereUuid('campaignId')->middleware('throttle:30,1,marketing-campaign:');
+        Route::post('/admin/marketing/campaigns/{campaignId}/preview', [CampaignController::class, 'preview'])->whereUuid('campaignId')->middleware('throttle:30,1,marketing-campaign-preview:');
+        Route::post('/admin/marketing/campaigns/{campaignId}/activations', [CampaignController::class, 'activate'])->whereUuid('campaignId')->middleware('throttle:30,1,marketing-campaign-activate:');
+        Route::post('/admin/marketing/campaigns/{campaignId}/pause', [CampaignController::class, 'pause'])->whereUuid('campaignId')->middleware('throttle:30,1,marketing-campaign-pause:');
+        Route::post('/admin/marketing/campaigns/{campaignId}/sends', [CampaignController::class, 'send'])->whereUuid('campaignId')->middleware('throttle:30,1,marketing-campaign-send:');
         Route::get('/admin/coupons', [CouponController::class, 'index']);
         Route::get('/admin/coupons/create', [CouponController::class, 'create']);
         Route::post('/admin/coupons', [CouponController::class, 'store'])->middleware('throttle:30,1,pricing-coupon:');

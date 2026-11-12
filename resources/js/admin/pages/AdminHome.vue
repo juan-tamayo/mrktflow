@@ -14,6 +14,7 @@ defineProps<{
   canConfigureAi: boolean
   canUseAi: boolean
   canManageEmail: boolean
+  canManageMarketing: boolean
   canReadReports: boolean
   canExport: boolean
   canPrivacy: boolean
@@ -142,6 +143,18 @@ const logout = useForm({})
               <p>
                 Review validated drafts, usage, and diffs. Owner-only settings stay on the
                 credentials screen. Publishing stays a separate action.
+              </p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageMarketing" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">09a</span>
+            <div>
+              <a class="tool-link" href="/admin/marketing/campaigns">Campaigns</a>
+              <p>
+                Draft versioned broadcasts, preview verified opt-in audiences, and inspect schedules
+                and caps. Activation and send stay separate permissions. This workspace does not
+                deliver live campaign mail.
               </p>
             </div>
             <span aria-hidden="true">↗</span>

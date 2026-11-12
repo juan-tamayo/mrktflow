@@ -71,6 +71,9 @@ final class StaffSessionController
             'canConfigureAi' => $staff->role === 'owner',
             'canUseAi' => $staff->hasPermission('ai.use'),
             'canManageEmail' => $staff->hasPermission('settings.manage'),
+            'canManageMarketing' => $staff->hasPermission('marketing.write')
+                || $staff->hasPermission('marketing.activate')
+                || $staff->hasPermission('marketing.send'),
             'canReadReports' => $staff->hasPermission('reports.read'),
             'canExport' => $staff->hasPermission('exports.read'),
             'canPrivacy' => $staff->hasPermission('customers.read'),
