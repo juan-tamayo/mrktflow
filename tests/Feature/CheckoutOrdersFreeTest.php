@@ -319,6 +319,8 @@ it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads a
         ->assertSee('>Order '.$order->number.'</a>', false);
     $this->get('/account/orders/'.$order->id)->assertOk()
         ->assertSee('<h2>Shipments</h2>', false)
+        ->assertSee('Nothing shipped yet.')
+        ->assertDontSee('No shipments yet.')
         ->assertDontSee('Track this shipment');
 });
 

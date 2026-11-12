@@ -22,7 +22,7 @@
             <p>Merchandise {{ $order['totals']['merchandise']['formatted'] }} · discount {{ $order['totals']['discount']['formatted'] }} · shipping {{ $order['totals']['shipping']['formatted'] }} · tax {{ $order['totals']['tax']['formatted'] }} · {{ $order['totals']['grand_total']['formatted'] }}</p>
             <h2>Shipments</h2>
             @if($order['shipments'] === [])
-                <p class="theme-purchase-note">No shipments yet.</p>
+                <p class="theme-purchase-note">Nothing shipped yet.</p>
             @else
                 <ul class="product-list">
                     @foreach($order['shipments'] as $shipment)
