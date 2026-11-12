@@ -22,7 +22,7 @@ final class DiskUsage
         }
         $free = disk_free_space($path);
         $total = disk_total_space($path);
-        if ((! is_int($free) && ! is_float($free)) || (! is_int($total) && ! is_float($total)) || $total <= 0) {
+        if ($free === false || $total === false || $total <= 0) {
             return ['path' => $path, 'free_bytes' => 0, 'total_bytes' => 0, 'used_percent' => 100];
         }
         $freeBytes = (int) $free;
