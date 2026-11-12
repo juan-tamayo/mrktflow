@@ -34,7 +34,7 @@
             <input type="hidden" name="variant_id" value="{{ $selected['id'] }}">
         @else
             <div class="setup-field">
-                <label for="wishlist-variant">Variant</label>
+                <label for="wishlist-variant">Wishlist variant</label>
                 <select id="wishlist-variant" name="variant_id" required>
                     <option value="">Choose a combination</option>
                     @foreach($product->variants as $variant)
@@ -55,7 +55,7 @@
                 <input type="hidden" name="variant_id" value="{{ $selected['id'] }}">
             @else
                 <div class="setup-field">
-                    <label for="watch-variant">Variant</label>
+                    <label for="watch-variant">Alert variant</label>
                     <select id="watch-variant" name="variant_id" required>
                         <option value="">Choose a combination</option>
                         @foreach($product->variants as $variant)

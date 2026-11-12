@@ -58,7 +58,11 @@ it('CatalogVariant saves unique combinations and lets a shopper see the selected
     $unavailablePage->assertOk()->assertSee('This combination is unavailable')->assertDontSee('<strong>USD 25.99</strong>', false);
     $this->getJson('/products/studio-lamp?variant=not-a-variant')->assertUnprocessable();
     $missing = $this->get('/products/studio-lamp');
-    $missing->assertOk()->assertSee('Choose a finish and size to see the current price');
+    $missing->assertOk()->assertSee('Choose a finish and size to see the current price')
+        ->assertSee('<label for="cart-variant">Variant</label>', false)
+        ->assertSee('<label for="wishlist-variant">Wishlist variant</label>', false)
+        ->assertSee('<label for="watch-variant">Alert variant</label>', false);
+    expect(substr_count($missing->getContent(), '>Variant</label>'))->toBe(1);
 });
 
 it('CatalogVariant HTTP keeps privileged staff behind two-factor and rejects customers', function (): void {

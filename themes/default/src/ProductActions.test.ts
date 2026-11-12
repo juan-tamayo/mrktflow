@@ -86,6 +86,7 @@ describe('ProductActions', () => {
       },
     })
     const button = wrapper.get('button')
+    expect(wrapper.get('label').text()).toBe('Compare variant')
     expect(button.attributes('disabled')).toBeDefined()
     await wrapper.get('select').setValue(alphaVariant)
     expect(button.attributes('disabled')).toBeUndefined()

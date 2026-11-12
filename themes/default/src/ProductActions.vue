@@ -45,7 +45,7 @@ function toggle(): void {
 <template>
   <div class="theme-compare-actions">
     <div v-if="props.variants.length > 1" class="setup-field">
-      <label :for="selectId">Variant</label>
+      <label :for="selectId">Compare variant</label>
       <select :id="selectId" v-model="chosenVariantId">
         <option value="">Choose a combination</option>
         <option v-for="variant in props.variants" :key="variant.id" :value="variant.id">
