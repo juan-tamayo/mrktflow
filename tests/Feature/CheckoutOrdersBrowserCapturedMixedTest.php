@@ -11,6 +11,7 @@ use App\Domain\CheckoutOrders\Actions\ReadCustomerOrders;
 use App\Domain\CheckoutOrders\Actions\StartPayment;
 use App\Domain\CheckoutOrders\Actions\UpdateCart;
 use App\Domain\CheckoutOrders\Support\CartOwner;
+use App\Domain\Fulfillment\Actions\CreateShipment;
 use App\Domain\Fulfillment\Actions\ReadDownloads;
 use App\Domain\Identity\Models\CustomerAccount;
 use App\Domain\Platform\Actions\ConsumeEvent;
@@ -100,6 +101,29 @@ it('CheckoutOrdersBrowserCapturedMixed staff list prefers a captured mixed order
         ->where('refundSaved', true));
     $customerOrders = app(ReadCustomerOrders::class)->list($fixture['customer']);
     expect($customerOrders['data'][0]['id'])->toBe($paidId);
+    $this->get('/')->assertStatus(503);
+});
+
+it('CheckoutOrdersBrowserCapturedMixed shipped captured order shows Track this shipment', function (): void {
+    $fixture = browserMixedFreeOrder();
+    $owner = $fixture['owner'];
+    $customer = $fixture['customer'];
+    $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
+    $this->get('/admin/orders')->assertOk();
+    $paidId = app(ReadAdminOrders::class)->search($owner, [])['data'][0]['id'];
+    expect($paidId)->not->toBe($fixture['free_order_id']);
+    $lampLine = (string) DB::table('order_lines')->where('order_id', $paidId)
+        ->where('title', 'Studio Lamp')->value('id');
+    app(CreateShipment::class)->create($owner, $paidId, [
+        'lines' => [['id' => $lampLine, 'quantity' => 1]],
+    ], (string) Str::uuid());
+    expect(DB::table('shipments')->where('order_id', $paidId)->value('tracking_url'))->toBeNull();
+    $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1]);
+    $this->get('/account/orders/'.$paidId)->assertOk()
+        ->assertSee('<h2>Shipments</h2>', false)
+        ->assertSee('Track this shipment')
+        ->assertSee('Studio Lamp')
+        ->assertDontSee('javascript:');
     $this->get('/')->assertStatus(503);
 });
 

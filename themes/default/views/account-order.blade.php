@@ -33,6 +33,8 @@
                             @endforeach
                             @if($shipment['tracking_url'] !== null)
                                 <p><a class="text-link" href="{{ $shipment['tracking_url'] }}" target="_blank" rel="noopener noreferrer">Track this shipment</a></p>
+                            @else
+                                <p>Track this shipment</p>
                             @endif
                         </li>
                     @endforeach
