@@ -154,6 +154,19 @@ final class RegisterTheme implements ThemeRegistry
         return $status === ThemeRegistration::STATUS_VALID;
     }
 
+    /** @return list<ThemeRegistration> */
+    public function list(): array
+    {
+        $themes = [];
+        $rows = DB::table('installed_themes')->orderBy('name')->orderBy('theme_id')->get();
+        foreach ($rows as $row) {
+            /** @var object{theme_id: string, name: string|null, version: string|null, status: string, errors: string|null, checksum: string, path: string} $row */
+            $themes[] = ThemeRegistration::fromRow($row);
+        }
+
+        return $themes;
+    }
+
     private function root(): string
     {
         $root = realpath($this->themesRoot ?? base_path('themes'));

@@ -8,7 +8,7 @@ vi.mock('@inertiajs/vue3', () => ({
     ...((data as object) ?? {}),
     processing: false,
     transform: (callback: (data: unknown) => unknown) => {
-      callback({ version: 2 })
+      callback({ version: 2, revision: 1 })
       return { post }
     },
   }),
@@ -20,7 +20,7 @@ it('publishes a page through a uniquely labelled native control', async () => {
       kind: 'page',
       subjectId: '11111111-1111-4111-8111-111111111111',
       version: 2,
-      publishedRevision: 1,
+      publishedRevision: 2,
       label: 'page About the studio',
       canPublish: true,
     },
@@ -33,6 +33,11 @@ it('publishes a page through a uniquely labelled native control', async () => {
     'Publish page About the studio',
   )
   expect(post).toHaveBeenCalled()
+  expect(
+    wrapper
+      .find('button[aria-label="Restore prior published revision of page About the studio"]')
+      .exists(),
+  ).toBe(true)
 })
 
 it('hides publish when staff cannot publish and still offers preview', () => {
