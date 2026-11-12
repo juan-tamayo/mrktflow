@@ -168,17 +168,16 @@ it('OperationsInstall rehearses clean owner setup, private-file denial, and phys
 
     $owner = StaffAccount::query()->where('email', 'owner@example.test')->firstOrFail();
     $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
-    $assetId = app(StoreMedia::class)->store(catalogPrivateTextFile(), 'private_file', new class($owner->id) implements MediaUploadAuthorization
+    $authority = new class($owner->id) implements MediaUploadAuthorization
     {
-        public function __construct(private readonly string $ownerId)
-        {
-        }
+        public function __construct(private readonly string $ownerId) {}
 
         public function authorizeUpload(): string
         {
             return $this->ownerId;
         }
-    });
+    };
+    $assetId = app(StoreMedia::class)->store(catalogPrivateTextFile(), 'private_file', $authority);
     $key = (string) DB::table('media_assets')->where('id', $assetId)->value('original_key');
     Auth::guard('staff')->logout();
     $this->flushSession();

@@ -3,9 +3,9 @@
 use App\Domain\Identity\Actions\PruneExpiredData;
 use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Operations\Actions\InspectHealth;
-use App\Domain\Operations\Actions\ReadInstallationRunbook;
 use App\Domain\Operations\Actions\PruneExpiredExports;
 use App\Domain\Operations\Actions\PublishNotification;
+use App\Domain\Operations\Actions\ReadInstallationRunbook;
 use App\Domain\Operations\Actions\RecordBackupObservation;
 use App\Domain\Platform\Actions\CleanMedia;
 use App\Domain\Platform\Actions\InstallationPrerequisites;
@@ -169,18 +169,21 @@ Artisan::command('operations:install-check', function (ReadInstallationRunbook $
     $guide = $runbook->read();
     $this->line('target_setup_seconds: '.$guide['target_setup_seconds']);
     foreach ($guide['documents'] as $id => $document) {
-        $this->line($id.': '.($document['exists'] && $document['missing_headings'] === [] ? 'ready' : 'incomplete'));
+        $ready = $document['exists'] && $document['missing_headings'] === [];
+        $this->line($id.': '.($ready ? 'ready' : 'incomplete'));
     }
-    $this->line('environment_example_secrets: '.($guide['environment']['forbids_secrets'] ? 'absent' : 'refused'));
+    $secrets = $guide['environment']['forbids_secrets'] ? 'absent' : 'refused';
+    $this->line('environment_example_secrets: '.$secrets);
     $blocked = false;
     foreach ($prerequisites->report() as $check) {
         $state = $check['passed'] ? 'PASS' : ($check['required'] ? 'BLOCKED' : 'PENDING');
         $this->line($state.' '.$check['id'].': '.$check['message']);
-        $blocked = $blocked || ($check['required'] && ! $check['passed']);
+        $blocked = $blocked || ($check['required'] && $check['passed'] === false);
     }
     $this->line('homepage: HTTP 503 until the storefront-open slice');
+    $failed = $guide['complete'] === false || $blocked;
 
-    return ($guide['complete'] && ! $blocked) ? 0 : 1;
+    return $failed ? 1 : 0;
 })->purpose('Check the installation runbook and required host prerequisites without printing secrets');
 
 Artisan::command('identity:prune-expired', function (PruneExpiredData $prune): int {
