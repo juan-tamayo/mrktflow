@@ -105,7 +105,12 @@ final class BuildStoreExport
                 ]),
         };
 
-        return $query->get()->all();
+        $records = [];
+        foreach ($query->get() as $row) {
+            $records[] = $row;
+        }
+
+        return $records;
     }
 
     private function cell(stdClass $row, string $header): string
