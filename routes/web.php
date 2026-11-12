@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\ProductInventoryController;
 use App\Http\Controllers\Admin\ProductSchemaController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingController;
@@ -115,6 +116,7 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin', [StaffSessionController::class, 'home']);
         Route::get('/admin/email', [EmailSettingsController::class, 'show']);
         Route::post('/admin/email/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1,email-test:');
+        Route::get('/admin/reports', [ReportsController::class, 'show']);
         Route::get('/admin/notifications', [NotificationFailureController::class, 'index']);
         Route::post('/admin/notifications/{deliveryId}/retry', [NotificationFailureController::class, 'retry'])->whereUuid('deliveryId')->middleware('throttle:30,1,notification-retry:');
         Route::get('/admin/ai', [AiSettingsController::class, 'show']);
