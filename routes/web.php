@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiSettingsController;
+use App\Http\Controllers\Admin\AiStudioController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\ContentEditorController;
@@ -111,6 +112,10 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin', [StaffSessionController::class, 'home']);
         Route::get('/admin/ai', [AiSettingsController::class, 'show']);
         Route::post('/admin/ai', [AiSettingsController::class, 'update'])->middleware('throttle:30,1,ai-settings:');
+        Route::get('/admin/ai/studio', [AiStudioController::class, 'index']);
+        Route::get('/admin/ai/studio/{runId}', [AiStudioController::class, 'show'])->whereUuid('runId');
+        Route::post('/admin/ai/studio/{runId}/preview', [AiStudioController::class, 'preview'])->whereUuid('runId')->middleware('throttle:30,1,ai-studio-preview:');
+        Route::post('/admin/ai/studio/{runId}/apply', [AiStudioController::class, 'apply'])->whereUuid('runId')->middleware('throttle:30,1,ai-studio-apply:');
         Route::post('/admin/logout', [StaffSessionController::class, 'logout']);
         Route::get('/admin/two-factor', [TwoFactorController::class, 'show']);
         Route::post('/admin/two-factor', [TwoFactorController::class, 'confirm'])->middleware('throttle:5,1,staff-two-factor:');
