@@ -262,6 +262,53 @@ it('CheckoutOrdersFree mixed FREE100 quote is zero-total so checkout.actions off
         ->assertSee('action="/checkout/'.$quote['id'].'/pay"', false);
 });
 
+it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads after outbox entitlements', function (): void {
+    $catalog = freeCatalog();
+    $customer = new CustomerAccount;
+    $customer->forceFill([
+        'name' => 'Mixed Shopper',
+        'email' => 'mixed-free@example.test',
+        'password' => Hash::make('Fictional shopper passphrase 471!'),
+        'is_active' => true,
+        'session_version' => 1,
+        'email_verified_at' => now(),
+    ])->save();
+    $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1]);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['physical_variant'], 'quantity' => 2, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => $cart['revision'],
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => $customer->email,
+        'coupon' => 'FREE100',
+        'billing' => checkoutAddress(),
+        'shipping' => checkoutAddress(),
+    ])->assertOk()->json('data');
+    $this->post('/checkout/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policy_acknowledged' => '1',
+    ])->assertRedirect('/checkout/'.$quote['id']);
+    $this->post('/checkout/'.$quote['id'].'/pay', [
+        'fingerprint' => $quote['fingerprint'],
+    ])->assertRedirect();
+    $this->artisan('queue:work', [
+        'connection' => 'database-outbox',
+        '--queue' => 'outbox',
+        '--stop-when-empty' => true,
+        '--sleep' => 0,
+        '--timeout' => 60,
+        '--tries' => 1,
+    ])->assertSuccessful();
+    $this->get('/account/downloads')->assertOk()
+        ->assertSee('Lighting guide')
+        ->assertSee('5 of 5 downloads remaining');
+});
+
 it('CheckoutOrdersFree HTML shows Place order only after checkout.actions confirms totals', function (): void {
     $catalog = freeCatalog();
     $this->get('/')->assertStatus(503);

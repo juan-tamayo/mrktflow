@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Domain\Catalog\Actions\SaveProduct;
 use App\Domain\Catalog\Actions\SaveProductSchema;
 use App\Domain\Catalog\Actions\SaveVariants;
+use App\Domain\Catalog\Actions\VersionDigitalAsset;
 use App\Domain\Catalog\Support\CatalogMediaUploadAuthorization;
 use App\Domain\Catalog\Support\ProductAttributes;
 use App\Domain\Identity\Models\StaffAccount;
@@ -33,6 +34,7 @@ final class BrowserShopCatalogSeeder extends Seeder
         }
 
         $this->republishStudioLamp($owner);
+        $this->ensureLightingGuide($owner);
         $this->ensureFreeCoupon($owner);
         $this->ensureComparisonCatalog($owner);
     }
@@ -61,6 +63,34 @@ final class BrowserShopCatalogSeeder extends Seeder
             'image_asset_id' => (string) $media->media_asset_id,
             'image_alt' => (string) $media->alt,
             'category_ids' => array_values(array_map(strval(...), $categories)),
+        ]);
+    }
+
+    private function ensureLightingGuide(StaffAccount $owner): void
+    {
+        $product = DB::table('products')->where('slug', 'studio-guide')->first();
+        if ($product === null) {
+            return;
+        }
+        $asset = DB::table('digital_assets')->where('product_id', $product->id)->orderBy('created_at')->first();
+        if ($asset !== null) {
+            DB::table('digital_assets')->where('id', $asset->id)->update([
+                'label' => 'Lighting guide',
+                'updated_at' => now(),
+            ]);
+
+            return;
+        }
+        $variantId = (string) DB::table('product_variants')->where('product_id', $product->id)->value('id');
+        $versioned = app(VersionDigitalAsset::class)->version($owner, [
+            'product_id' => (string) $product->id,
+            'label' => 'Lighting guide',
+            'file' => UploadedFile::fake()->createWithContent('studio-guide.txt', "Fictional studio lighting guide.\n"),
+        ]);
+        app(VersionDigitalAsset::class)->attach($owner, [
+            'product_id' => (string) $product->id,
+            'variant_id' => $variantId,
+            'version_ids' => [$versioned['id']],
         ]);
     }
 

@@ -48,11 +48,30 @@ if (file_put_contents($secretPath, $matches[1], LOCK_EX) === false || ! chmod($s
     throw new RuntimeException('Could not create the private setup fixture.');
 }
 
+$worker = new Process([
+    PHP_BINARY, 'artisan', 'queue:work', 'database-outbox',
+    '--queue=outbox',
+    '--sleep=0',
+    '--timeout=60',
+    '--tries=1',
+    '--no-interaction',
+], $root, $environment);
+$worker->setTimeout(null);
+$worker->start(static function (string $type, string $buffer): void {
+    fwrite($type === Process::ERR ? STDERR : STDOUT, $buffer);
+});
+
 $server = new Process([
     PHP_BINARY, '-d', 'display_errors=0', '-S', '127.0.0.1:8011', '-t', $root.'/public',
     $root.'/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php',
 ], $root.'/public', $environment);
 $server->setTimeout(null);
-exit($server->run(static function (string $type, string $buffer): void {
-    fwrite($type === Process::ERR ? STDERR : STDOUT, $buffer);
-}));
+try {
+    exit($server->run(static function (string $type, string $buffer): void {
+        fwrite($type === Process::ERR ? STDERR : STDOUT, $buffer);
+    }));
+} finally {
+    if ($worker->isRunning()) {
+        $worker->stop(2);
+    }
+}
