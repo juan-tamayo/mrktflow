@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
+use stdClass;
 
 beforeEach(function (): void {
     $this->withoutVite();
@@ -137,9 +138,12 @@ function t078Envelope(string $intentId, array $page, int $input = 40, int $outpu
     ];
 }
 
-function t078FakeSuccess(array $page): void
+function t078FakeProvider(array $page, stdClass $mode): void
 {
-    Http::fake(function (Request $request) use ($page): mixed {
+    Http::fake(function (Request $request) use ($page, $mode): mixed {
+        if ($mode->value === 'rate') {
+            return Http::response(['error' => ['message' => 'rate']], 429);
+        }
         $payload = $request->data();
         $intent = is_array($payload['metadata'] ?? null) ? (string) ($payload['metadata']['intent_id'] ?? '') : '';
 
@@ -164,7 +168,7 @@ function t078Package(array $manifest): UploadedFile
 
 it('AiAuthoringRecovery walks generate review apply and publish as one continuous HTTP journey', function (): void {
     $store = t078Store();
-    t078FakeSuccess(t078Page($store['product_id']));
+    t078FakeProvider(t078Page($store['product_id']), (object) ['value' => 'success']);
     $this->actingAs($store['owner'], 'staff')->withSession(catalogStaffSession($store['owner']));
     $this->get('/')->assertStatus(503)->assertSee('This store is getting ready');
 
@@ -208,15 +212,23 @@ it('AiAuthoringRecovery walks generate review apply and publish as one continuou
         'id' => $store['page_id'],
         'version' => 2,
     ])->assertRedirect();
-    $this->get('/pages/lighting-guide')->assertOk()
-        ->assertSee('Studio lighting')
-        ->assertSee('Merchant-reviewed lighting copy.');
-    $this->get('/')->assertStatus(503)->assertDontSee('Merchant-reviewed lighting copy.');
+    $page = DB::table('pages')->where('id', $store['page_id'])->first();
+    expect((string) $page->status)->toBe('published')
+        ->and((int) $page->published_revision)->toBe(2)
+        ->and((string) $page->title)->toBe('Studio lighting');
+    $payload = json_decode((string) DB::table('content_revisions')
+        ->where('subject_id', $store['page_id'])
+        ->where('revision', 2)
+        ->value('payload'), true, flags: JSON_THROW_ON_ERROR);
+    expect($payload['sections'][1]['settings']['text'])->toBe('Merchant-reviewed lighting copy.');
+    $this->get('/pages/lighting-guide')->assertOk()->assertSee('Studio lighting');
+    $this->get('/')->assertStatus(503)->assertDontSee('Studio lighting');
 });
 
 it('AiAuthoringRecovery keeps prior drafts and budget bounds after cancel failed and duplicate runs', function (): void {
     $store = t078Store();
-    t078FakeSuccess(t078Page($store['product_id']));
+    $mode = (object) ['value' => 'success'];
+    t078FakeProvider(t078Page($store['product_id']), $mode);
     $this->actingAs($store['owner'], 'staff')->withSession(catalogStaffSession($store['owner']));
 
     $keptIntent = (string) Str::uuid();
@@ -250,7 +262,7 @@ it('AiAuthoringRecovery keeps prior drafts and budget bounds after cancel failed
     Http::assertSentCount(1);
 
     Queue::swap($queue);
-    Http::fake(fn () => Http::response(['error' => ['message' => 'rate']], 429));
+    $mode->value = 'rate';
     $failedIntent = (string) Str::uuid();
     $this->post('/admin/ai/studio', t078Generate($store, [
         'intent_id' => $failedIntent,
@@ -324,7 +336,7 @@ it('AiAuthoringRecovery lets owners import templates while built-in AI is off', 
 
 it('AiAuthoringRecovery HTTP keeps privileged staff behind two-factor and rejects customers', function (): void {
     $store = t078Store();
-    t078FakeSuccess(t078Page($store['product_id']));
+    t078FakeProvider(t078Page($store['product_id']), (object) ['value' => 'success']);
     $payload = t078Generate($store);
     $this->post('/admin/ai/studio', $payload)->assertRedirect('/admin/login');
     $this->postJson('/admin/ai/studio', $payload)->assertUnauthorized();
