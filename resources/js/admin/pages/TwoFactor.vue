@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
-import { nextTick, ref } from 'vue'
-import { Head, useForm } from '@inertiajs/vue3'
+import { computed, onMounted, ref } from 'vue'
+import { Head, usePage } from '@inertiajs/vue3'
 
 defineProps<{
   mode: 'enroll' | 'challenge' | 'codes' | 'reauthenticate'
@@ -11,36 +11,21 @@ defineProps<{
   label: string | null
   recoveryCodes: string[]
 }>()
-const enroll = useForm({ code: '' }).dontRemember('code')
-const challenge = useForm({ code: '' }).dontRemember('code')
-const reauth = useForm({ password: '', code: '' }).dontRemember('password', 'code')
-const logout = useForm({})
+const page = usePage()
+const formErrors = computed(() => {
+  const bag = page.props.errors
+  if (bag === null || typeof bag !== 'object') return {} as Record<string, string>
+  return bag as Record<string, string>
+})
 const errors = ref<HTMLElement | null>(null)
-async function focusErrors() {
-  await nextTick()
-  errors.value?.focus()
-}
-function confirmEnroll() {
-  enroll.post('/admin/two-factor', {
-    onFinish: () => enroll.reset('code'),
-    onError: () => void focusErrors(),
-  })
-}
-function verifyChallenge() {
-  challenge.post('/admin/two-factor/challenge', {
-    onFinish: () => challenge.reset('code'),
-    onError: () => void focusErrors(),
-  })
-}
-function confirmReauth() {
-  reauth.post('/admin/two-factor/reauthenticate', {
-    onFinish: () => {
-      reauth.reset('password')
-      reauth.reset('code')
-    },
-    onError: () => void focusErrors(),
-  })
-}
+const csrf = computed(
+  () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+)
+onMounted(() => {
+  if (Object.keys(formErrors.value).length > 0) {
+    errors.value?.focus()
+  }
+})
 </script>
 
 <template>
@@ -58,15 +43,16 @@ function confirmReauth() {
           Owners and privileged staff must confirm a time-based authenticator before using the
           workspace. Store the secret in your authenticator app, then enter the current code.
         </p>
-        <form class="setup-form" @submit.prevent="confirmEnroll">
+        <form method="post" action="/admin/two-factor" class="setup-form">
+          <input type="hidden" name="_token" :value="csrf" />
           <div
-            v-if="Object.keys(enroll.errors).length"
+            v-if="Object.keys(formErrors).length"
             ref="errors"
             class="error-summary"
             tabindex="-1"
             role="alert"
           >
-            <p v-for="(message, field) in enroll.errors" :key="field">{{ message }}</p>
+            <p v-for="(message, field) in formErrors" :key="field">{{ message }}</p>
           </div>
           <div class="setup-field">
             <label for="two-factor-issuer">Issuer</label
@@ -104,16 +90,14 @@ function confirmReauth() {
             <label for="two-factor-code">Authentication code</label
             ><input
               id="two-factor-code"
-              v-model="enroll.code"
+              name="code"
               inputmode="numeric"
               autocomplete="one-time-code"
               required
               maxlength="32"
             />
           </div>
-          <button class="primary-button" type="submit" :disabled="enroll.processing">
-            {{ enroll.processing ? 'Confirming…' : 'Confirm authenticator' }}
-          </button>
+          <button class="primary-button" type="submit">Confirm authenticator</button>
         </form>
       </template>
       <template v-else-if="mode === 'challenge'">
@@ -122,29 +106,28 @@ function confirmReauth() {
           Enter the current authenticator code, or an unused recovery code if this device was lost.
           A recovery code signs this authenticator out and requires a new enrollment.
         </p>
-        <form class="setup-unlock" @submit.prevent="verifyChallenge">
+        <form method="post" action="/admin/two-factor/challenge" class="setup-unlock">
+          <input type="hidden" name="_token" :value="csrf" />
           <div
-            v-if="Object.keys(challenge.errors).length"
+            v-if="Object.keys(formErrors).length"
             ref="errors"
             class="error-summary"
             tabindex="-1"
             role="alert"
           >
-            <p v-for="(message, field) in challenge.errors" :key="field">{{ message }}</p>
+            <p v-for="(message, field) in formErrors" :key="field">{{ message }}</p>
           </div>
           <div class="setup-field">
             <label for="two-factor-challenge">Authentication code</label
             ><input
               id="two-factor-challenge"
-              v-model="challenge.code"
+              name="code"
               autocomplete="one-time-code"
               required
               maxlength="32"
             />
           </div>
-          <button class="primary-button" type="submit" :disabled="challenge.processing">
-            {{ challenge.processing ? 'Verifying…' : 'Verify' }}
-          </button>
+          <button class="primary-button" type="submit">Verify</button>
         </form>
       </template>
       <template v-else-if="mode === 'codes'">
@@ -165,21 +148,22 @@ function confirmReauth() {
           Staff, credential, and refund changes need a fresh password and authenticator code. This
           confirmation lasts 15 minutes.
         </p>
-        <form class="setup-form" @submit.prevent="confirmReauth">
+        <form method="post" action="/admin/two-factor/reauthenticate" class="setup-form">
+          <input type="hidden" name="_token" :value="csrf" />
           <div
-            v-if="Object.keys(reauth.errors).length"
+            v-if="Object.keys(formErrors).length"
             ref="errors"
             class="error-summary"
             tabindex="-1"
             role="alert"
           >
-            <p v-for="(message, field) in reauth.errors" :key="field">{{ message }}</p>
+            <p v-for="(message, field) in formErrors" :key="field">{{ message }}</p>
           </div>
           <div class="setup-field">
             <label for="two-factor-password">Current password</label
             ><input
               id="two-factor-password"
-              v-model="reauth.password"
+              name="password"
               type="password"
               required
               maxlength="72"
@@ -190,21 +174,18 @@ function confirmReauth() {
             <label for="two-factor-reauth-code">Authentication code</label
             ><input
               id="two-factor-reauth-code"
-              v-model="reauth.code"
+              name="code"
               autocomplete="one-time-code"
               required
               maxlength="32"
             />
           </div>
-          <button class="primary-button" type="submit" :disabled="reauth.processing">
-            {{ reauth.processing ? 'Confirming…' : 'Confirm identity' }}
-          </button>
+          <button class="primary-button" type="submit">Confirm identity</button>
         </form>
       </template>
-      <form class="workspace-account" @submit.prevent="logout.post('/admin/logout')">
-        <button type="submit" class="quiet-button" :disabled="logout.processing">
-          {{ logout.processing ? 'Signing out…' : 'Sign out' }}
-        </button>
+      <form method="post" action="/admin/logout" class="workspace-account">
+        <input type="hidden" name="_token" :value="csrf" />
+        <button type="submit" class="quiet-button">Sign out</button>
       </form>
     </main>
     <footer class="footer"><span>MRKTFlow</span><a href="/">Return to storefront</a></footer>

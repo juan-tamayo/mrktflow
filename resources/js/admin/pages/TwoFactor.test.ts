@@ -4,20 +4,7 @@ import TwoFactor from './TwoFactor.vue'
 
 vi.mock('@inertiajs/vue3', () => ({
   Head: { template: '<span />' },
-  useForm: () => {
-    const form = {
-      code: '',
-      password: '',
-      errors: {},
-      processing: false,
-      post: vi.fn(),
-      reset: vi.fn(),
-      dontRemember() {
-        return form
-      },
-    }
-    return form
-  },
+  usePage: () => ({ props: { errors: {} } }),
 }))
 
 it('shows the enrollment secret without interpreting markup', () => {
@@ -37,6 +24,25 @@ it('shows the enrollment secret without interpreting markup', () => {
     '<script>alert(1)</script>',
   )
   expect(wrapper.text()).toContain('Confirm authenticator')
+  expect(wrapper.get('form.setup-form').attributes('method')).toBe('post')
+  expect(wrapper.get('form.setup-form').attributes('action')).toBe('/admin/two-factor')
+})
+
+it('posts the challenge as a native form so Verify completes the staff session', () => {
+  const wrapper = mount(TwoFactor, {
+    props: {
+      mode: 'challenge',
+      secret: null,
+      uri: null,
+      issuer: null,
+      label: null,
+      recoveryCodes: [],
+    },
+  })
+  expect(wrapper.get('form.setup-unlock').attributes('method')).toBe('post')
+  expect(wrapper.get('form.setup-unlock').attributes('action')).toBe('/admin/two-factor/challenge')
+  expect(wrapper.get('#two-factor-challenge').attributes('name')).toBe('code')
+  expect(wrapper.get('button.primary-button').text()).toBe('Verify')
 })
 
 it('lists recovery codes once after enrollment', () => {

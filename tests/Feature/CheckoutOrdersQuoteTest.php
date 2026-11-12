@@ -200,6 +200,34 @@ it('CheckoutOrdersQuote refuses empty unavailable digital-over-one missing cover
         ->toThrow(ValidationException::class);
 });
 
+it('CheckoutOrdersQuote HTML review with blank delivery uses billing and renders the summary slot', function (): void {
+    $catalog = quoteCatalog();
+    $this->get('/')->assertStatus(503);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['physical_variant'], 'quantity' => 1, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $created = $this->from('/checkout')->post('/checkout', [
+        'expected_revision' => $cart['revision'],
+        'email' => 'layout@example.test',
+        'billing' => checkoutAddress(),
+        'shipping' => [
+            'recipient' => '',
+            'line1' => '',
+            'line2' => '',
+            'city' => '',
+            'region' => '',
+            'postal_code' => '',
+            'country_code' => '',
+        ],
+    ]);
+    $created->assertRedirect();
+    expect((string) $created->headers->get('Location'))->toMatch('#/checkout/[0-9a-f-]{36}$#D');
+    $this->get((string) $created->headers->get('Location'))->assertOk()
+        ->assertSee('data-platform-slot="checkout.summary"', false)
+        ->assertSee('data-platform-slot="checkout.actions"', false);
+});
+
 it('CheckoutOrdersQuote HTTP quotes guests and accounts, corrects addresses, and rejects stale CSRF posts', function (): void {
     $catalog = quoteCatalog();
     $this->get('/')->assertStatus(503)->assertDontSee('Checkout');

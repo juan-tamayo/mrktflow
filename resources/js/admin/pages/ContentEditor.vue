@@ -219,7 +219,8 @@ async function refreshPreview() {
 </script>
 
 <template>
-  <main>
+  <div class="page-shell">
+    <main>
     <Head title="Content editor" />
     <h1>Content editor</h1>
     <p class="field-help">
@@ -309,4 +310,5 @@ async function refreshPreview() {
 
     <DevicePreview :html="previewHtml" :loading="previewing" @refresh="refreshPreview" />
   </main>
+  </div>
 </template>

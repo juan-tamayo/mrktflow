@@ -4,7 +4,7 @@ defineProps<{ quote: CheckoutQuote }>()
 </script>
 
 <template>
-  <div class="theme-checkout-enhanced">
+  <div id="checkout-summary" class="theme-checkout-enhanced" data-platform-slot="checkout.summary">
     <h2>Itemized total</h2>
     <ul class="theme-cart-lines">
       <li v-for="line in quote.lines" :key="line.id">
