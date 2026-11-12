@@ -40,6 +40,14 @@ it('posts shipment quantities and tracking fields with a stable key', () => {
   expect(wrapper.text()).toContain('Studio Lamp')
   expect(wrapper.text()).toContain('unshipped 2')
   expect(wrapper.text()).not.toContain('Lighting Guide')
+  const quantity = wrapper.get('input[type="number"]')
+  expect(quantity.attributes('aria-label') ?? '').not.toMatch(/Studio Lamp/i)
+  const labelFor = quantity.attributes('id')
+    ? wrapper.find(`label[for="${quantity.attributes('id')}"]`)
+    : wrapper.find('label')
+  if (labelFor.exists()) {
+    expect(labelFor.text()).not.toMatch(/Studio Lamp/i)
+  }
   expect(wrapper.find('input[name="carrier"]').exists()).toBe(true)
   expect(wrapper.find('input[name="tracking_number"]').exists()).toBe(true)
   expect(wrapper.find('input[name="tracking_url"]').exists()).toBe(true)
