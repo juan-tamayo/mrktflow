@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use stdClass;
 
 final class BuildStoreExport
 {
@@ -81,7 +82,7 @@ final class BuildStoreExport
         return [implode("\n", $lines)."\n", count($rows)];
     }
 
-    /** @return list<object> */
+    /** @return list<stdClass> */
     private function records(string $dataset): array
     {
         $query = match ($dataset) {
@@ -104,17 +105,10 @@ final class BuildStoreExport
                 ]),
         };
 
-        $records = [];
-        foreach ($query->get() as $row) {
-            if (is_object($row)) {
-                $records[] = $row;
-            }
-        }
-
-        return $records;
+        return $query->get()->all();
     }
 
-    private function cell(object $row, string $header): string
+    private function cell(stdClass $row, string $header): string
     {
         $values = get_object_vars($row);
         $value = $values[$header] ?? null;
