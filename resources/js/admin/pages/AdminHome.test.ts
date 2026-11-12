@@ -37,6 +37,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   ).toEqual(['/admin/coupons', '/admin/taxes', '/admin/pricing-preview'])
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/content"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/content/import"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/themes"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
@@ -58,6 +59,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/pricing-preview"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/content"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/content/import"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/themes"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
@@ -77,6 +79,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/pricing-preview',
           '/admin/shipping',
           '/admin/content',
+          '/admin/content/import',
           '/admin/themes',
           '/admin/orders',
           '/admin/staff',

@@ -102,6 +102,9 @@ function saveMenu() {
         Saves keep drafts; publish switches a validated revision. The storefront homepage stays
         closed.
       </p>
+      <p>
+        <a class="text-link" href="/admin/content/import">Import a data-only template</a>
+      </p>
 
       <section aria-labelledby="pages-heading">
         <h2 id="pages-heading">Pages</h2>

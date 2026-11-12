@@ -1272,7 +1272,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T069: Safe merchant template import
 
-- [ ] Complete T069.
+- [x] Complete T069.
+- **Evidence:** Focused `ThemesContentImport`: 6 passed / 120 assertions (red first: ValidateImport missing). Staging a JSON+PNG package maps `ref:` category aliases and `/media/` images into a home content draft; published revision stays put. PHP files, zip traversal, `<script>` and Vue `{{` payloads, and unknown `custom-php` blocks throw and leave live heading unchanged with no `content_import_files` row. Replaying the same import intent does not increment the draft version or published pointer. Guests/customers/fulfillment denied; owner without TOTP redirected to `/admin/two-factor`. HTTP stage/apply at `/admin/content/import` writes drafts only. `GET /` stays HTTP 503. Group filter ThemesContent 107 passed / 919 assertions. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (162 passed)/build green. Full PHP suite process-races were not completed in this workspace (`bin/php` is container-wrapped). Playwright e2e was not run here (no isolated browser database). Hosted Quality evidence is the PR check, not claimed here.
 - **Module / requirements:** `themes-content` · THEME-04.
 - **Depends on:** T063, T067.
 - **Acceptance:** Stage JSON/media package, enforce archive/size/MIME/type rules, map references and import only into drafts; PHP/Vue/script payloads rejected.
