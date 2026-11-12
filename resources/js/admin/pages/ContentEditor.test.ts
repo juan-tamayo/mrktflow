@@ -212,6 +212,61 @@ describe('ContentEditor', () => {
     )
   })
 
+  it('applies a published revision when Inertia returns to the same editor', async () => {
+    const wrapper = mount(ContentEditor, {
+      props: {
+        definitions,
+        targets: [
+          { page: 'home', slots: ['announcement', 'content'] },
+          { page: 'search', slots: ['announcement', 'content'] },
+        ],
+        initial: {
+          page: 'search',
+          slot: 'content',
+          version: 2,
+          publishedRevision: 0,
+          sections: [
+            {
+              id: 'intro',
+              type: 'hero',
+              version: 1,
+              settings: { heading: 'Edited search banner' },
+            },
+          ],
+        },
+        canWrite: true,
+        canPublish: true,
+        published: false,
+      },
+    })
+    expect(
+      wrapper.get('[aria-label="Publication status for search content sections"]').text(),
+    ).toBe('Not published')
+    await wrapper.setProps({
+      published: true,
+      initial: {
+        page: 'search',
+        slot: 'content',
+        version: 2,
+        publishedRevision: 2,
+        sections: [
+          {
+            id: 'intro',
+            type: 'hero',
+            version: 1,
+            settings: { heading: 'Edited search banner' },
+          },
+        ],
+      },
+    })
+    expect(wrapper.get('[role="status"][aria-label="Publish result"]').text()).toBe(
+      'Published search content sections.',
+    )
+    expect(
+      wrapper.get('[aria-label="Publication status for search content sections"]').text(),
+    ).toBe('Live revision 2 of search content sections')
+  })
+
   it('hides saving from read-only staff', () => {
     const wrapper = mount(ContentEditor, {
       props: {

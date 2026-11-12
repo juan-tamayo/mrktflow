@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import DevicePreview from '../components/DevicePreview.vue'
 import PublishPanel from '../components/PublishPanel.vue'
 import SectionList from '../components/SectionList.vue'
@@ -109,6 +109,26 @@ function applyDraft(data: DraftResponse) {
   errors.value = EMPTY_ERRORS
   conflictVersion.value = null
 }
+
+watch(
+  () =>
+    [
+      props.initial.page,
+      props.initial.slot,
+      props.initial.version,
+      props.initial.publishedRevision ?? 0,
+      JSON.stringify(props.initial.sections),
+    ] as const,
+  () => {
+    page.value = props.initial.page
+    slot.value = props.initial.slot
+    applyDraft({
+      version: props.initial.version,
+      publishedRevision: props.initial.publishedRevision ?? 0,
+      sections: props.initial.sections,
+    })
+  },
+)
 
 async function loadTarget() {
   const { status, data } = await api(
