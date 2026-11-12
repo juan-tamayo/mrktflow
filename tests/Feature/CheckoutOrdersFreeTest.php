@@ -307,6 +307,20 @@ it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads a
     $this->get('/account/downloads')->assertOk()
         ->assertSee('Lighting guide')
         ->assertSee('5 of 5 downloads remaining');
+    $entitlementId = (string) DB::table('entitlements')->where('customer_id', $customer->id)->value('id');
+    expect($entitlementId)->not->toBe('');
+    $this->post('/account/downloads/'.$entitlementId.'/grants')->assertRedirect();
+    $grantId = (string) DB::table('download_grants')->where('entitlement_id', $entitlementId)->value('id');
+    $grantUrl = '/account/download-grants/'.$grantId;
+    $status = $this->get($grantUrl)->assertOk();
+    preg_match('/name="token" value="([a-f0-9]{64})"/', (string) $status->getContent(), $match);
+    expect($match[1] ?? null)->not->toBeNull();
+    $this->post($grantUrl.'/start', ['token' => $match[1]])->assertRedirect($grantUrl);
+    $transferId = (string) DB::table('download_transfers')->where('grant_id', $grantId)->value('id');
+    $stream = $this->get('/account/download-transfers/'.$transferId);
+    $stream->assertOk()
+        ->assertHeader('Content-Disposition', 'attachment; filename="studio-guide.txt"');
+    expect($stream->headers->get('Content-Disposition'))->not->toContain('eyJpdiI');
 });
 
 it('CheckoutOrdersFree HTML shows Place order only after checkout.actions confirms totals', function (): void {

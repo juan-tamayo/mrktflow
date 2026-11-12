@@ -163,7 +163,9 @@ it('FulfillmentDownload start POST consumes the token once and the owner status 
     // The transfer outlives the five-minute start window...
     Carbon::setTestNow(Carbon::parse('2026-10-16T18:10:00Z')->utc());
     $stream = $this->get('/account/download-transfers/'.$transfer->id);
-    $stream->assertOk();
+    $stream->assertOk()
+        ->assertHeader('Content-Disposition', 'attachment; filename="field-guide.txt"');
+    expect($stream->headers->get('Content-Disposition'))->not->toContain('eyJpdiI');
     expect($stream->streamedContent())->toBe($catalog['contents']);
     // ...but not its own one-hour lifetime.
     Carbon::setTestNow(Carbon::parse('2026-10-16T19:00:01Z')->utc());
@@ -187,7 +189,8 @@ it('FulfillmentDownload streams bounded ranges and resume spends no further allo
     $full = $this->get($url);
     $full->assertOk()->assertHeader('Accept-Ranges', 'bytes')
         ->assertHeader('Content-Length', '1000')
-        ->assertHeader('Content-Type', 'text/plain; charset=utf-8');
+        ->assertHeader('Content-Type', 'text/plain; charset=utf-8')
+        ->assertHeader('Content-Disposition', 'attachment; filename="field-guide.txt"');
     expect($full->streamedContent())->toBe($contents);
 
     $slice = $this->call('GET', $url, [], [], [], ['HTTP_RANGE' => 'bytes=100-199']);
