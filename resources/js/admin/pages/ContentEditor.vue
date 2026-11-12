@@ -221,94 +221,94 @@ async function refreshPreview() {
 <template>
   <div class="page-shell">
     <main>
-    <Head title="Content editor" />
-    <h1>Content editor</h1>
-    <p class="field-help">
-      Edit the section draft for one page area. Drafts are validated by the platform before they
-      save; nothing here publishes — publication is a separate step.
-    </p>
-    <p role="status">{{ announcement }}</p>
-
-    <div class="setup-grid">
-      <div class="setup-field">
-        <label for="editor-page">Page</label>
-        <select id="editor-page" :value="page" @change="onPageChange">
-          <option v-for="target in targets" :key="target.page" :value="target.page">
-            {{ target.page }}
-          </option>
-        </select>
-      </div>
-      <div class="setup-field">
-        <label for="editor-slot">Area</label>
-        <select id="editor-slot" :value="slot" @change="onSlotChange">
-          <option v-for="name in slotsForPage" :key="name" :value="name">{{ name }}</option>
-        </select>
-      </div>
-    </div>
-    <p>
-      Draft version {{ savedVersion }}{{ dirty ? ' · unsaved changes' : '' }}
-      <button
-        v-if="canWrite"
-        type="button"
-        class="primary-button"
-        data-action="save-draft"
-        :disabled="busy"
-        @click="save"
-      >
-        {{ busy ? 'Saving…' : 'Save draft' }}
-      </button>
-    </p>
-
-    <div v-if="conflictVersion !== null" class="error-summary" role="alert">
-      <p>
-        This draft is now at version {{ conflictVersion }} — someone saved after you loaded it. Your
-        changes are still here, but saving needs the current draft.
+      <Head title="Content editor" />
+      <h1>Content editor</h1>
+      <p class="field-help">
+        Edit the section draft for one page area. Drafts are validated by the platform before they
+        save; nothing here publishes — publication is a separate step.
       </p>
-      <button type="button" data-action="reload-draft" @click="loadTarget">
-        Reload saved draft
-      </button>
-    </div>
+      <p role="status">{{ announcement }}</p>
 
-    <div v-if="errorCount(errors) > 0" class="error-summary" role="alert">
-      <p>{{ errorCount(errors) }} problems to fix:</p>
-      <ul>
-        <li v-for="error in errors.document" :key="error">{{ error }}</li>
-        <template v-for="(list, key) in errors.sections" :key="key">
-          <li v-for="error in list" :key="error">
-            <button type="button" @click="selectedId = String(key)">{{ error }}</button>
-          </li>
-        </template>
-      </ul>
-    </div>
+      <div class="setup-grid">
+        <div class="setup-field">
+          <label for="editor-page">Page</label>
+          <select id="editor-page" :value="page" @change="onPageChange">
+            <option v-for="target in targets" :key="target.page" :value="target.page">
+              {{ target.page }}
+            </option>
+          </select>
+        </div>
+        <div class="setup-field">
+          <label for="editor-slot">Area</label>
+          <select id="editor-slot" :value="slot" @change="onSlotChange">
+            <option v-for="name in slotsForPage" :key="name" :value="name">{{ name }}</option>
+          </select>
+        </div>
+      </div>
+      <p>
+        Draft version {{ savedVersion }}{{ dirty ? ' · unsaved changes' : '' }}
+        <button
+          v-if="canWrite"
+          type="button"
+          class="primary-button"
+          data-action="save-draft"
+          :disabled="busy"
+          @click="save"
+        >
+          {{ busy ? 'Saving…' : 'Save draft' }}
+        </button>
+      </p>
 
-    <SectionList
-      :sections="sections"
-      :definitions="definitions"
-      :errors="errors"
-      :selected-id="selectedId"
-      :can-write="canWrite"
-      @update="replaceSections"
-      @select="selectedId = $event"
-      @add="addSection"
-      @announce="announce"
-    />
+      <div v-if="conflictVersion !== null" class="error-summary" role="alert">
+        <p>
+          This draft is now at version {{ conflictVersion }} — someone saved after you loaded it.
+          Your changes are still here, but saving needs the current draft.
+        </p>
+        <button type="button" data-action="reload-draft" @click="loadTarget">
+          Reload saved draft
+        </button>
+      </div>
 
-    <SectionSettings
-      v-if="selectedSection && selectedDefinition"
-      :definition="selectedDefinition"
-      :section="selectedSection"
-      :errors="
-        errorsForSection(
-          errors,
-          selectedSection,
-          sections.findIndex((section) => section.id === selectedSection?.id),
-        )
-      "
-      :can-write="canWrite"
-      @update="updateSection"
-    />
+      <div v-if="errorCount(errors) > 0" class="error-summary" role="alert">
+        <p>{{ errorCount(errors) }} problems to fix:</p>
+        <ul>
+          <li v-for="error in errors.document" :key="error">{{ error }}</li>
+          <template v-for="(list, key) in errors.sections" :key="key">
+            <li v-for="error in list" :key="error">
+              <button type="button" @click="selectedId = String(key)">{{ error }}</button>
+            </li>
+          </template>
+        </ul>
+      </div>
 
-    <DevicePreview :html="previewHtml" :loading="previewing" @refresh="refreshPreview" />
-  </main>
+      <SectionList
+        :sections="sections"
+        :definitions="definitions"
+        :errors="errors"
+        :selected-id="selectedId"
+        :can-write="canWrite"
+        @update="replaceSections"
+        @select="selectedId = $event"
+        @add="addSection"
+        @announce="announce"
+      />
+
+      <SectionSettings
+        v-if="selectedSection && selectedDefinition"
+        :definition="selectedDefinition"
+        :section="selectedSection"
+        :errors="
+          errorsForSection(
+            errors,
+            selectedSection,
+            sections.findIndex((section) => section.id === selectedSection?.id),
+          )
+        "
+        :can-write="canWrite"
+        @update="updateSection"
+      />
+
+      <DevicePreview :html="previewHtml" :loading="previewing" @refresh="refreshPreview" />
+    </main>
   </div>
 </template>
