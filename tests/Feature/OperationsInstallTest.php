@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function (): void {
     $this->withoutVite();
@@ -158,7 +159,7 @@ it('OperationsInstall rehearses clean owner setup, private-file denial, and phys
     $this->post('/setup/owner', ['owner' => catalogOwnerInput()])->assertRedirect('/admin/two-factor');
     $this->get('/setup')->assertNotFound();
     $this->postJson('/setup/owner', ['owner' => catalogOwnerInput()])->assertForbidden();
-    expect(fn () => Artisan::call('setup:secret'))->toThrow(Symfony\Component\HttpKernel\Exception\HttpException::class);
+    expect(fn () => Artisan::call('setup:secret'))->toThrow(HttpException::class);
     $this->get('/')->assertStatus(503);
     $this->assertAuthenticated('staff');
     expect(DB::table('installations')->value('status'))->toBe('complete')
@@ -169,7 +170,9 @@ it('OperationsInstall rehearses clean owner setup, private-file denial, and phys
     $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
     $assetId = app(StoreMedia::class)->store(catalogPrivateTextFile(), 'private_file', new class($owner->id) implements MediaUploadAuthorization
     {
-        public function __construct(private readonly string $ownerId) {}
+        public function __construct(private readonly string $ownerId)
+        {
+        }
 
         public function authorizeUpload(): string
         {

@@ -20,9 +20,9 @@ Measured verification for operations rehearsals. This file records what actually
 | Real emails | None. `MAIL_MAILER=array` in the example file; the rehearsal uses `Mail::fake()` and `Mail::assertNothingOutgoing()`. |
 | Staff 2FA | Owner is redirected to `/admin/two-factor`; privileged session helper enrolls TOTP. No bypass. |
 
-This agent image has **no PHP 8.4 binary** and **no MySQL 8.4 daemon**, so `bin/php artisan test --filter=OperationsInstall`, Pint, PHPStan, Composer audit and Playwright did not execute here.
+Hosted Quality [run 43324795125](https://github.com/juan-tamayo/mrktflow/actions/runs/43324795125) on `b9464e7` failed at Pint (`OperationsInstallTest` `class_definition` / `fully_qualified_strict_types`) before PHP tests. This agent image has **no PHP 8.4 binary** and **no MySQL 8.4 daemon**, so Pest, PHPStan, Playwright and `composer audit` still did not execute here.
 
-Frontend on pinned Node 22.23.3 / npm 10.9.9 (`npm ci --ignore-scripts`): `typecheck`, `lint`, `format:check`, Vitest **188/188**, production `build`, `npm audit` 0 vulnerabilities with lockfile signatures. Hosted Quality on the pull request is the PHP/MySQL/Pint/PHPStan/Playwright evidence path.
+Frontend on pinned Node 22.23.3 / npm 10.9.9 (`npm ci --ignore-scripts`): `typecheck`, `lint`, `format:check`, Vitest **188/188**, production `build`, `npm audit` 0 vulnerabilities with lockfile signatures. Hosted Quality after the Pint fix is the PHP/MySQL/PHPStan/Playwright evidence path.
 
 A local command sequence that operators should run on a machine that does have the runtimes:
 
