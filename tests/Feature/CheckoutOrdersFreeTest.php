@@ -321,6 +321,9 @@ it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads a
     $stream->assertOk()
         ->assertHeader('Content-Disposition', 'attachment; filename="studio-guide.txt"');
     expect($stream->headers->get('Content-Disposition'))->not->toContain('eyJpdiI');
+    $orderNumber = (string) DB::table('orders')->where('customer_id', $customer->id)->value('number');
+    $this->get('/account/orders')->assertOk()
+        ->assertSee('>Order '.$orderNumber.'</a>', false);
 });
 
 it('CheckoutOrdersFree HTML shows Place order only after checkout.actions confirms totals', function (): void {

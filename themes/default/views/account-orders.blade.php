@@ -15,7 +15,7 @@
                 <ul class="product-list">
                     @foreach($orders as $order)
                         <li>
-                            <p><a class="text-link" href="/account/orders/{{ $order['id'] }}">{{ $order['number'] }}</a> · {{ $order['email'] }} · {{ $order['status'] }} · {{ $order['grand_total']['formatted'] }}</p>
+                            <p><a class="text-link" href="/account/orders/{{ $order['id'] }}">Order {{ $order['number'] }}</a> · {{ $order['email'] }} · {{ $order['status'] }} · {{ $order['grand_total']['formatted'] }}</p>
                         </li>
                     @endforeach
                 </ul>

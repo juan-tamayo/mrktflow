@@ -153,7 +153,9 @@ it('CheckoutOrdersReceipt queues one event-derived receipt and shows the owner f
         ->toThrow(NotFoundHttpException::class);
     expect(app(ReadCustomerOrders::class)->list($bob)['data'])->toBe([]);
     $this->actingAs($alice, 'customer')->withSession(['customer_session_version' => 1]);
-    $this->get('/account/orders')->assertOk()->assertSee($paid['number'])->assertSee('alice@example.test');
+    $this->get('/account/orders')->assertOk()
+        ->assertSee('>Order '.$paid['number'].'</a>', false)
+        ->assertSee('alice@example.test');
     $this->get('/account/orders/'.$paid['order_id'])->assertOk()
         ->assertSee($paid['number'])
         ->assertSee('GUIDE-001')
