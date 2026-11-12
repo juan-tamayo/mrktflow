@@ -35,29 +35,37 @@ final class DispatchAuthoringRun
     public function queue(StaffAccount $actor, array $input): string
     {
         $data = Validator::make(['run' => $input], [
-            'run' => ['required', 'array:prompt,locale,product_ids,base_revision_id,max_output_tokens'],
+            'run' => ['required', 'array:prompt,locale,product_ids,base_revision_id,max_output_tokens,operation,subject_id,schema_id,expected_version'],
             'run.prompt' => ['required', 'string', 'min:1', 'max:4000'],
             'run.locale' => ['required', 'string', 'max:16'],
             'run.product_ids' => ['present', 'array', 'max:20'],
             'run.product_ids.*' => ['uuid'],
-            'run.base_revision_id' => ['required', 'uuid'],
+            'run.operation' => ['sometimes', 'in:draft_page,draft_product_copy,suggest_product_schema'],
+            'run.base_revision_id' => ['required_unless:run.operation,draft_product_copy,suggest_product_schema', 'nullable', 'uuid'],
+            'run.subject_id' => ['required_if:run.operation,draft_product_copy', 'required_if:run.operation,suggest_product_schema', 'nullable', 'uuid'],
+            'run.schema_id' => ['nullable', 'uuid'],
+            'run.expected_version' => ['required_if:run.operation,draft_product_copy', 'required_if:run.operation,suggest_product_schema', 'nullable', 'integer', 'min:1'],
             'run.max_output_tokens' => ['required', 'integer', 'min:1', 'max:8192'],
         ])->validate()['run'];
+        $operation = is_string($data['operation'] ?? null) ? (string) $data['operation'] : AiAuthoringRequest::PAGE;
         $productIds = array_values(array_unique(array_map(strtolower(...), $data['product_ids'])));
         if (count($productIds) !== count($data['product_ids'])) {
             throw ValidationException::withMessages(['run.product_ids' => 'Select distinct published products.']);
         }
         $this->context->products($productIds);
-        $revision = strtolower((string) $data['base_revision_id']);
-        if (DB::table('content_revisions')->where('id', $revision)->first() === null) {
+        $revision = $operation === AiAuthoringRequest::PAGE ? strtolower((string) $data['base_revision_id']) : '';
+        if ($operation === AiAuthoringRequest::PAGE && DB::table('content_revisions')->where('id', $revision)->first() === null) {
             throw new AiAuthoringRejected;
         }
+        $subjectId = isset($data['subject_id']) && is_string($data['subject_id']) ? strtolower($data['subject_id']) : null;
+        $schemaId = isset($data['schema_id']) && is_string($data['schema_id']) ? strtolower($data['schema_id']) : null;
+        $expectedVersion = isset($data['expected_version']) ? (int) $data['expected_version'] : null;
         $settings = DB::table('ai_settings')->where('id', 1)->first();
         if ($settings === null || ! in_array((string) $settings->model, AiModels::permitted(), true)) {
             throw new AiAuthoringRejected;
         }
         $model = (string) $settings->model;
-        $runId = DB::transaction(function () use ($actor, $data, $productIds, $revision, $model): string {
+        $runId = DB::transaction(function () use ($actor, $data, $productIds, $revision, $model, $operation, $subjectId, $schemaId, $expectedVersion): string {
             $intentId = (string) Str::uuid();
             $runId = (string) Str::uuid();
             $hold = $this->usage->reserve($actor, new UsageHold(
@@ -75,7 +83,11 @@ final class DispatchAuthoringRun
                 'staff_id' => $actor->id,
                 'provider' => AiModels::PROVIDER,
                 'model' => $model,
-                'base_revision_id' => $revision,
+                'base_revision_id' => $revision === '' ? null : $revision,
+                'operation' => $operation,
+                'subject_id' => $subjectId,
+                'schema_id' => $schemaId,
+                'expected_version' => $expectedVersion,
                 'status' => 'queued',
                 'repair_attempt' => 0,
                 'locale' => (string) $data['locale'],
@@ -277,6 +289,12 @@ final class DispatchAuthoringRun
             throw new InvalidArgumentException('Invalid stored product context.');
         }
 
+        $operation = $this->string($run, 'operation');
+        if ($operation === '') {
+            $operation = AiAuthoringRequest::PAGE;
+        }
+        $subject = $this->string($run, 'subject_id');
+
         return new AiAuthoringRequest(
             $this->string($run, 'intent_id'),
             $this->string($run, 'base_revision_id'),
@@ -287,6 +305,8 @@ final class DispatchAuthoringRun
             $this->context->products($ids),
             (int) $this->string($run, 'max_output_tokens'),
             (int) $this->string($run, 'repair_attempt'),
+            $operation,
+            $subject === '' ? null : $subject,
         );
     }
 

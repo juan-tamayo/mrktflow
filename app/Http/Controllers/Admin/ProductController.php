@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\AiAuthoring\Actions\DraftProductContent;
+use App\Domain\AiAuthoring\Actions\SuggestProductSchema;
+use App\Domain\AiAuthoring\Data\AiAuthoringRequest;
 use App\Domain\Catalog\Actions\ArchiveProduct;
 use App\Domain\Catalog\Actions\ExportProducts;
 use App\Domain\Catalog\Actions\ReadCatalog;
@@ -69,11 +72,19 @@ final class ProductController
             'saved' => session()->get('product_saved', false),
             'layout' => null,
             'layoutSaved' => false,
+            'canUseAi' => false,
+            'ai' => null,
         ]);
     }
 
-    public function edit(Request $request, string $productId, ReadCatalog $catalog, ResolveLayout $layouts): Response
-    {
+    public function edit(
+        Request $request,
+        string $productId,
+        ReadCatalog $catalog,
+        ResolveLayout $layouts,
+        DraftProductContent $copy,
+        SuggestProductSchema $schemas,
+    ): Response {
         Gate::authorize('catalog.write');
         $staff = $request->user('staff');
         abort_unless($staff instanceof StaffAccount, 403);
@@ -94,6 +105,8 @@ final class ProductController
                 'canAssign' => $staff->hasPermission('content.write'),
             ],
             'layoutSaved' => session()->get('layout_saved', false),
+            'canUseAi' => $this->canUseAi($staff),
+            'ai' => $this->productAi($staff, $productId, $copy, $schemas),
         ]);
     }
 
@@ -229,5 +242,43 @@ final class ProductController
         }
 
         return redirect('/admin/products/'.$productId)->with('product_saved', true);
+    }
+
+    private function canUseAi(StaffAccount $staff): bool
+    {
+        return $staff->hasPermission('ai.use')
+            && $staff->hasPermission('catalog.write')
+            && DB::table('ai_authors')->where('staff_id', $staff->id)->exists()
+            && (bool) DB::table('ai_settings')->where('id', 1)->value('enabled');
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function productAi(StaffAccount $staff, string $productId, DraftProductContent $copy, SuggestProductSchema $schemas): ?array
+    {
+        if (! $this->canUseAi($staff)) {
+            return null;
+        }
+        $run = DB::table('ai_runs')
+            ->where('subject_id', $productId)
+            ->whereIn('operation', [AiAuthoringRequest::PRODUCT_COPY, AiAuthoringRequest::PRODUCT_SCHEMA])
+            ->where('status', 'completed')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first();
+        if ($run === null) {
+            return null;
+        }
+        $operation = is_string($run->operation ?? null) ? (string) $run->operation : '';
+        $runId = is_string($run->id ?? null) ? (string) $run->id : '';
+        if ($operation === AiAuthoringRequest::PRODUCT_COPY) {
+            return $copy->review($staff, $runId);
+        }
+        if ($operation === AiAuthoringRequest::PRODUCT_SCHEMA) {
+            return $schemas->review($staff, $runId);
+        }
+
+        return null;
     }
 }

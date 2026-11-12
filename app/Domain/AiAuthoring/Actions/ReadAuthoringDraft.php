@@ -28,6 +28,7 @@ final class ReadAuthoringDraft
         $rows = DB::table('ai_drafts')
             ->join('ai_runs', 'ai_runs.id', '=', 'ai_drafts.run_id')
             ->where('ai_runs.staff_id', $actor->id)
+            ->where('ai_runs.operation', 'draft_page')
             ->whereIn('ai_drafts.status', ['candidate', 'applied'])
             ->orderByDesc('ai_drafts.updated_at')
             ->limit(50)
@@ -73,7 +74,7 @@ final class ReadAuthoringDraft
     {
         $this->assertRunId($runId);
         $run = DB::table('ai_runs')->where('id', $runId)->first();
-        if ($run === null) {
+        if ($run === null || $this->string($run, 'operation') === 'draft_product_copy' || $this->string($run, 'operation') === 'suggest_product_schema') {
             abort(404);
         }
         $this->assertAuthor($actor);

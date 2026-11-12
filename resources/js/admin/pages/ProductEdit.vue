@@ -3,6 +3,7 @@ import BrandLogo from '../components/BrandLogo.vue'
 import TemplatePicker from '../components/TemplatePicker.vue'
 import AttributeFields, { type SchemaField } from '../components/AttributeFields.vue'
 import DigitalAssets from '../components/DigitalAssets.vue'
+import ProductAiPanel, { type ProductAiReview } from '../components/ProductAiPanel.vue'
 import StockEditor from '../components/StockEditor.vue'
 import VariantEditor from '../components/VariantEditor.vue'
 import { Head, useForm } from '@inertiajs/vue3'
@@ -67,8 +68,10 @@ const props = withDefaults(
       canAssign: boolean
     } | null
     layoutSaved?: boolean
+    canUseAi?: boolean
+    ai?: ProductAiReview | null
   }>(),
-  { schemas: () => [], layout: null, layoutSaved: false },
+  { schemas: () => [], layout: null, layoutSaved: false, canUseAi: false, ai: null },
 )
 const errors = ref<HTMLElement | null>(null)
 const archiveForm = useForm({
@@ -142,6 +145,7 @@ function submit(status: 'draft' | 'published') {
         published products and categories can be browsed.
       </p>
       <p v-if="saved" role="status" class="success-notice">Product saved.</p>
+      <ProductAiPanel v-if="product && canUseAi" :product-id="product.id" :review="ai" />
       <TemplatePicker
         v-if="product && layout"
         subject-type="product"
