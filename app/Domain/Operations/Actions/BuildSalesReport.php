@@ -27,20 +27,10 @@ final class BuildSalesReport
         }
         $timezone = $this->storeTimezone();
         $currency = $this->storeCurrency();
-        $from = $this->day($filters['from'] ?? null, $timezone);
-        $to = $this->day($filters['to'] ?? null, $timezone);
-        if ($from === null && $to === null) {
-            $today = $this->today($timezone);
-            $from = $today;
-            $to = $today;
-        } elseif ($from === null) {
-            $from = $to;
-        } elseif ($to === null) {
-            $to = $from;
-        }
-        if ($from === null || $to === null) {
-            throw new InvalidArgumentException('A store-timezone date range is required.');
-        }
+        $from = $this->day($filters['from'] ?? null, $timezone)
+            ?? $this->day($filters['to'] ?? null, $timezone)
+            ?? $this->today($timezone);
+        $to = $this->day($filters['to'] ?? null, $timezone) ?? $from;
         if ($from > $to) {
             [$from, $to] = [$to, $from];
         }
@@ -295,10 +285,10 @@ final class BuildSalesReport
         if ($orders < 1) {
             return 0;
         }
-        $quotient = bcdiv((string) $net, (string) $orders, 8) ?? '0';
+        $quotient = bcdiv((string) $net, (string) $orders, 8);
         $negative = bccomp($quotient, '0', 8) < 0;
-        $abs = $negative ? (bcmul($quotient, '-1', 8) ?? '0') : $quotient;
-        $whole = (int) (bcdiv($abs, '1', 0) ?? '0');
+        $abs = $negative ? bcmul($quotient, '-1', 8) : $quotient;
+        $whole = (int) bcdiv($abs, '1', 0);
         $fraction = bcsub($abs, (string) $whole, 8);
         if (bccomp($fraction, '0.5', 8) >= 0) {
             $whole++;
