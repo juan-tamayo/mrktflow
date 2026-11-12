@@ -19,7 +19,7 @@ final class ReservedContentPaths
     private const FORBIDDEN_MENU_SEGMENTS = [
         'admin', 'setup', 'staff', 'storage', 'up', 'brand', 'build',
         'webhooks', 'store-api', 'livewire', 'downloads', 'login', 'register',
-        'preferences',
+        'preferences', 'account', 'products', 'categories', 'checkout', 'orders',
     ];
 
     /** @return list<string> */

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { totpCode } from './totp'
+import { browserOwnerTotpSecret, totpCode } from './totp'
 
 /**
  * T054 browser journey — staff fulfillment of a mixed order (FUL-01,
@@ -38,7 +38,7 @@ test('staff partial physical refund leaves the digital half untouched, then ship
   browser,
 }) => {
   test.setTimeout(180_000)
-  const ownerTotpSecret = process.env.BROWSER_OWNER_TOTP_SECRET ?? ''
+  const ownerTotpSecret = browserOwnerTotpSecret()
   expect(ownerTotpSecret).not.toBe('')
 
   // The customer re-checks the downloads area around the staff actions.

@@ -456,5 +456,5 @@ it('FulfillmentAssetUpdate HTTP requires fulfillment permission and fresh 2FA an
             'reason' => 'No permission.',
             'idempotency_key' => (string) Str::uuid(),
         ])->assertForbidden();
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });

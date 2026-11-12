@@ -12,7 +12,25 @@ export default defineConfig({
     trace: process.env.CI ? 'off' : 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'closed',
+      testMatch: /platform-smoke\.spec\.ts$|cart\.spec\.ts$/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'install',
+      testMatch: /setup\.spec\.ts$/,
+      dependencies: ['closed'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'shop',
+      testIgnore: /platform-smoke\.spec\.ts$|cart\.spec\.ts$|setup\.spec\.ts$/,
+      dependencies: ['install'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   webServer: {
     command: 'bin/php scripts/browser-server.php',
     url: 'http://127.0.0.1:8011/up',

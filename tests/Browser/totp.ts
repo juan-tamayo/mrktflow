@@ -1,4 +1,18 @@
 import { createHmac } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+
+export function browserOwnerTotpSecret(): string {
+  const fromEnv =
+    process.env.BROWSER_OWNER_TOTP_SECRET ?? process.env.MRKTFLOW_BROWSER_TOTP_SECRET ?? ''
+  if (fromEnv !== '') {
+    return fromEnv
+  }
+  try {
+    return readFileSync('.runtime/browser-owner-totp', 'utf8').trim()
+  } catch {
+    return ''
+  }
+}
 
 function decodeBase32(secret: string): Buffer {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'

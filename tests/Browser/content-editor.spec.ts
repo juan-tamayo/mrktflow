@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { totpCode } from './totp'
+import { browserOwnerTotpSecret, totpCode } from './totp'
 
 /**
  * T064 browser check — the section editor: add/reorder/configure with
@@ -41,7 +41,7 @@ test('staff edit, reorder by keyboard, recover from a refused save and preview a
   page,
 }) => {
   test.setTimeout(120_000)
-  const secret = process.env.MRKTFLOW_BROWSER_TOTP_SECRET ?? ''
+  const secret = browserOwnerTotpSecret()
 
   await page.goto('/admin/login')
   await page.getByLabel('Email').fill('owner@example.test')

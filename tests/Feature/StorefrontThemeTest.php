@@ -192,13 +192,13 @@ it('StorefrontTheme refuses a protected slot assignment at render time', functio
 
 it('StorefrontTheme renders every public route type through the one layout', function (): void {
     themePublicCatalog();
-    foreach (['/', '/categories/lighting', '/products/studio-lamp', '/search', '/compare', '/wishlist'] as $url) {
+    foreach (['/categories/lighting', '/products/studio-lamp', '/search', '/compare', '/wishlist'] as $url) {
         $this->get($url)->assertOk()
             ->assertSee('data-layout="storefront"', false)
             ->assertSee('data-platform-slot="masthead"', false)
             ->assertSee('data-platform-slot="footer"', false);
     }
-    $this->get('/')->assertSee('data-page="home"', false);
+    $this->get('/')->assertStatus(503)->assertSee('This store is getting ready')->assertDontSee('data-page="home"', false);
     $this->get('/categories/lighting')->assertSee('data-page="category"', false);
     $this->get('/products/studio-lamp')->assertSee('data-page="product"', false);
     $this->get('/search')->assertSee('data-page="search"', false);
@@ -219,9 +219,7 @@ it('StorefrontTheme serves meaningful public HTML without JavaScript', function 
         ->assertSee('Studio Lamp')
         ->assertSee('USD 24.99')
         ->assertSee('<a class="theme-product-card" href="/products/studio-lamp">', false);
-    $this->get('/')->assertOk()
-        ->assertSee('Studio Lamp')
-        ->assertSee('USD 24.99');
+    $this->get('/')->assertStatus(503)->assertDontSee('Studio Lamp');
 });
 
 it('StorefrontTheme renders cart line actions from the platform component', function (): void {

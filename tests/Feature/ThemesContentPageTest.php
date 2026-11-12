@@ -79,7 +79,7 @@ it('ThemesContentPage creates page article and menu records with validated paths
         ->and(DB::table('articles')->count())->toBe(1)
         ->and(DB::table('menus')->count())->toBe(1)
         ->and(DB::table('menu_items')->count())->toBe(2);
-    $this->get('/')->assertOk()->assertDontSee('About the studio');
+    $this->get('/')->assertStatus(503)->assertSee('This store is getting ready')->assertDontSee('About the studio');
 });
 
 it('ThemesContentPage rejects path collision with reserved routes and the category tree', function (): void {
@@ -114,6 +114,9 @@ it('ThemesContentPage rejects an invalid menu URL and persists nothing', functio
         [['label' => 'Empty', 'url' => '']],
         [['label' => 'Setup', 'url' => '/setup']],
         [['label' => 'Unsubscribe', 'url' => '/preferences/unsubscribe']],
+        [['label' => 'Product', 'url' => '/products/studio-lamp']],
+        [['label' => 'Account', 'url' => '/account/register']],
+        [['label' => 'Checkout', 'url' => '/checkout']],
     ] as $items) {
         expect(fn () => app(SaveContent::class)->saveMenu($owner, t065MenuInput(['items' => $items])))
             ->toThrow(ValidationException::class);
@@ -237,6 +240,8 @@ it('ThemesContentPage HTTP lets authorized staff save content and keeps the stor
 
     expect(DB::table('pages')->count())->toBe(1)
         ->and(DB::table('menus')->where('handle', 'footer')->exists())->toBeFalse();
-    $this->get('/')->assertOk()->assertDontSee('About the studio');
+    $this->get('/')->assertStatus(503)->assertSee('This store is getting ready')->assertDontSee('About the studio');
     $this->get('/preferences/unsubscribe')->assertNotFound();
+    $this->get('/products/studio-lamp')->assertNotFound()->assertDontSee('About the studio');
+    $this->get('/account/register')->assertOk()->assertSee('Your name');
 });

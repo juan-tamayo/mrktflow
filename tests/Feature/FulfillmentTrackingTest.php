@@ -205,7 +205,7 @@ it('FulfillmentTracking HTTP rejects a malicious tracking URL before any shipmen
         ])->assertRedirect('/admin/orders/'.$orderId)->assertSessionHas('order_shipment_saved', true);
     expect(DB::table('shipments')->where('order_id', $orderId)->count())->toBe(1)
         ->and(DB::table('shipment_notification_intents')->where('order_id', $orderId)->count())->toBe(1);
-    $this->get('/')->assertOk();
+    $this->get('/')->assertStatus(503);
 });
 
 it('FulfillmentTracking queues one deduplicated notification intent per shipment', function (): void {
