@@ -34,6 +34,9 @@ it('activates a reviewed theme through a uniquely labelled control', async () =>
   expect(wrapper.get('button[aria-label="Activate theme mrktflow/default"]').text()).toBe(
     'Activate theme mrktflow/default',
   )
+  expect(wrapper.get('[aria-label="Installed theme mrktflow/default"]').text()).toContain(
+    'mrktflow/default · 0.1.0',
+  )
   expect(post).toHaveBeenCalled()
 })
 

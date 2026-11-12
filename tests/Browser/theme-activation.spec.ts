@@ -73,7 +73,7 @@ test('staff activate the default theme, assign custom templates, and keep checko
   await expect(page.getByRole('heading', { level: 1, name: 'Themes.' })).toBeVisible()
   await page.getByRole('button', { name: 'Activate theme mrktflow/default', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('Theme activated')
-  await expect(page.getByText('mrktflow/example')).toBeVisible()
+  await expect(page.getByLabel('Installed theme mrktflow/example', { exact: true })).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Activate theme mrktflow/example', exact: true }),
   ).toHaveCount(0)

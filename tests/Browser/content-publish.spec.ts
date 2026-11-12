@@ -90,7 +90,9 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
   await page.getByRole('button', { name: 'Stage and validate package', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Import report', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Apply template to drafts', exact: true }).click()
-  await expect(page.getByRole('status')).toContainText('Applied to drafts')
+  await expect(
+    page.getByRole('status', { name: 'Import apply result', exact: true }),
+  ).toContainText('Applied to drafts')
 
   await page.goto('/admin/content-editor')
   await page.locator('#editor-page').selectOption('search')
