@@ -20,7 +20,7 @@ const ready = computed(
   <form method="post" :action="props.endpoint" class="theme-watch-form">
     <input type="hidden" name="_token" :value="props.csrfToken" />
     <div class="setup-field">
-      <label for="watch-variant">Alert variant</label>
+      <label for="watch-variant">Item for alerts</label>
       <select id="watch-variant" v-model="variantId" name="variant_id" required>
         <option value="">Choose a combination</option>
         <option v-for="variant in props.variants" :key="variant.id" :value="variant.id">

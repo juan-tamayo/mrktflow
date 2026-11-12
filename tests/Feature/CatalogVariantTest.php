@@ -60,8 +60,8 @@ it('CatalogVariant saves unique combinations and lets a shopper see the selected
     $missing = $this->get('/products/studio-lamp');
     $missing->assertOk()->assertSee('Choose a finish and size to see the current price')
         ->assertSee('<label for="cart-variant">Variant</label>', false)
-        ->assertSee('<label for="wishlist-variant">Wishlist variant</label>', false)
-        ->assertSee('<label for="watch-variant">Alert variant</label>', false);
+        ->assertSee('<label for="wishlist-variant">Item to save</label>', false)
+        ->assertSee('<label for="watch-variant">Item for alerts</label>', false);
     expect(substr_count($missing->getContent(), '>Variant</label>'))->toBe(1);
 });
 
