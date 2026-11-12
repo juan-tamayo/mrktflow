@@ -8,6 +8,7 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\ThemesContent\Actions\PublishContent;
 use App\Domain\ThemesContent\Actions\ReadContent;
 use App\Domain\ThemesContent\Actions\ResolveLayout;
+use App\Domain\ThemesContent\Actions\RestoreRevision;
 use App\Domain\ThemesContent\Actions\SaveContent;
 use App\Domain\ThemesContent\Exceptions\SectionValidationFailed;
 use App\Domain\ThemesContent\Support\VisualTemplates;
@@ -81,6 +82,24 @@ final class ContentController
         }
 
         return redirect('/admin/content')->with('content_published', true);
+    }
+
+    public function restore(Request $request, RestoreRevision $restore): RedirectResponse
+    {
+        Gate::authorize('content.publish');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
+        $input = $request->validate([
+            'kind' => ['required', 'string'],
+            'id' => ['nullable', 'uuid'],
+            'page' => ['nullable', 'string', 'max:64'],
+            'slot' => ['nullable', 'string', 'max:64'],
+            'revision' => ['required', 'integer', 'min:1'],
+            'version' => ['required', 'integer', 'min:1'],
+        ]);
+        $restore->restore($staff, $input);
+
+        return redirect()->to((string) url()->previous('/admin/content'))->with('content_restored', true);
     }
 
     public function storeMenu(Request $request, SaveContent $save): RedirectResponse

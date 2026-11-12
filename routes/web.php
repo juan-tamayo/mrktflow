@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
 use App\Http\Controllers\Admin\TaxController;
+use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\Admin\ThemePreviewController;
 use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Storefront\CartController;
@@ -168,6 +169,9 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/content/articles', [ContentController::class, 'storeArticle'])->middleware('throttle:30,1,content-article:');
         Route::post('/admin/content/menus', [ContentController::class, 'storeMenu'])->middleware('throttle:30,1,content-menu:');
         Route::post('/admin/content/publish', [ContentController::class, 'publish'])->middleware('throttle:30,1,content-publish:');
+        Route::post('/admin/content/restore', [ContentController::class, 'restore'])->middleware('throttle:30,1,content-restore:');
+        Route::get('/admin/themes', [ThemeController::class, 'show']);
+        Route::post('/admin/themes/activate', [ThemeController::class, 'activate'])->middleware('throttle:30,1,theme-activate:');
         Route::put('/admin/layouts', [LayoutAssignmentController::class, 'update'])->middleware('throttle:30,1,content-layout:');
         Route::get('/admin/content-editor', [ContentEditorController::class, 'show']);
         Route::get('/admin/content-editor/draft', [ContentEditorController::class, 'draft']);

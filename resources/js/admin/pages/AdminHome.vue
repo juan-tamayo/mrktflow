@@ -105,8 +105,14 @@ const logout = useForm({})
           <div v-if="canManageContent" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">06</span>
             <div>
-              <a class="tool-link" href="/admin/content">Pages, articles, menus</a>
-              <p>Create content records with validated paths and navigation links.</p>
+              <div class="tool-links">
+                <a class="tool-link" href="/admin/content">Pages, articles, menus</a>
+                <a class="tool-link" href="/admin/themes">Themes</a>
+              </div>
+              <p>
+                Create content records with validated paths and navigation links. Activate a
+                reviewed theme.
+              </p>
             </div>
             <span aria-hidden="true">↗</span>
           </div>

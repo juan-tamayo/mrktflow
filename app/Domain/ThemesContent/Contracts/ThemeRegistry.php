@@ -21,6 +21,11 @@ interface ThemeRegistry
 
     public function find(string $themeId): ?ThemeRegistration;
 
+    /**
+     * @return list<ThemeRegistration>
+     */
+    public function list(): array;
+
     /** Only a recorded `valid` registration may ever be activated. */
     public function isActivatable(string $themeId): bool;
 }

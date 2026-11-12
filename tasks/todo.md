@@ -1261,7 +1261,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T068: Content rollback and theme activation
 
-- [ ] Complete T068.
+- [x] Complete T068.
+- **Evidence:** Focused `ThemesContentActivation`: 10 passed / 141 assertions (red first: restore/activate classes missing). Rollback copies an earlier snapshot into a new published revision; older revision payloads stay immutable; a stale expected version conflicts. Activation of `mrktflow/default` succeeds; a valid theme missing checkout is refused and the active theme stays; live `specifications` without mapping (and a mapping that would drop settings onto `rich-text`) is refused; a compatible `featured-product` mapping and a `product.compact` → `product.default` mapping activate without rewriting live documents. Invalid/unregistered themes and `content_editor` cannot activate. Guests/customers/fulfillment denied; owner without TOTP redirected to `/admin/two-factor`. `GET /` stays HTTP 503. Group filter ThemesContent 101 passed / 801 assertions. Full PHP suite: 718 passed / 7,238 assertions. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (160 passed)/build green. Playwright e2e was not run in this workspace (no isolated browser database). Hosted Quality evidence is the PR check, not claimed here.
 - **Module / requirements:** `themes-content` · THEME-03, THEME-06.
 - **Depends on:** T067, T066.
 - **Acceptance:** Rollback creates a new publication revision; activation validates route coverage and missing-section mapping; failure retains active theme.
