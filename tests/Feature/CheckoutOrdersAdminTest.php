@@ -127,6 +127,9 @@ it('CheckoutOrdersAdmin lets permitted staff search frozen orders with independe
         ->and($byNumber['data'][0]['grand_total']['amount'])->toBe(2805);
     $byEmail = $reader->search($catalog['owner'], ['q' => 'alex@example.test', 'from' => '2026-10-16', 'to' => '2026-10-16']);
     expect(array_column($byEmail['data'], 'id'))->toEqualCanonicalizing([$pending['order_id'], $paid['order_id']]);
+    $listed = $reader->search($catalog['owner'], []);
+    expect($listed['data'][0]['id'])->toBe($pending['order_id'])
+        ->and($listed['data'][0]['fulfillment_status'])->toBe('unfulfilled');
     $detail = $reader->detail($catalog['owner'], $pending['order_id']);
     expect($detail['email'])->toBe('alex@example.test')
         ->and($detail['status'])->toBe('pending')

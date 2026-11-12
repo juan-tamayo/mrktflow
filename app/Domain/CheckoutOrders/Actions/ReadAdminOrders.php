@@ -25,7 +25,10 @@ final class ReadAdminOrders
         $q = $this->term($filters['q'] ?? null);
         $from = $this->day($filters['from'] ?? null, false);
         $to = $this->day($filters['to'] ?? null, true);
-        $query = DB::table('orders')->orderByDesc('created_at')->orderByDesc('id');
+        $query = DB::table('orders')
+            ->orderByRaw("CASE WHEN fulfillment_status = 'unfulfilled' THEN 0 ELSE 1 END")
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
         if ($q !== '') {
             $like = '%'.addcslashes($q, '%_\\').'%';
             $query->where(function (Builder $orders) use ($like): void {

@@ -68,6 +68,23 @@ describe('section editor helpers', () => {
     expect(defaultSettings(grid.settings)).toEqual({ heading: '', limit: 8 })
   })
 
+  it('creates rich-text with starter copy while leaving a required hero heading empty', () => {
+    const copy = createSection(
+      {
+        type: 'rich-text',
+        version: 1,
+        label: 'Rich text',
+        maxPerPage: 20,
+        binding: null,
+        settings: [{ key: 'text', type: 'text', required: true, maxLength: 5000 }],
+      },
+      [],
+    )
+    expect(copy.settings.text).toBe('Rich text.')
+    const intro = createSection(hero, [])
+    expect(intro.settings.heading).toBe('')
+  })
+
   it('creates sections with unique bounded ids and a default binding', () => {
     const first = createSection(grid, [])
     expect(first.id).toBe('product-grid')
