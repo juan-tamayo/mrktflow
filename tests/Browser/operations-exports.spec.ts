@@ -16,5 +16,6 @@ test('staff queue a private product export with an expiry notice', async ({ page
   await page.getByRole('button', { name: 'Queue export' }).click()
   await expect(page.getByRole('status')).toContainText('Export queued')
   await expect(page.getByRole('link', { name: 'Download CSV' })).toBeVisible()
-  expect((await request.get('/')).status()).toBe(503)
+  await page.waitForLoadState('domcontentloaded')
+  expect((await request.get('/', { timeout: 10_000 })).status()).toBe(503)
 })

@@ -11,5 +11,5 @@ test('staff open privacy requests with retention notice', async ({ page, request
   await page.goto('/admin/privacy')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Privacy requests')
   await expect(page.getByRole('note')).toContainText('Financial history is never blanket-deleted')
-  expect((await request.get('/')).status()).toBe(503)
+  expect((await request.get('/', { timeout: 10_000 })).status()).toBe(503)
 })
