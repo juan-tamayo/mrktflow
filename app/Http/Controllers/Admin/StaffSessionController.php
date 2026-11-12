@@ -68,6 +68,7 @@ final class StaffSessionController
             'canReadOrders' => $staff->hasPermission('orders.read'),
             'canPreviewTheme' => $staff->hasPermission('content.read'),
             'canManageContent' => $staff->hasPermission('content.read'),
+            'canConfigureAi' => $staff->role === 'owner',
         ]);
     }
 }

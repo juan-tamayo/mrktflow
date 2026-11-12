@@ -1330,13 +1330,14 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T073: AI configuration and concurrent budget holds
 
-- [ ] Complete T073.
+- [x] Complete T073 locally; GitHub Quality is the hosted CI evidence. Did not merge. Did not start T074.
 - **Module / requirements:** `ai-authoring` · AI-01, AI-03.
 - **Depends on:** T012, T013, T072.
 - **Acceptance:** Owner-only secret configuration and author permissions work; concurrent requests cannot exceed configured reserved budget; disabled mode remains usable.
 - **Verify:** Run `php artisan test --filter=AiAuthoringBudget`; race two requests at remaining budget limit.
 - **Likely files:** `database/migrations/create_ai_tables.php`, `app/Domain/AiAuthoring/Actions/ReserveUsage.php`, `resources/js/admin/pages/AiSettings.vue`, `tests/Feature/AiAuthoringBudgetTest.php`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
+- **Evidence (November 12, 2026):** Failing `AiAuthoringBudget` tests first (missing actions/routes), then AI tables, owner-only `SaveAiSettings`/`ReadAiSettings`, `ReserveUsage` row locks, and `/admin/ai`. Encrypted store-owned secret is never returned; only owners save credentials/authors; `ai.use` staff still need an author grant to reserve. Two MySQL workers racing the last 1000-token budget yield one `reserved` and one `exhausted`. Disabled default still allows `SaveContent` and `GET /admin/content`; reservations throw `AiAuthoringDisabled`. Privileged staff without TOTP are sent to `/admin/two-factor`. `GET /` stays HTTP 503. Focused `AiAuthoringBudget`: 7 passed / 101 assertions including the race. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (173 passed)/`bin/npm run build` green. Playwright Chromium: 22 passed. Composer audit --locked: no advisories. npm audit: 0 vulnerabilities; 238 signatures / 97 attestations. Live provider smoke remains T074. Hosted Quality is the PR check. Did not merge.
 
 ### T074: Queued bounded generation adapter
 
