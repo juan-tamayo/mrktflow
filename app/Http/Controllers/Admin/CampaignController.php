@@ -141,14 +141,21 @@ final class CampaignController
     /** @return array<string, mixed> */
     private function payload(Request $request, bool $update): array
     {
-        $data = $request->validate([
+        $request->validate([
             'campaign' => ['required', 'array'],
             'campaign.name' => ['required', 'string', 'max:120'],
             'campaign.subject' => ['required', 'string', 'max:180'],
             'campaign.body_text' => ['required', 'string', 'max:8000'],
             'campaign.purpose' => ['required', 'string'],
             'campaign.version' => [$update ? 'required' : 'sometimes', 'nullable', 'integer'],
-        ])['campaign'];
+            'campaign.audience' => ['required', 'array'],
+            'campaign.schedule' => ['required', 'array'],
+            'campaign.caps' => ['required', 'array'],
+        ]);
+        $data = $request->input('campaign');
+        if (! is_array($data)) {
+            throw ValidationException::withMessages(['campaign' => 'Provide a campaign.']);
+        }
         if (! $update) {
             unset($data['id'], $data['version']);
         }

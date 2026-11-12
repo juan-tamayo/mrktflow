@@ -30,8 +30,21 @@ final class SaveCampaign
                 $input[$empty] = null;
             }
         }
-        $audience = is_array($input['audience'] ?? null) ? $input['audience'] : [];
-        if (! array_key_exists('category_ids', $audience) || $audience['category_ids'] === null) {
+        if (! array_key_exists('offer_reference', $input)) {
+            $input['offer_reference'] = null;
+        }
+        if (($input['id'] ?? null) === null) {
+            unset($input['id'], $input['version']);
+        }
+        $audience = array_merge([
+            'customer_status' => 'any',
+            'category_ids' => [],
+            'purchased_after' => null,
+            'purchased_before' => null,
+            'previous_campaign_id' => null,
+            'previous_campaign_mode' => 'any',
+        ], is_array($input['audience'] ?? null) ? $input['audience'] : []);
+        if ($audience['category_ids'] === null) {
             $audience['category_ids'] = [];
         }
         foreach (['purchased_after', 'purchased_before', 'previous_campaign_id'] as $empty) {

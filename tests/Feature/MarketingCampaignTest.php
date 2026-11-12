@@ -367,7 +367,9 @@ it('MarketingCampaign HTTP lets editors draft, activators schedule, and senders 
         ->where('canWrite', true)
         ->where('canActivate', true)
         ->where('canSend', true));
-    $created = $this->post('/admin/marketing/campaigns', ['campaign' => t092CampaignInput(['name' => 'HTTP drop'])]);
+    $created = $this->from('/admin/marketing/campaigns/create')
+        ->post('/admin/marketing/campaigns', ['campaign' => t092CampaignInput(['name' => 'HTTP drop'])]);
+    $created->assertSessionHasNoErrors();
     $id = (string) DB::table('marketing_campaigns')->value('id');
     expect($id)->not->toBe('');
     $created->assertRedirect('/admin/marketing/campaigns/'.$id);
