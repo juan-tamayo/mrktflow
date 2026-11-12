@@ -132,6 +132,7 @@ final class CampaignRecords
         return $time?->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
     }
 
+    /** @param  object|array<string, mixed>  $row */
     public function string(object|array $row, string $key): string
     {
         $value = is_array($row) ? ($row[$key] ?? null) : (get_object_vars($row)[$key] ?? null);
@@ -139,6 +140,7 @@ final class CampaignRecords
         return is_scalar($value) ? (string) $value : '';
     }
 
+    /** @param  object|array<string, mixed>  $row */
     public function int(object|array $row, string $key): int
     {
         $value = is_array($row) ? ($row[$key] ?? null) : (get_object_vars($row)[$key] ?? null);
