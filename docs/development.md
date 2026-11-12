@@ -88,7 +88,7 @@ A crash after transport acceptance can produce a duplicate email when the lease 
 
 ## Customer profile and addresses
 
-Installed customers can edit their own profile at `/account/profile` and add, edit or remove up to 20 saved addresses at `/account/addresses`. These are native forms that work without JavaScript. Changing an email requires the current password, revokes previous challenges, clears verification, increments the session version and atomically queues confirmation for the new address. Name-only edits preserve email verification. Profile and address version fields reject stale writes. Saved addresses encrypt their payload; preserve the application key securely along with backups. Deleting an address removes its payload; the audit retains only object/account IDs and the version. Postal codes and regions are optional for international addresses. This storage is not postal/carrier validation: checkout will apply current shipping-country eligibility later. Account export/deletion and backup retention remain T083.
+Installed customers can edit their own profile at `/account/profile` and add, edit or remove up to 20 saved addresses at `/account/addresses`. These are native forms that work without JavaScript. Changing an email requires the current password, revokes previous challenges, clears verification, increments the session version and atomically queues confirmation for the new address. Name-only edits preserve email verification. Profile and address version fields reject stale writes. Saved addresses encrypt their payload; preserve the application key securely along with backups. Deleting an address removes its payload; the audit retains only object/account IDs and the version. Postal codes and regions are optional for international addresses. This storage is not postal/carrier validation: checkout will apply current shipping-country eligibility later. Account export/deletion is T082; backup retention remains later operations work.
 
 ## Theme rendering preview
 
@@ -309,6 +309,10 @@ Authorized catalog authors with `ai.use` open the product editor AI panel. `Draf
 ## Permission-gated private exports
 
 Staff with `exports.read` open `/admin/exports` and queue customer, order, or product CSVs. Each dataset also requires `customers.read`, `orders.read`, or `catalog.read`. The encrypted ID-only `ExportStoreData` job writes a formula-safe CSV on the private local disk (`exports/{id}.csv`) and never a public permanent URL. The download token stays in the requesting staff session; other staff and customers cannot read the file even with the UUID. Links expire after 24 hours and `operations:export-prune` deletes the private object. Queue and first download are audited. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=OperationsExport`.
+
+## Account data and retention
+
+Verified customers submit export or deletion requests at `/account/privacy` with their current password. Unverified accounts and wrong passwords fail closed. Staff with `customers.read` process requests at `/admin/privacy`. An export writes a formula-safe private CSV (`privacy/{id}.csv`) that the signed-in customer can download for 24 hours. Deletion removes login, saved addresses, and outstanding challenges, anonymizes the profile, and records a global delivery suppression so the original address cannot be silently re-enrolled. Order emails, receipts, payments, provider event dedup, and idempotency records stay valid. `identity:prune-expired` deletes expired guest carts (not referenced by orders), unpublished AI prompts, and expired export files under configured `store_settings.retention` days; it never blanket-deletes financial history. Order retention days are store policy, not a hard-coded legal period. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=IdentityPrivacy`.
 
 ## Sales and refund reporting
 

@@ -1803,6 +1803,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 ### T082: Account data and retention workflow
 
 - [ ] Complete T082.
+- **Progress:** Failing `IdentityPrivacy` tests first, then `privacy_requests`, verified customer export/deletion requests, staff processing, profile anonymization with retained orders/receipts/payment dedup, `identity:prune-expired`, `/account/privacy` native form, and `/admin/privacy` for `customers.read`. Frontend type/lint/format/unit and production build run locally. PHP 8.4 / isolated MySQL 8.4 / Pint / PHPStan / Playwright are hosted Quality evidence when this image cannot run them. Did not merge. Did not start T083. `GET /` stays HTTP 503.
 - **Module / requirements:** `identity` · ID-06.
 - **Depends on:** T081, T050.
 - **Acceptance:** Export/deletion request verifies identity; eligible profile data anonymized under configured policy; retained order/dedup records remain valid.

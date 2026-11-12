@@ -73,6 +73,7 @@ final class StaffSessionController
             'canManageEmail' => $staff->hasPermission('settings.manage'),
             'canReadReports' => $staff->hasPermission('reports.read'),
             'canExport' => $staff->hasPermission('exports.read'),
+            'canPrivacy' => $staff->hasPermission('customers.read'),
         ]);
     }
 }

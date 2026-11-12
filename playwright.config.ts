@@ -6,6 +6,10 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   workers: 1,
+  // Staff TOTP rejects reused steps; consecutive owner tests may wait a
+  // full 30s period before login. Queue/download plus GET / 503 must
+  // still finish without Playwright closing the browser.
+  timeout: 90_000,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:8011',

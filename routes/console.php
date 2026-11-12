@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Identity\Actions\PruneExpiredData;
 use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
 use App\Domain\Operations\Actions\PruneExpiredExports;
 use App\Domain\Operations\Actions\PublishNotification;
@@ -134,6 +135,14 @@ Artisan::command('operations:export-prune', function (PruneExpiredExports $prune
 })->purpose('Delete expired private export files and mark jobs expired');
 
 Schedule::command('operations:export-prune')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('identity:prune-expired', function (PruneExpiredData $prune): int {
+    $this->info('Pruned '.$prune->prune().' expired operational record(s).');
+
+    return 0;
+})->purpose('Prune expired guest carts, privacy exports and AI prompts without deleting retained orders');
+
+Schedule::command('identity:prune-expired')->everyMinute()->withoutOverlapping(2);
 
 Artisan::command('operations:mail-health', function (): int {
     $pending = DB::table('notification_deliveries')->whereIn('status', ['pending', 'sending'])->count();

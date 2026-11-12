@@ -16,6 +16,7 @@ defineProps<{
   canManageEmail: boolean
   canReadReports: boolean
   canExport: boolean
+  canPrivacy: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -158,8 +159,19 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canReadReports || canExport" class="workspace-tool">
+          <div v-if="canPrivacy" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">10</span>
+            <div>
+              <a class="tool-link" href="/admin/privacy">Privacy requests</a>
+              <p>
+                Process verified account export and deletion requests without erasing financial
+                history.
+              </p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canReadReports || canExport" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">11</span>
             <div>
               <div class="tool-links">
                 <a v-if="canReadReports" class="tool-link" href="/admin/reports">Sales reports</a>
@@ -174,7 +186,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div v-if="canManageStaff" class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">11</span>
+            <span class="tool-number" aria-hidden="true">12</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -182,7 +194,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">12</span>
+            <span class="tool-number" aria-hidden="true">13</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>
