@@ -2,6 +2,8 @@
 
 Objective: optional assisted authoring that produces reviewable validated drafts and also accepts compatible externally authored data. Depends on platform, identity, catalog, themes-content and seo-hubs. Inherits [template/AI contract](docs/template-contracts.md), [interfaces](docs/interfaces.md), and [commands](docs/coding-handoff.md).
 
+Implementation status: AI-01 through AI-06 are implemented by T073–T078. Owners configure a store-owned secret, model, budgets and authors; page generation, product copy/schema suggestions, validation/repair caps, review/apply and outage/cancel/duplicate recovery compose through `/admin/ai/studio` and `/admin/content`. Disabled AI does not block imports. AI-07 remains proposed. Live provider smoke is opt-in and pending without `MRKTFLOW_AI_SMOKE_KEY`.
+
 ## Requirements
 
 - **AI-01:** Owner enables/configures provider credentials, permitted model, daily/monthly budget and author permissions. Disabled AI never blocks manual authoring, imports, checkout or updates.

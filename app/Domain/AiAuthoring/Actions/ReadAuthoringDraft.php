@@ -20,29 +20,45 @@ use JsonException;
 final class ReadAuthoringDraft
 {
     /**
-     * @return list<array{runId: string, draftId: string, status: string, title: string, updatedAt: string}>
+     * @return list<array{runId: string, draftId: string, status: string, statusMessage: string, title: string, updatedAt: string}>
      */
     public function listFor(StaffAccount $actor): array
     {
         $this->assertAuthor($actor);
-        $rows = DB::table('ai_drafts')
-            ->join('ai_runs', 'ai_runs.id', '=', 'ai_drafts.run_id')
+        $rows = DB::table('ai_runs')
+            ->leftJoin('ai_drafts', 'ai_drafts.run_id', '=', 'ai_runs.id')
             ->where('ai_runs.staff_id', $actor->id)
             ->where('ai_runs.operation', 'draft_page')
-            ->whereIn('ai_drafts.status', ['candidate', 'applied'])
-            ->orderByDesc('ai_drafts.updated_at')
+            ->orderByDesc('ai_runs.updated_at')
             ->limit(50)
-            ->get(['ai_runs.id as run_id', 'ai_drafts.id as draft_id', 'ai_drafts.status', 'ai_drafts.payload', 'ai_drafts.updated_at']);
+            ->get([
+                'ai_runs.id as run_id',
+                'ai_runs.status as run_status',
+                'ai_runs.status_message',
+                'ai_runs.prompt',
+                'ai_runs.updated_at as run_updated_at',
+                'ai_drafts.id as draft_id',
+                'ai_drafts.status as draft_status',
+                'ai_drafts.payload',
+                'ai_drafts.updated_at as draft_updated_at',
+            ]);
         $items = [];
         foreach ($rows as $row) {
-            $payload = $this->json($row, 'payload');
-            $title = is_string($payload['title'] ?? null) ? $payload['title'] : 'Untitled draft';
+            $draftId = $this->string($row, 'draft_id');
+            $title = 'Page draft';
+            if ($draftId !== '') {
+                $payload = $this->json($row, 'payload');
+                $title = is_string($payload['title'] ?? null) ? $payload['title'] : 'Untitled draft';
+            } elseif ($this->string($row, 'prompt') !== '') {
+                $title = $this->string($row, 'prompt');
+            }
             $items[] = [
                 'runId' => $this->string($row, 'run_id'),
-                'draftId' => $this->string($row, 'draft_id'),
-                'status' => $this->string($row, 'status'),
+                'draftId' => $draftId,
+                'status' => $draftId === '' ? $this->string($row, 'run_status') : $this->string($row, 'draft_status'),
+                'statusMessage' => $this->string($row, 'status_message'),
                 'title' => $title,
-                'updatedAt' => $this->string($row, 'updated_at'),
+                'updatedAt' => $draftId === '' ? $this->string($row, 'run_updated_at') : $this->string($row, 'draft_updated_at'),
             ];
         }
 
@@ -50,12 +66,38 @@ final class ReadAuthoringDraft
     }
 
     /**
+     * @return array{pages: list<array{id: string, title: string}>, products: list<array{id: string, title: string}>}
+     */
+    public function catalog(StaffAccount $actor): array
+    {
+        $this->assertAuthor($actor);
+        $pages = [];
+        foreach (DB::table('pages')->orderBy('title')->orderBy('id')->get(['id', 'title']) as $page) {
+            $pages[] = [
+                'id' => $this->string($page, 'id'),
+                'title' => $this->string($page, 'title'),
+            ];
+        }
+        $products = [];
+        foreach (DB::table('products')->where('status', 'published')->orderBy('title')->orderBy('id')->get(['id', 'title']) as $product) {
+            $products[] = [
+                'id' => $this->string($product, 'id'),
+                'title' => $this->string($product, 'title'),
+            ];
+        }
+
+        return ['pages' => $pages, 'products' => $products];
+    }
+
+    /**
      * @return array{
      *     runId: string,
      *     draftId: string,
      *     status: string,
+     *     statusMessage: string,
      *     stale: bool,
      *     canApply: bool,
+     *     canCancel: bool,
      *     canPublish: bool,
      *     expectedRevisionId: string,
      *     currentRevisionId: string,
@@ -64,7 +106,7 @@ final class ReadAuthoringDraft
      *     publishedRevision: int,
      *     prompt: string,
      *     model: string,
-     *     candidate: array<string, mixed>,
+     *     candidate: array<string, mixed>|null,
      *     base: array<string, mixed>,
      *     usage: array{input_tokens: int|null, output_tokens: int|null, total_tokens: int|null, known: bool},
      *     warnings: list<string>
@@ -79,9 +121,6 @@ final class ReadAuthoringDraft
         }
         $this->assertAuthor($actor);
         $draft = DB::table('ai_drafts')->where('run_id', $runId)->first();
-        if ($draft === null) {
-            abort(404);
-        }
         $baseId = $this->string($run, 'base_revision_id');
         $base = DB::table('content_revisions')->where('id', $baseId)->first();
         if ($base === null || $this->string($base, 'subject_type') !== 'page') {
@@ -102,16 +141,19 @@ final class ReadAuthoringDraft
         }
         $currentId = $this->string($current, 'id');
         $stale = $currentId !== $baseId;
-        $status = $this->string($draft, 'status');
-        $candidate = $this->document($this->json($draft, 'payload'));
+        $runStatus = $this->string($run, 'status');
+        $status = $draft === null ? $runStatus : $this->string($draft, 'status');
+        $candidate = $draft === null ? null : $this->document($this->json($draft, 'payload'));
         $usage = DB::table('ai_usage_entries')->where('intent_id', $this->string($run, 'intent_id'))->first();
 
         return [
             'runId' => $runId,
-            'draftId' => $this->string($draft, 'id'),
+            'draftId' => $draft === null ? '' : $this->string($draft, 'id'),
             'status' => $status,
+            'statusMessage' => $this->string($run, 'status_message'),
             'stale' => $stale,
-            'canApply' => $status === 'candidate' && ! $stale && $actor->hasPermission('content.write'),
+            'canApply' => $status === 'candidate' && $candidate !== null && ! $stale && $actor->hasPermission('content.write'),
+            'canCancel' => in_array($runStatus, ['queued', 'running'], true) && $this->string($run, 'staff_id') === $actor->id,
             'canPublish' => $actor->hasPermission('content.publish'),
             'expectedRevisionId' => $baseId,
             'currentRevisionId' => $currentId,

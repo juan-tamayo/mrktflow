@@ -308,4 +308,10 @@ Authorized catalog authors with `ai.use` open the product editor AI panel. `Draf
 
 ## AI authoring contract spike
 
+## AI authoring integration gate
+
+`POST /admin/ai/studio` queues a page run after a budget hold. Authors review at `/admin/ai/studio/{run}`, apply onto a matching content draft, and publish only through `/admin/content` with `content.publish`. The same request `intent_id` is a no-op (one reservation, no second provider call). Cancelling a queued run releases an unused hold; rate limits and timeouts keep a pending estimate and never retry automatically; applied drafts stay put. Template import still applies to drafts while AI is disabled. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoring` and `bin/npm run test:e2e`. Capped live-provider smoke runs only when `MRKTFLOW_AI_SMOKE_KEY` is configured; this environment does not set it. See [AI authoring guide](ai-authoring-guide.md).
+
+## AI authoring contract spike
+
 Run `bin/php artisan test --filter=AiAuthoringContract` for the bounded public-context request, shared data-only page schema and Responses-shaped success/refusal/incomplete/malformed/tool-call fixtures. No SDK or live provider request is required for that spike. The schema is a prototype with no page persistence, renderer, importer or publishing feature. [Schema and remaining acceptance](template-contracts.md#implemented-t012-page-draft-spike), [provider/model findings](open-decisions.md#d08-t012-providerschema-findings-october-10-2026). T074's adapter is fixture-tested; a deliberate capped live smoke remains pending until credentials exist.
