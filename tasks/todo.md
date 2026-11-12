@@ -1774,7 +1774,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T080: Sales and refund reporting
 
-- [ ] Complete T080.
+- [x] Complete T080.
+- **Evidence (November 12, 2026):** Failing `OperationsReports` tests first, then `BuildSalesReport` + `GET /admin/reports`. Paid live captures and local zero-total included; Stripe test-mode and unpaid excluded; store-timezone dates; activity refunds on succeeded timestamp vs cohort on capture date. Ledger 2500 − 250 + 300 + 255 = 2805; merchandise refund 2250; capture-day activity net 2250 / AOV 1125; cohort net 0; refund-day activity net −2250. Hosted Quality SUCCESS ([run 43296276886](https://github.com/juan-tamayo/mrktflow/actions/runs/43296276886), 783 PHP passed / 1 skipped). Local frontend typecheck/lint/format/unit (182)/build. Privileged staff 2FA not bypassed. `GET /` stays HTTP 503. Did not merge. Did not start T081.
 - **Module / requirements:** `operations` · OPS-02.
 - **Depends on:** T041, T044.
 - **Acceptance:** Paid/test/unpaid inclusion and date/timezone rules are explicit; dashboard figures reconcile to captured/refunded fixtures.
