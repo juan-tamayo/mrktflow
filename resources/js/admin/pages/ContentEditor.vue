@@ -133,8 +133,9 @@ async function changeTarget(nextPage: string, nextSlot: string) {
 
 function onPageChange(event: Event) {
   const nextPage = (event.target as HTMLSelectElement).value
-  const firstSlot = props.targets.find((target) => target.page === nextPage)?.slots[0] ?? 'content'
-  void changeTarget(nextPage, firstSlot)
+  const slots = props.targets.find((target) => target.page === nextPage)?.slots ?? []
+  const nextSlot = slots.includes(slot.value) ? slot.value : (slots[0] ?? 'content')
+  void changeTarget(nextPage, nextSlot)
 }
 
 function onSlotChange(event: Event) {

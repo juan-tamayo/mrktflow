@@ -157,6 +157,61 @@ describe('ContentEditor', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('Preview updated.')
   })
 
+  it('keeps the current area and publish name when switching pages that share it', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, options: { method: string; body?: string }) => {
+        calls.push({
+          url,
+          method: options.method,
+          body: options.body ? (JSON.parse(options.body) as Record<string, unknown>) : {},
+        })
+        if (url.includes('/admin/content-editor/draft?page=search&slot=content')) {
+          return Promise.resolve(
+            jsonResponse(200, {
+              version: 2,
+              publishedRevision: 0,
+              sections: [
+                {
+                  id: 'intro',
+                  type: 'hero',
+                  version: 1,
+                  settings: { heading: 'Edited search banner' },
+                },
+              ],
+            }),
+          )
+        }
+        return Promise.resolve(jsonResponse(404, {}))
+      }),
+    )
+    const wrapper = mount(ContentEditor, {
+      props: {
+        definitions,
+        targets: [
+          { page: 'home', slots: ['announcement', 'content'] },
+          { page: 'search', slots: ['announcement', 'content'] },
+        ],
+        initial: { page: 'home', slot: 'content', version: 1, sections: [] },
+        canWrite: true,
+        canPublish: true,
+      },
+    })
+    expect(wrapper.get('button[aria-label="Publish home content sections"]').text()).toBe(
+      'Publish home content sections',
+    )
+    await wrapper.get('#editor-page').setValue('search')
+    await wrapper.get('#editor-page').trigger('change')
+    await flushPromises()
+    expect(wrapper.get('[role="status"]').text()).toContain('Loaded the search content draft')
+    expect(wrapper.get('button[aria-label="Publish search content sections"]').text()).toBe(
+      'Publish search content sections',
+    )
+    expect(wrapper.get('a[aria-label="Preview search content sections"]').attributes('href')).toBe(
+      '/admin/preview/sections?page=search&slot=content',
+    )
+  })
+
   it('hides saving from read-only staff', () => {
     const wrapper = mount(ContentEditor, {
       props: {

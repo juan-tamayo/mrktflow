@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { signInStaffWithTotp } from './staff-native-login'
 import { browserOwnerTotpSecret } from './totp'
 
@@ -73,6 +73,17 @@ function templatePackageZip(): string {
   return zipPath
 }
 
+async function openSearchContentDraft(page: Page): Promise<void> {
+  await page.goto('/admin/content-editor')
+  await page.locator('#editor-page').selectOption('search')
+  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
+  const editorSlot = page.locator('#editor-slot')
+  if ((await editorSlot.inputValue()) !== 'content') {
+    await editorSlot.selectOption('content')
+  }
+  await expect(page.getByRole('status')).toContainText('Loaded the search content draft')
+}
+
 test('staff import, edit, preview, publish and rollback without opening GET /', async ({
   page,
   request,
@@ -94,14 +105,7 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
     page.getByRole('status', { name: 'Import apply result', exact: true }),
   ).toContainText('Applied to drafts')
 
-  await page.goto('/admin/content-editor')
-  await page.locator('#editor-page').selectOption('search')
-  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
-  const editorSlot = page.locator('#editor-slot')
-  if ((await editorSlot.inputValue()) !== 'content') {
-    await editorSlot.selectOption('content')
-  }
-  await expect(page.getByRole('status')).toContainText('Loaded the search content draft')
+  await openSearchContentDraft(page)
   const configure = page.locator('[data-section-id="intro"] [data-action="configure"]')
   await expect(configure).toHaveText('Hero · intro')
   await configure.click()
@@ -117,9 +121,7 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
   await expect(
     page.getByRole('complementary', { name: 'Preview status', exact: true }),
   ).toContainText('Content preview')
-  await page.goto('/admin/content-editor')
-  await page.locator('#editor-page').selectOption('search')
-  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
+  await openSearchContentDraft(page)
   await page.getByRole('button', { name: 'Publish search content sections', exact: true }).click()
   await expect(page.getByText(/Live revision/)).toBeVisible()
 
@@ -136,9 +138,7 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
   await page.getByRole('link', { name: 'Preview page Gate studio', exact: true }).click()
   await expect(page.getByRole('heading', { name: /Gate studio/ })).toBeVisible()
 
-  await page.goto('/admin/content-editor')
-  await page.locator('#editor-page').selectOption('search')
-  await expect(page.getByRole('status')).toContainText(/Loaded the search /)
+  await openSearchContentDraft(page)
   await page
     .getByRole('button', {
       name: 'Restore prior published revision of search content sections',
