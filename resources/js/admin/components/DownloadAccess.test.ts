@@ -51,6 +51,8 @@ it('posts the asset update grant to the entitlement update URL with a reason', (
   const updateForm = wrapper.findAll('form')[0]!
   expect(updateForm.find('select[name="version_id"]').exists()).toBe(true)
   expect(updateForm.find('textarea[name="reason"]').exists()).toBe(true)
+  expect(updateForm.text()).toContain('Why grant this update')
+  expect(updateForm.text()).not.toMatch(/Reason/)
   updateForm.trigger('submit')
   expect(post).toHaveBeenCalledWith(
     `/admin/orders/${orderId}/entitlements/${entitlementId}/update`,
@@ -68,6 +70,8 @@ it('posts the limit reset to the entitlement reset URL with a reason', () => {
   const resetForm = wrapper.findAll('form')[1]!
   expect(resetForm.find('input[name="download_limit"]').exists()).toBe(true)
   expect(resetForm.find('textarea[name="reason"]').exists()).toBe(true)
+  expect(resetForm.text()).toContain('Why reset downloads')
+  expect(resetForm.text()).not.toMatch(/Reason/)
   resetForm.trigger('submit')
   expect(post).toHaveBeenCalledWith(
     `/admin/orders/${orderId}/entitlements/${entitlementId}/reset-limit`,

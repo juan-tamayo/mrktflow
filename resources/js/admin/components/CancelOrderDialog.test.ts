@@ -20,6 +20,8 @@ it('posts a cancellation reason with a stable key', () => {
   })
   expect(wrapper.text()).toContain('Shipped lines require a return')
   expect(wrapper.find('textarea[name="reason"]').exists()).toBe(true)
+  expect(wrapper.get('label').text()).toBe('Why cancel this order')
+  expect(wrapper.get('label').text()).not.toMatch(/Reason/)
   wrapper.find('form').trigger('submit')
   expect(post).toHaveBeenCalled()
 })

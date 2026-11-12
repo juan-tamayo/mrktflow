@@ -80,7 +80,7 @@ const lineFor = (id: string): Line | undefined => props.lines.find((line) => lin
         </label>
       </fieldset>
       <label v-if="action === 'create'">
-        Reason
+        Why open this return
         <textarea v-model="form.reason" name="reason" maxlength="500" rows="3" required />
       </label>
       <button type="submit" class="primary-button" :disabled="form.processing">

@@ -42,6 +42,9 @@ it('posts quantity and goodwill refund fields with a stable key', () => {
   expect(quantity.attributes('aria-label')).toContain('Studio Lamp')
   expect(wrapper.text()).toContain('Remaining USD 28.05')
   expect(wrapper.find('textarea[name="reason"]').exists()).toBe(true)
+  expect(wrapper.find('textarea[name="reason"]').element.closest('label')?.textContent).toMatch(
+    /^\s*Reason\s*$/,
+  )
   expect(wrapper.find('input[name="amount"]').exists()).toBe(true)
   wrapper.find('form').trigger('submit')
   expect(post).toHaveBeenCalled()

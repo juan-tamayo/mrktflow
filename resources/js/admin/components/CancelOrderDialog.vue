@@ -25,7 +25,7 @@ const submit = () => {
       require a return.
     </p>
     <label>
-      Reason
+      Why cancel this order
       <textarea v-model="form.reason" name="reason" maxlength="500" rows="3" required />
     </label>
     <button type="submit" class="primary-button" :disabled="form.processing">

@@ -88,7 +88,7 @@ const submitReset = (entry: Entry) => {
             </select>
           </label>
           <label>
-            Reason
+            Why grant this update
             <textarea
               v-model="entry.update.reason"
               name="reason"
@@ -113,7 +113,7 @@ const submitReset = (entry: Entry) => {
             />
           </label>
           <label>
-            Reason
+            Why reset downloads
             <textarea
               v-model="entry.reset.reason"
               name="reason"
