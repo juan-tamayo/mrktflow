@@ -74,6 +74,7 @@ final class StaffSessionController
             'canReadReports' => $staff->hasPermission('reports.read'),
             'canExport' => $staff->hasPermission('exports.read'),
             'canPrivacy' => $staff->hasPermission('customers.read'),
+            'canInspectHealth' => $staff->role === 'owner',
         ]);
     }
 }

@@ -47,6 +47,8 @@ The scheduler records its heartbeat and recovers up to 100 due outbox receipts, 
 
 `bin/php artisan platform:health` prints heartbeat freshness, pending/failed receipt counts, queue/failed-job counts and the oldest due receipt age. It exits 1 for a missing/older-than-180-second heartbeat, any quarantined/failed job, an unpurged failed media draft, or due outbox/media work older than 300 seconds. Freshness and queue age are observations, not proof of a running worker or a verified email sender. Monitor the command and alert operators on a failing exit status. `/up` alone cannot confirm readiness.
 
+Owners with a completed two-factor session open `/admin/health` for the same class of warnings plus unknown payment age, disk usage, backup observation freshness, email readiness, and redacted failed-job class names. `bin/php artisan operations:health` prints those WARN lines without payloads. After a successful off-host backup, record `bin/php artisan operations:backup-observed` (this does not copy files). `/admin/audit` lists allowlisted audit rows. The support JSON export from the health page excludes job payloads, exception text, secrets and customer records.
+
 ## Recovery
 
 1. Read `platform:health` and the redacted `outbox.consumer_failed` / `outbox.publication_failed` diagnostics. Request responses carry a server-generated `X-Request-ID`; durable intent retains that correlation ID.

@@ -2,8 +2,10 @@
 
 use App\Domain\Identity\Actions\PruneExpiredData;
 use App\Domain\Identity\Actions\QueueCustomerChallengeMail;
+use App\Domain\Operations\Actions\InspectHealth;
 use App\Domain\Operations\Actions\PruneExpiredExports;
 use App\Domain\Operations\Actions\PublishNotification;
+use App\Domain\Operations\Actions\RecordBackupObservation;
 use App\Domain\Platform\Actions\CleanMedia;
 use App\Domain\Platform\Actions\InstallationPrerequisites;
 use App\Domain\Platform\Actions\PlatformHealth;
@@ -135,6 +137,32 @@ Artisan::command('operations:export-prune', function (PruneExpiredExports $prune
 })->purpose('Delete expired private export files and mark jobs expired');
 
 Schedule::command('operations:export-prune')->everyMinute()->withoutOverlapping(2);
+
+Artisan::command('operations:health', function (InspectHealth $health): int {
+    $report = $health->snapshot();
+    $this->line('version: '.$report['version']);
+    $this->line('scheduler: '.($report['scheduler']['current'] ? 'current' : 'stale'));
+    $this->line('worker_oldest_due_seconds: '.($report['worker']['oldest_due_seconds'] ?? 'none'));
+    $this->line('unknown_payments: '.$report['payments']['unknown_count']);
+    $this->line('failed_jobs: '.$report['jobs']['failed']);
+    $this->line('backup_age_seconds: '.($report['backup']['age_seconds'] ?? 'none'));
+    $this->line('disk_used_percent: '.$report['disk']['used_percent']);
+    foreach ($report['jobs']['errors'] as $error) {
+        $this->line('failed_job '.$error['uuid'].' '.$error['queue'].' '.$error['error_code']);
+    }
+    foreach ($report['warnings'] as $warning) {
+        $this->line('WARN '.$warning['code'].': '.$warning['message']);
+    }
+
+    return $report['warnings'] === [] ? 0 : 1;
+})->purpose('Read owner diagnostics without job payloads or customer records');
+
+Artisan::command('operations:backup-observed', function (RecordBackupObservation $backup): int {
+    $backup->record();
+    $this->info('Recorded a backup observation. This is not a backup.');
+
+    return 0;
+})->purpose('Record that an off-host backup completed, without storing backup contents');
 
 Artisan::command('identity:prune-expired', function (PruneExpiredData $prune): int {
     $this->info('Pruned '.$prune->prune().' expired operational record(s).');
