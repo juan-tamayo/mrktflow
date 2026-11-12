@@ -13,7 +13,7 @@ final class ReservedCatalogSlugs
             'admin', 'account', 'setup', 'staff', 'storage', 'up', 'brand', 'build', 'login',
             'register', 'downloads', 'webhooks', 'store-api', 'livewire', 'products', 'categories',
             'shop', 'search', 'cart', 'checkout', 'orders', 'pages', 'journal', 'wishlist',
-            'compare', 'collections', 'recover', 'email', 'r',
+            'compare', 'collections', 'recover', 'email', 'r', 'preferences',
         ];
     }
 }

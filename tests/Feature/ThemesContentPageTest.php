@@ -92,6 +92,8 @@ it('ThemesContentPage rejects path collision with reserved routes and the catego
         ->toThrow(ValidationException::class);
     expect(fn () => app(SaveContent::class)->savePage($owner, t065PageInput(['title' => 'Cart', 'slug' => 'cart'])))
         ->toThrow(ValidationException::class);
+    expect(fn () => app(SaveContent::class)->savePage($owner, t065PageInput(['title' => 'Prefs', 'slug' => 'preferences'])))
+        ->toThrow(ValidationException::class);
     expect(fn () => app(SaveContent::class)->savePage($owner, t065PageInput(['title' => 'Lighting page', 'slug' => 'lighting'])))
         ->toThrow(ValidationException::class);
     expect(fn () => app(SaveContent::class)->saveArticle($owner, t065ArticleInput(['title' => 'Cart notes', 'slug' => 'cart'])))
@@ -111,6 +113,7 @@ it('ThemesContentPage rejects an invalid menu URL and persists nothing', functio
         [['label' => 'Traversal', 'url' => '/../secret']],
         [['label' => 'Empty', 'url' => '']],
         [['label' => 'Setup', 'url' => '/setup']],
+        [['label' => 'Unsubscribe', 'url' => '/preferences/unsubscribe']],
     ] as $items) {
         expect(fn () => app(SaveContent::class)->saveMenu($owner, t065MenuInput(['items' => $items])))
             ->toThrow(ValidationException::class);
@@ -224,6 +227,9 @@ it('ThemesContentPage HTTP lets authorized staff save content and keeps the stor
     $this->from('/admin/content')->post('/admin/content/pages', ['page' => t065PageInput(['title' => 'Admin', 'slug' => 'admin'])])
         ->assertRedirect('/admin/content')
         ->assertSessionHasErrors();
+    $this->from('/admin/content')->post('/admin/content/pages', ['page' => t065PageInput(['title' => 'Prefs', 'slug' => 'preferences'])])
+        ->assertRedirect('/admin/content')
+        ->assertSessionHasErrors();
     $this->from('/admin/content')->post('/admin/content/menus', ['menu' => t065MenuInput([
         'handle' => 'footer',
         'items' => [['label' => 'Remote', 'url' => 'https://evil.example']],
@@ -232,4 +238,5 @@ it('ThemesContentPage HTTP lets authorized staff save content and keeps the stor
     expect(DB::table('pages')->count())->toBe(1)
         ->and(DB::table('menus')->where('handle', 'footer')->exists())->toBeFalse();
     $this->get('/')->assertOk()->assertDontSee('About the studio');
+    $this->get('/preferences/unsubscribe')->assertNotFound();
 });
