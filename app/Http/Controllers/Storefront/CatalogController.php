@@ -11,6 +11,7 @@ use App\Domain\Catalog\Exceptions\CatalogProductNotFound;
 use App\Domain\Catalog\Exceptions\CatalogProductUnpublished;
 use App\Domain\CheckoutOrders\Actions\ReadCart;
 use App\Domain\CheckoutOrders\Support\CartOwner;
+use App\Domain\Storefront\Actions\BuildMetadata;
 use App\Domain\ThemesContent\Actions\ResolveLayout;
 use App\Domain\ThemesContent\Data\CategoryView;
 use App\Domain\ThemesContent\Data\ProductView;
@@ -22,8 +23,18 @@ use Illuminate\Support\Facades\DB;
 
 final class CatalogController
 {
-    public function product(Request $request, string $slug, CatalogReader $catalog, DefaultThemeRenderer $renderer): View
+    public function product(Request $request, string $slug, CatalogReader $catalog, DefaultThemeRenderer $renderer, BuildMetadata $metadata): View|RedirectResponse
     {
+        $redirect = DB::table('product_redirects')->where('from_slug', $slug)->first();
+        if ($redirect !== null) {
+            try {
+                $catalog->publicProduct((string) $redirect->to_slug);
+            } catch (CatalogProductNotFound|CatalogProductUnpublished) {
+                abort(404);
+            }
+
+            return redirect('/products/'.$redirect->to_slug, 301);
+        }
         try {
             $snapshot = $catalog->publicProduct($slug);
         } catch (CatalogProductNotFound|CatalogProductUnpublished) {
@@ -105,11 +116,18 @@ final class CatalogController
         }
 
         $templateKey = app(ResolveLayout::class)->templateKey('product', $snapshot['id']);
+        $pageMetadata = $metadata->product($snapshot, $snapshot['breadcrumbs'], [
+            'amount' => (int) $selected['money']['amount'],
+            'currency' => (string) $selected['money']['currency'],
+            'exponent' => (int) $selected['money']['exponent'],
+            'availability' => (string) $selected['availability'],
+            'url' => '/products/'.$snapshot['slug'],
+        ]);
 
-        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision, $cartItemCount, $templateKey);
+        return $renderer->product($product, $selectedId, false, $snapshot['breadcrumbs'], $selectionState, $cartRevision, $cartItemCount, $templateKey, $pageMetadata);
     }
 
-    public function category(string $path, CatalogReader $catalog, DefaultThemeRenderer $renderer): View|RedirectResponse
+    public function category(string $path, CatalogReader $catalog, DefaultThemeRenderer $renderer, BuildMetadata $metadata): View|RedirectResponse
     {
         if (! preg_match('#^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*){0,4}$#D', $path)) {
             abort(404);
@@ -155,7 +173,11 @@ final class CatalogController
             'description' => $snapshot['description'],
             'breadcrumbs' => $snapshot['breadcrumbs'],
             'products' => $products,
-        ]), $templateKey);
+        ]), $templateKey, $metadata->category([
+            'path' => $snapshot['path'],
+            'title' => $snapshot['title'],
+            'description' => $snapshot['description'],
+        ], $snapshot['breadcrumbs']));
     }
 
     private function selectionState(string $availability): string

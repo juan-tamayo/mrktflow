@@ -1289,7 +1289,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T070: SEO, redirects and public cache rules
 
-- [ ] Complete T070.
+- [x] Complete T070.
+- **Evidence:** Focused `StorefrontSeo`: 4 passed / 107 assertions (red first: missing metadata/sitemap/redirect/cache types). Published product HTML includes live canonical, OG, Product+Offer JSON-LD and breadcrumbs; sitemap lists live products/categories/pages/articles and omits drafts, search, cart, checkout, account, preview and `GET /`. Slug 301s collapse chains and refuse loops/private destinations; product slug changes write `product_redirects`. Guest catalog `Cache-Control: public`; cart-bearing, customer, preview stay `private, no-store` and noindex. Staff SEO/preview still requires TOTP. `GET /` stays HTTP 503. Full PHP 728 passed / 7468 assertions. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (162 passed)/build green. Composer audit --locked: no advisories. Playwright e2e not run (no isolated browser database in this workspace).
 - **Module / requirements:** `storefront` · WEB-04, WEB-05, WEB-07, THEME-05.
 - **Depends on:** T068, T062.
 - **Acceptance:** Metadata/sitemap/structured data reflect live content; slug redirects avoid loops; private and preview pages never enter shared cache.

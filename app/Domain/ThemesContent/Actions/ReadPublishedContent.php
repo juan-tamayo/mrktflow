@@ -60,6 +60,46 @@ final class ReadPublishedContent
     }
 
     /**
+     * @return array{kind: string, id: string, revision: int, title: string, slug: string, path: string, excerpt: string}
+     */
+    public function byPath(string $requestPath): array
+    {
+        $normalized = '/'.ltrim($requestPath, '/');
+        if (preg_match('#^/pages/[a-z0-9]+(?:-[a-z0-9]+)*$#D', $normalized) === 1) {
+            return $this->publishedMatching('pages', ContentRevisions::PAGE, 'page', ltrim($normalized, '/'));
+        }
+        if (preg_match('#^/journal/[a-z0-9]+(?:-[a-z0-9]+)*$#D', $normalized) === 1) {
+            return $this->publishedMatching('articles', ContentRevisions::ARTICLE, 'article', ltrim($normalized, '/'));
+        }
+        abort(404);
+    }
+
+    /**
+     * @return array{kind: string, id: string, revision: int, title: string, slug: string, path: string, excerpt: string}
+     */
+    private function publishedMatching(string $table, string $subjectType, string $kind, string $documentPath): array
+    {
+        $rows = DB::table($table)->whereNotNull('published_revision')->orderBy('id')->get();
+        foreach ($rows as $row) {
+            $payload = ContentRevisions::payload($subjectType, (string) $row->id, (int) $row->published_revision);
+            if (! is_array($payload) || (string) ($payload['path'] ?? '') !== $documentPath) {
+                continue;
+            }
+
+            return [
+                'kind' => $kind,
+                'id' => (string) $row->id,
+                'revision' => (int) $row->published_revision,
+                'title' => (string) ($payload['title'] ?? ''),
+                'slug' => (string) ($payload['slug'] ?? ''),
+                'path' => (string) ($payload['path'] ?? ''),
+                'excerpt' => (string) ($payload['excerpt'] ?? ''),
+            ];
+        }
+        abort(404);
+    }
+
+    /**
      * @return array{revision: int, title: string, slug: string, path: string, excerpt?: string}
      */
     private function document(string $table, string $subjectType, string $id): array

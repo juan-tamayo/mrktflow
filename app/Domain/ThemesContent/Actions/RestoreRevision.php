@@ -61,6 +61,11 @@ final class RestoreRevision
         abort_unless($row->published_revision !== null, 422, 'Publish this '.$kind.' before restoring a revision.');
         $payload = ContentRevisions::payload($kind, $id, $revision);
         abort_unless(is_array($payload), 404);
+        $previousPath = null;
+        $previous = ContentRevisions::payload($kind, $id, (int) $row->published_revision);
+        if (is_array($previous)) {
+            $previousPath = (string) ($previous['path'] ?? '');
+        }
         $version = ((int) $row->version) + 1;
         ContentRevisions::record($kind, $id, $version, $payload, $actor->id);
         $now = now();
@@ -79,6 +84,7 @@ final class RestoreRevision
             $update['excerpt'] = (string) ($payload['excerpt'] ?? '');
         }
         DB::table($table)->where('id', $id)->update($update);
+        app(SaveRedirect::class)->recordPublishedPathChange($previousPath, (string) ($payload['path'] ?? ''));
         app(RecordEvent::class)->record('platform.audit.recorded', 'content:'.$kind.':'.$id.':restore:'.$revision.':'.$version, [
             'action' => 'content.'.$kind.'.restored',
             'subject_type' => $kind,

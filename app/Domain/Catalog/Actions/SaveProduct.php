@@ -123,6 +123,9 @@ final class SaveProduct
                 // default variant's price is written by this action),
                 // and a save that enters publication is also a stock
                 // source.
+                if ($existing !== null && (string) $existing->slug !== $data['slug'] && $data['status'] === 'published') {
+                    $this->recordSlugRedirect((string) $existing->slug, $data['slug'], $now);
+                }
                 if ($data['status'] === 'published') {
                     $stockEntered = $existing === null || (string) $existing->status !== 'published';
                     app(EvaluateWatchEvent::class)->product($id, 'product:'.$id.':'.$version, $stockEntered);
@@ -186,5 +189,28 @@ final class SaveProduct
         }
         $values->replaceValues($productId, $schema->current_version_id, $attributes, $now);
         DB::table('products')->where('id', $productId)->update(['schema_version_id' => $schema->current_version_id, 'updated_at' => $now]);
+    }
+
+    private function recordSlugRedirect(string $fromSlug, string $toSlug, mixed $now): void
+    {
+        if ($fromSlug === $toSlug) {
+            return;
+        }
+        DB::table('product_redirects')->where('from_slug', $toSlug)->delete();
+        DB::table('product_redirects')->where('to_slug', $fromSlug)->update(['to_slug' => $toSlug, 'updated_at' => $now]);
+        DB::table('product_redirects')->whereColumn('from_slug', 'to_slug')->delete();
+        $existing = DB::table('product_redirects')->where('from_slug', $fromSlug)->lockForUpdate()->first();
+        if ($existing === null) {
+            DB::table('product_redirects')->insert([
+                'id' => (string) Str::uuid(),
+                'from_slug' => $fromSlug,
+                'to_slug' => $toSlug,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            return;
+        }
+        DB::table('product_redirects')->where('id', $existing->id)->update(['to_slug' => $toSlug, 'updated_at' => $now]);
     }
 }

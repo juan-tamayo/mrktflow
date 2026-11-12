@@ -34,6 +34,8 @@ final class SystemSlots
         'category' => 'default-theme::category',
         'search' => 'default-theme::search',
         'product' => 'default-theme::product',
+        'page' => 'default-theme::page',
+        'article' => 'default-theme::article',
         'compare' => 'default-theme::compare',
         'wishlist' => 'default-theme::wishlist',
         'cart' => 'default-theme::cart',

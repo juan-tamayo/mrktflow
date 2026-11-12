@@ -1,6 +1,8 @@
 @extends('default-theme::layout', [
     'pageKey' => 'category',
-    'pageRobots' => 'index, follow',
+    'pageRobots' => $metadata?->robots ?? 'index, follow',
+    'pageDescription' => $metadata?->description ?? $category->description,
+    'metadata' => $metadata ?? null,
     'pageTitle' => $category->title.' · MRKTFlow',
     'pageAssets' => ['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/compareTray.ts', 'themes/default/src/compareActions.ts'],
     'mainId' => 'category-main',

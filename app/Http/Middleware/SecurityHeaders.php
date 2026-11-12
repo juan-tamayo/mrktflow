@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Domain\Storefront\Support\PublicCachePolicy;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Vite;
@@ -44,8 +45,7 @@ final class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', $request->is('account', 'account/*') ? 'no-referrer' : 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
-        $response->headers->set('Cache-Control', 'private, no-store');
-        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        PublicCachePolicy::apply($request, $response);
 
         if (! app()->environment('local', 'testing') && $request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000');

@@ -1,6 +1,8 @@
 @extends('default-theme::layout', [
     'pageKey' => 'product',
-    'pageRobots' => $preview ? 'noindex, nofollow' : 'index, follow',
+    'pageRobots' => $preview ? 'noindex, nofollow' : ($metadata?->robots ?? 'index, follow'),
+    'pageDescription' => $preview ? null : ($metadata?->description ?? $product->description),
+    'metadata' => $preview ? null : ($metadata ?? null),
     'pageTitle' => $product->title.' · '.($preview ? 'Theme preview' : 'MRKTFlow'),
     'pageAssets' => ['resources/css/app.css', 'themes/default/src/theme.css', 'themes/default/src/product.ts', 'themes/default/src/watch.ts', 'themes/default/src/compareTray.ts', 'themes/default/src/compareActions.ts', 'themes/default/src/cartIndicator.ts'],
     'mainId' => 'product-main',

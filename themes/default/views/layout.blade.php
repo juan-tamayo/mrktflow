@@ -13,10 +13,15 @@
 <html lang="{{ $pageLang ?? 'en' }}">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="{{ $pageRobots ?? 'noindex, nofollow' }}">
-    @isset($pageDescription)<meta name="description" content="{{ $pageDescription }}">@endisset
+    <meta name="robots" content="{{ ($metadata ?? null)?->robots ?? $pageRobots ?? 'noindex, nofollow' }}">
+    @if(isset($pageDescription) && is_string($pageDescription) && $pageDescription !== '')
+        <meta name="description" content="{{ $pageDescription }}">
+    @elseif(($metadata ?? null)?->description)
+        <meta name="description" content="{{ $metadata->description }}">
+    @endif
     <title>{{ $pageTitle }}</title>
     <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+    @include('default-theme::metadata')
     @vite($pageAssets ?? ['resources/css/app.css', 'themes/default/src/theme.css'])
     @yield('head')
 </head>
