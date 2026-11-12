@@ -14,7 +14,7 @@ final readonly class AiAuthoringResult
 {
     private function __construct(
         public string $status,
-        public ?PageDraft $candidate,
+        public PageDraft|ProductCopyDraft|ProductSchemaDraft|null $candidate,
         public ?string $providerResponseId,
         public ?int $inputTokens,
         public ?int $outputTokens,
@@ -80,7 +80,7 @@ final readonly class AiAuthoringResult
             && $input <= 1000000000 && $output <= 1000000000 && $total === $input + $output;
         $input = $known ? $input : null;
         $output = $known ? $output : null;
-        $result = static fn (string $status, ?PageDraft $candidate = null): self => new self($status, $candidate, $response['id'], $input, $output);
+        $result = static fn (string $status, PageDraft|ProductCopyDraft|ProductSchemaDraft|null $candidate = null): self => new self($status, $candidate, $response['id'], $input, $output);
         $status = $response['status'] ?? null;
         if (in_array($status, ['incomplete', 'failed', 'cancelled'], true)) {
             return $result($status);
@@ -126,10 +126,19 @@ final readonly class AiAuthoringResult
             return $result('invalid_output');
         }
         try {
-            return $result('candidate', PageDraft::fromJson($text, $request->productIds()));
+            return $result('candidate', self::candidateFrom($request, $text));
         } catch (InvalidArgumentException) {
             return $result('invalid_output');
         }
+    }
+
+    private static function candidateFrom(AiAuthoringRequest $request, string $text): PageDraft|ProductCopyDraft|ProductSchemaDraft
+    {
+        return match ($request->operation) {
+            AiAuthoringRequest::PRODUCT_COPY => ProductCopyDraft::fromJson($text, (string) $request->subjectId),
+            AiAuthoringRequest::PRODUCT_SCHEMA => ProductSchemaDraft::fromJson($text),
+            default => PageDraft::fromJson($text, $request->productIds()),
+        };
     }
 
     /** @return array<string, mixed> */

@@ -6,6 +6,8 @@ namespace App\Domain\AiAuthoring\Actions;
 
 use App\Domain\AiAuthoring\Data\AiAuthoringRequest;
 use App\Domain\AiAuthoring\Data\AiAuthoringResult;
+use App\Domain\AiAuthoring\Data\ProductCopyDraft;
+use App\Domain\AiAuthoring\Data\ProductSchemaDraft;
 use App\Domain\ThemesContent\Actions\ValidateSections;
 use App\Domain\ThemesContent\Data\PageDraft;
 use App\Domain\ThemesContent\Exceptions\SectionValidationFailed;
@@ -29,12 +31,30 @@ final class ValidateCandidate
             return $result;
         }
         try {
-            $this->document($result->candidate->jsonSerialize(), $request->productIds());
+            $this->accepted($request, $result->candidate->jsonSerialize());
         } catch (InvalidArgumentException|JsonException|SectionValidationFailed|ValidationException) {
             return $result->rejectCandidate();
         }
 
         return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @param  list<string>  $productIds
+     * @return array<string, mixed>
+     */
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, mixed>
+     */
+    public function accepted(AiAuthoringRequest $request, array $document): array
+    {
+        return match ($request->operation) {
+            AiAuthoringRequest::PRODUCT_COPY => $this->productCopy($document, (string) $request->subjectId),
+            AiAuthoringRequest::PRODUCT_SCHEMA => $this->productSchema($document),
+            default => $this->document($document, $request->productIds()),
+        };
     }
 
     /**
@@ -54,5 +74,27 @@ final class ValidateCandidate
         $this->sections->validate($sections);
 
         return $payload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, mixed>
+     */
+    public function productCopy(array $document, string $productId): array
+    {
+        TemplatePackage::rejectExecutable($document);
+
+        return ProductCopyDraft::fromJson(json_encode($document, JSON_THROW_ON_ERROR), $productId)->jsonSerialize();
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     * @return array<string, mixed>
+     */
+    public function productSchema(array $document): array
+    {
+        TemplatePackage::rejectExecutable($document);
+
+        return ProductSchemaDraft::fromJson(json_encode($document, JSON_THROW_ON_ERROR))->jsonSerialize();
     }
 }

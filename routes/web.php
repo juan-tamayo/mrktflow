@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderReceiptController;
 use App\Http\Controllers\Admin\PreviewController;
 use App\Http\Controllers\Admin\PricingPreviewController;
+use App\Http\Controllers\Admin\ProductAiController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImportController;
 use App\Http\Controllers\Admin\ProductInventoryController;
@@ -134,6 +135,9 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/products/export.csv', [ProductController::class, 'export']);
         Route::post('/admin/products', [ProductController::class, 'store'])->middleware('throttle:30,1,catalog-product:');
         Route::get('/admin/products/{productId}', [ProductController::class, 'edit'])->whereUuid('productId');
+        Route::post('/admin/products/{productId}/ai/copy', [ProductAiController::class, 'copy'])->whereUuid('productId')->middleware('throttle:20,1,ai-product-copy:');
+        Route::post('/admin/products/{productId}/ai/schema', [ProductAiController::class, 'schema'])->whereUuid('productId')->middleware('throttle:20,1,ai-product-schema:');
+        Route::post('/admin/products/{productId}/ai/{runId}/apply', [ProductAiController::class, 'apply'])->whereUuid('productId')->whereUuid('runId')->middleware('throttle:20,1,ai-product-apply:');
         Route::patch('/admin/products/{productId}', [ProductController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product:');
         Route::post('/admin/products/{productId}/archive', [ProductController::class, 'archive'])->whereUuid('productId')->middleware('throttle:30,1,catalog-product-archive:');
         Route::put('/admin/products/{productId}/variants', [ProductVariantController::class, 'update'])->whereUuid('productId')->middleware('throttle:30,1,catalog-variants:');

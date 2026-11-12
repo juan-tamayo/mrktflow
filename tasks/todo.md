@@ -1379,13 +1379,14 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T077: Product copy and schema suggestions
 
-- [ ] Complete T077.
+- [x] Complete T077.
 - **Module / requirements:** `ai-authoring` · AI-02, CAT-04.
 - **Depends on:** T076, T018.
 - **Acceptance:** AI can propose typed product schema/copy; merchant reviews semantic-key conflicts and migrations; price/stock remain authoritative core fields.
 - **Verify:** Run `php artisan test --filter=AiAuthoringProduct`; apply a camera schema suggestion with an existing-key conflict.
 - **Likely files:** `app/Domain/AiAuthoring/Actions/DraftProductContent.php`, `app/Domain/AiAuthoring/Actions/SuggestProductSchema.php`, `resources/js/admin/components/ProductAiPanel.vue`, `tests/Feature/AiAuthoringProductTest.php`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
+- **Evidence (November 12, 2026):** Failing `AiAuthoringProduct` tests first (missing actions/routes/panel), then `DraftProductContent`/`SuggestProductSchema`, run `operation` context, closed `ProductCopyDraft`/`ProductSchemaDraft` contracts, product-editor `ProductAiPanel`, and HTTP apply. Copy apply updates title/description only; price 2499 and on-hand 7 stay put. A camera suggestion that retypes `sensor.megapixels` surfaces the semantic-key conflict, `canApply` stays false, and apply leaves the decimal definition and schema version 1 intact. A compatible optional `body.weight` suggestion migrates to schema version 2 and keeps `24.2`. Price/stock/SKU claims in copy output never become drafts. Privileged staff without TOTP are sent to `/admin/two-factor`; content editors without `catalog.write` cannot queue. `GET /` stays HTTP 503. Focused `AiAuthoringProduct`: 6 passed / 102 assertions. Broader `AiAuthoring`: 54 passed / 483 assertions. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (176 passed)/`bin/npm run build` green. Playwright: 22 passed. Composer audit --locked: no advisories. npm audit: 0 vulnerabilities; 238 signatures / 97 attestations. Live provider smoke remains T078. Hosted Quality for this branch is pending.
 
 ### T078: AI authoring and outage integration gate
 
