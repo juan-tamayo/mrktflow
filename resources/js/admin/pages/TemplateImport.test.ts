@@ -64,7 +64,7 @@ it('names the apply result separately from the staging report', () => {
       },
     },
   })
-  expect(wrapper.get('[role="status"][aria-label="Import staging report"]').exists()).toBe(true)
+  expect(wrapper.find('[role="status"][aria-label="Import staging report"]').exists()).toBe(true)
   expect(wrapper.get('[role="status"][aria-label="Import apply result"]').text()).toContain(
     'Applied to drafts',
   )
