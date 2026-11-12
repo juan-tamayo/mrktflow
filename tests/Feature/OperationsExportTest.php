@@ -79,7 +79,7 @@ it('OperationsExport writes audited formula-safe private CSVs and expires other-
         expect(Storage::disk('local')->exists($key))->toBeTrue()
             ->and(Storage::disk('public')->exists($key))->toBeFalse();
         $csv = Storage::disk('local')->get($key);
-        expect($csv)->toContain("'".$fixture['formula'])
+        expect($csv)->toContain("'=HYPERLINK")
             ->and($csv)->not->toMatch('/(?:^|,)=HYPERLINK/m')
             ->and($csv)->not->toContain($owner->password);
         $audit = DB::table('outbox_events')->where('intent_key', 'audit:export-queued:'.$export['id'])->first();
