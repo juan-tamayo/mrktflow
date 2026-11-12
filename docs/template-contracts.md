@@ -121,6 +121,8 @@ States: draft → validated → published → archived. Saving creates a revisio
 
 Publishing verifies base revision, references, required assets and compatibility, then atomically changes the published pointer and invalidates affected caches. A conflict returns 409 and preserves both editors' work. Rollback republishes an older valid revision as a new revision; it does not delete history. Theme activation previews all required route types and verifies fallback templates before switching the active pointer. Failed activation retains the last healthy theme.
 
+T072 proves that contract end to end: a data-only import lands only in drafts, an edit and authenticated preview do not move the live pointer, explicit publish then restore switch public page copy without opening `GET /`, and a reviewed developer theme can be validated beside an activated default theme whose custom product/category templates leave physical and digital checkout totals intact. See `tests/Feature/ThemesContentGateTest.php`.
+
 ## AI authoring contract
 
 Input: operation (`draft_page`, `revise_section`, `draft_product_copy`, `suggest_product_schema`), prompt, selected entity IDs, base revision, allowed section/schema definitions, style tokens, locale and request intent ID. Only selected public catalog/content context is sent; no customer/order/address/payment/secrets context.

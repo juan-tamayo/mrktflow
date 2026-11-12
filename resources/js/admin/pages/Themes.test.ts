@@ -34,7 +34,43 @@ it('activates a reviewed theme through a uniquely labelled control', async () =>
   expect(wrapper.get('button[aria-label="Activate theme mrktflow/default"]').text()).toBe(
     'Activate theme mrktflow/default',
   )
+  expect(wrapper.get('[aria-label="Installed theme mrktflow/default"]').text()).toContain(
+    'mrktflow/default · 0.1.0',
+  )
   expect(post).toHaveBeenCalled()
+})
+
+it('hides the activate control for the live theme only', () => {
+  const wrapper = mount(Themes, {
+    props: {
+      themes: [
+        {
+          theme_id: 'mrktflow/default',
+          name: 'Default',
+          version: '0.1.0',
+          status: 'valid',
+          activatable: true,
+          errors: [],
+        },
+        {
+          theme_id: 'mrktflow/example',
+          name: 'Example technical sheet',
+          version: '1.0.0',
+          status: 'valid',
+          activatable: true,
+          errors: [],
+        },
+      ],
+      activeThemeId: 'mrktflow/default',
+      canActivate: true,
+      activated: true,
+    },
+  })
+  expect(wrapper.get('[aria-label="Installed theme mrktflow/default"]').text()).toContain('Active')
+  expect(wrapper.find('button[aria-label="Activate theme mrktflow/default"]').exists()).toBe(false)
+  expect(wrapper.get('button[aria-label="Activate theme mrktflow/example"]').text()).toBe(
+    'Activate theme mrktflow/example',
+  )
 })
 
 it('hides activation when staff cannot activate and does not execute untrusted names', () => {

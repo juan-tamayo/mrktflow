@@ -30,7 +30,14 @@ function assign() {
 
 <template>
   <form class="setup-form" @submit.prevent="assign">
-    <p v-if="saved" role="status" class="success-notice">Visual template assigned.</p>
+    <p
+      v-if="saved"
+      role="status"
+      class="success-notice"
+      aria-label="Visual template assignment result"
+    >
+      Visual template assigned.
+    </p>
     <div class="setup-field">
       <label :for="selectId">{{ fieldLabel }}</label>
       <select

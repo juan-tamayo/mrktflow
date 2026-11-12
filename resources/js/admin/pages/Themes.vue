@@ -44,7 +44,7 @@ function activate(themeId: string) {
       <ul v-else class="product-list">
         <li v-for="theme in themes" :key="theme.theme_id">
           <p class="tool-link">{{ theme.name ?? theme.theme_id }}</p>
-          <p>
+          <p :aria-label="`Installed theme ${theme.theme_id}`">
             {{ theme.theme_id }} · {{ theme.version ?? 'unknown version' }} ·
             {{ theme.status }}
             <span v-if="activeThemeId === theme.theme_id"> · Active</span>

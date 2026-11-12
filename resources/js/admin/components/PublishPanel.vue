@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 defineOptions({ name: 'PublishPanel' })
 
@@ -12,86 +13,75 @@ const props = defineProps<{
   publishedRevision: number
   label: string
   canPublish: boolean
+  justPublished?: boolean
 }>()
 
-const form = useForm(
-  props.kind === 'section_draft'
-    ? { page: props.page ?? '', slot: props.slotName ?? '', version: props.version }
-    : { kind: props.kind, id: props.subjectId ?? '', version: props.version },
+const action = computed(() =>
+  props.kind === 'section_draft' ? '/admin/content-editor/publish' : '/admin/content/publish',
 )
-const restoreForm = useForm(
-  props.kind === 'section_draft'
-    ? {
-        kind: 'section_draft',
-        page: props.page ?? '',
-        slot: props.slotName ?? '',
-        revision: Math.max(1, props.publishedRevision - 1),
-        version: props.version,
-      }
-    : {
-        kind: props.kind,
-        id: props.subjectId ?? '',
-        revision: Math.max(1, props.publishedRevision - 1),
-        version: props.version,
-      },
-)
+const previewHref = computed(() => {
+  if (props.kind === 'page') {
+    return `/admin/preview/pages/${props.subjectId ?? ''}`
+  }
+  if (props.kind === 'article') {
+    return `/admin/preview/articles/${props.subjectId ?? ''}`
+  }
 
-const action =
-  props.kind === 'section_draft' ? '/admin/content-editor/publish' : '/admin/content/publish'
-const previewHref =
-  props.kind === 'page'
-    ? `/admin/preview/pages/${props.subjectId ?? ''}`
-    : props.kind === 'article'
-      ? `/admin/preview/articles/${props.subjectId ?? ''}`
-      : `/admin/preview/sections?page=${encodeURIComponent(props.page ?? '')}&slot=${encodeURIComponent(props.slotName ?? '')}`
-const previewName = `Preview ${props.label}`
-const publishName = `Publish ${props.label}`
-const restoreName = `Restore prior published revision of ${props.label}`
+  return `/admin/preview/sections?page=${encodeURIComponent(props.page ?? '')}&slot=${encodeURIComponent(props.slotName ?? '')}`
+})
+const previewName = computed(() => `Preview ${props.label}`)
+const publishName = computed(() => `Publish ${props.label}`)
+const restoreName = computed(() => `Restore prior published revision of ${props.label}`)
+const publicationStatus = computed(() => `Publication status for ${props.label}`)
 
 function submit() {
-  form
-    .transform((data) => ({ ...data, version: props.version }))
-    .post(action, { preserveScroll: true })
+  const form =
+    props.kind === 'section_draft'
+      ? useForm({ page: props.page ?? '', slot: props.slotName ?? '', version: props.version })
+      : useForm({ kind: props.kind, id: props.subjectId ?? '', version: props.version })
+  form.post(action.value)
 }
 
 function restore() {
-  restoreForm
-    .transform((data) => ({
-      ...data,
-      version: props.version,
-      revision: Math.max(1, props.publishedRevision - 1),
-    }))
-    .post('/admin/content/restore', { preserveScroll: true })
+  const form =
+    props.kind === 'section_draft'
+      ? useForm({
+          kind: 'section_draft',
+          page: props.page ?? '',
+          slot: props.slotName ?? '',
+          revision: Math.max(1, props.publishedRevision - 1),
+          version: props.version,
+        })
+      : useForm({
+          kind: props.kind,
+          id: props.subjectId ?? '',
+          revision: Math.max(1, props.publishedRevision - 1),
+          version: props.version,
+        })
+  form.post('/admin/content/restore')
 }
 </script>
 
 <template>
   <div class="publish-panel">
-    <p :aria-label="`Publication status for ${label}`">
-      <template v-if="publishedRevision > 0">Live revision {{ publishedRevision }}</template>
+    <p v-if="justPublished" role="status" aria-label="Publish result">Published {{ label }}.</p>
+    <p :aria-label="publicationStatus">
+      <template v-if="publishedRevision > 0"
+        >Live revision {{ publishedRevision }} of {{ label }}</template
+      >
       <template v-else>Not published</template>
     </p>
     <p>
-      <a class="text-link" :href="previewHref">{{ previewName }}</a>
+      <a class="text-link" :href="previewHref" :aria-label="previewName">{{ previewName }}</a>
     </p>
     <form v-if="canPublish && version > 0" @submit.prevent="submit">
-      <button
-        type="submit"
-        class="primary-button"
-        :aria-label="publishName"
-        :disabled="form.processing"
-      >
-        {{ form.processing ? 'Publishing…' : publishName }}
+      <button type="submit" class="primary-button" :aria-label="publishName">
+        {{ publishName }}
       </button>
     </form>
     <form v-if="canPublish && publishedRevision > 1" @submit.prevent="restore">
-      <button
-        type="submit"
-        class="quiet-button"
-        :aria-label="restoreName"
-        :disabled="restoreForm.processing"
-      >
-        {{ restoreForm.processing ? 'Restoring…' : restoreName }}
+      <button type="submit" class="quiet-button" :aria-label="restoreName">
+        {{ restoreName }}
       </button>
     </form>
   </div>

@@ -109,7 +109,7 @@ function apply() {
         aria-labelledby="template-import-report-heading"
       >
         <h2 id="template-import-report-heading">Import report</h2>
-        <p role="status">
+        <p role="status" aria-label="Import staging report">
           {{ preview.documents.length }} documents, {{ preview.media.length }} media files.
           {{
             preview.can_apply
@@ -166,7 +166,7 @@ function apply() {
             {{ applyForm.processing ? 'Applying…' : 'Apply template to drafts' }}
           </button>
         </form>
-        <p v-if="applied" role="status">
+        <p v-if="applied" role="status" aria-label="Import apply result">
           Applied to drafts{{ applied.replayed ? ' (replay)' : '' }}. Live pages were not published.
         </p>
       </section>

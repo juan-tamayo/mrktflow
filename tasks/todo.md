@@ -1311,13 +1311,14 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T072: Content and theme end-to-end gate
 
-- [ ] Complete T072.
+- [x] Complete T072.
 - **Module / requirements:** `themes-content` · THEME-01, THEME-02, THEME-03, THEME-04, THEME-05, THEME-06.
 - **Depends on:** T070, T071.
 - **Acceptance:** Import→edit→preview→publish→rollback and developer-theme→custom-product/category journeys pass with physical/digital checkout intact.
 - **Verify:** Run `php artisan test --filter=ThemesContent` and `npm run test:e2e -- --project=chromium`.
 - **Likely files:** `tests/Browser/content-publish.spec.ts`, `tests/Browser/theme-activation.spec.ts`, `docs/template-contracts.md`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
+- **Evidence (November 12, 2026):** Gate slice on `cursor/t072-content-theme-gate-af08`; no production change was required — T070/T071 compose as built. New `tests/Feature/ThemesContentGateTest.php` walks both acceptance journeys over the real HTTP controllers: (1) staff with TOTP session import a data-only package into the search/content draft, edit, preview (noindex, unpublished), publish, then restore a published page and the section draft while `GET /` stays HTTP 503 and the sitemap still excludes preview/cart/checkout; (2) `theme:validate themes/example` records trusted-developer-code without activating, the example Blade sheet still renders public ProductView data, staff activate `mrktflow/default`, assign `product.compact` and `category.landing`, and a guest mixed physical/digital FREE100 checkout confirms with one physical and one digital order line. New `tests/Feature/ThemesContentIsolationTest.php` keeps draft titles off public pages, preview/import/themes behind login, customers unauthorized on publish, and privileged staff without TOTP on `/admin/two-factor`. Chromium journeys authored in `tests/Browser/content-publish.spec.ts` and `tests/Browser/theme-activation.spec.ts` with native staff login/TOTP POST and unique accessible names. Focused ThemesContentGate+Isolation: 4 passed / 147 assertions. `--filter=ThemesContent` 116 passed / 1 failed (existing T067 concurrent-editor race: child `bin/php` processes exited before ready files in this workspace, same class of process-race limitation recorded on T069; hosted Quality is the CI evidence). Pint on the new PHP files PASS. Hosted Quality is the PR check. Did not merge. Did not start T073.
 
 #### Checkpoint after T070, T071, T072
 

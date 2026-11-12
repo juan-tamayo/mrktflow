@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import DevicePreview from '../components/DevicePreview.vue'
 import PublishPanel from '../components/PublishPanel.vue'
 import SectionList from '../components/SectionList.vue'
@@ -38,6 +38,7 @@ const props = defineProps<{
   }
   canWrite: boolean
   canPublish?: boolean
+  published?: boolean
 }>()
 
 const definitionByType = computed(
@@ -109,6 +110,26 @@ function applyDraft(data: DraftResponse) {
   conflictVersion.value = null
 }
 
+watch(
+  () =>
+    [
+      props.initial.page,
+      props.initial.slot,
+      props.initial.version,
+      props.initial.publishedRevision ?? 0,
+      JSON.stringify(props.initial.sections),
+    ] as const,
+  () => {
+    page.value = props.initial.page
+    slot.value = props.initial.slot
+    applyDraft({
+      version: props.initial.version,
+      publishedRevision: props.initial.publishedRevision ?? 0,
+      sections: props.initial.sections,
+    })
+  },
+)
+
 async function loadTarget() {
   const { status, data } = await api(
     `/admin/content-editor/draft?page=${encodeURIComponent(page.value)}&slot=${encodeURIComponent(slot.value)}`,
@@ -133,8 +154,9 @@ async function changeTarget(nextPage: string, nextSlot: string) {
 
 function onPageChange(event: Event) {
   const nextPage = (event.target as HTMLSelectElement).value
-  const firstSlot = props.targets.find((target) => target.page === nextPage)?.slots[0] ?? 'content'
-  void changeTarget(nextPage, firstSlot)
+  const slots = props.targets.find((target) => target.page === nextPage)?.slots ?? []
+  const nextSlot = slots.includes(slot.value) ? slot.value : (slots[0] ?? 'content')
+  void changeTarget(nextPage, nextSlot)
 }
 
 function onSlotChange(event: Event) {
@@ -327,6 +349,7 @@ async function refreshPreview() {
         :published-revision="publishedRevision"
         :label="`${page} ${slot} sections`"
         :can-publish="canPublish === true"
+        :just-published="published === true"
       />
 
       <DevicePreview :html="previewHtml" :loading="previewing" @refresh="refreshPreview" />

@@ -218,3 +218,27 @@ it('ThemesContentEditor keeps drafts isolated per page and slot', function (): v
     $this->getJson('/admin/content-editor/draft?page=cart&slot=content')->assertJsonPath('sections.0.settings.text', 'Cart note');
     $this->getJson('/admin/content-editor/draft?page=search&slot=content')->assertOk()->assertJsonPath('version', 0)->assertJsonPath('sections', []);
 });
+
+it('ThemesContentEditor publish returns to the same page and slot with the live revision', function (): void {
+    $owner = catalogInstalledOwner();
+    $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
+
+    $this->putJson('/admin/content-editor/draft', [
+        'page' => 'search',
+        'slot' => 'content',
+        'version' => 0,
+        'sections' => [t064Hero(['heading' => 'Search live'])],
+    ])->assertOk();
+    $this->post('/admin/content-editor/publish', [
+        'page' => 'search',
+        'slot' => 'content',
+        'version' => 1,
+    ])->assertRedirect('/admin/content-editor?page=search&slot=content');
+    $this->get('/admin/content-editor?page=search&slot=content')->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->component('ContentEditor')
+            ->where('initial.page', 'search')
+            ->where('initial.slot', 'content')
+            ->where('initial.publishedRevision', 1)
+            ->where('published', true));
+    $this->get('/')->assertStatus(503)->assertDontSee('Search live');
+});
