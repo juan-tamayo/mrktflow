@@ -1,0 +1,24 @@
+.example-product {
+  display: grid;
+  gap: 1.5rem;
+}
+.example-spec-sheet {
+  display: grid;
+  gap: 1.25rem;
+}
+.example-spec-sheet__intro .eyebrow {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.example-spec-sheet__facts dl {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: 0.5rem 1rem;
+}
+.example-spec-sheet__facts dt {
+  font-weight: 600;
+}
+.example-spec-sheet[data-theme='example'] {
+  border-top: 4px solid currentColor;
+  padding-top: 1rem;
+}

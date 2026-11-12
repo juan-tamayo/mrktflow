@@ -69,6 +69,7 @@ resources/
   css/
   views/{system,mail}/
 themes/default/{theme.json,views,src,dist,sections}/
+themes/example/{theme.json,views,src}/
 routes/{web,admin,storefront,webhooks,console}.php
 storage/app/{public,private}/
 tests/{Unit,Feature,Contract}/

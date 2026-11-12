@@ -18,6 +18,7 @@ final class ThemeServiceProvider extends ServiceProvider
     {
         // Reviewed application code only; requests and imported content cannot choose this path.
         View::addNamespace('default-theme', base_path('themes/default/views'));
+        View::addNamespace('example-theme', base_path('themes/example/views'));
 
         // Shop chrome shared by every storefront page: the store's own name
         // and its published top-level categories for the masthead and footer.
