@@ -230,6 +230,35 @@ it('CheckoutOrdersFree confirmation screen recovers pending status and ignores a
     expect(class_exists(OrderStatusController::class))->toBeTrue();
 });
 
+it('CheckoutOrdersFree HTML shows Place order only after checkout.actions confirms totals', function (): void {
+    $catalog = freeCatalog();
+    $this->get('/')->assertStatus(503);
+    $this->postJson('/store-api/v1/cart/lines', [
+        'variantId' => $catalog['digital_variant'], 'quantity' => 1, 'expectedRevision' => 1,
+    ])->assertOk();
+    $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $quote = $this->postJson('/store-api/v1/checkout-quotes', [
+        'expectedRevision' => $cart['revision'],
+        'email' => 'guest@example.test',
+        'coupon' => 'FREE100',
+        'billing' => checkoutAddress(),
+        'shipping' => null,
+    ])->assertOk()->json('data');
+    $this->get('/checkout/'.$quote['id'])->assertOk()
+        ->assertSee('data-platform-slot="checkout.actions"', false)
+        ->assertSee('Confirm these totals')
+        ->assertSee('I acknowledge the store policies')
+        ->assertDontSee('Place order');
+    $this->post('/checkout/'.$quote['id'].'/accept', [
+        'fingerprint' => $quote['fingerprint'],
+        'policy_acknowledged' => '1',
+    ])->assertRedirect('/checkout/'.$quote['id']);
+    $this->get('/checkout/'.$quote['id'])->assertOk()
+        ->assertSee('data-platform-slot="checkout.actions"', false)
+        ->assertSee('Place order')
+        ->assertSee('action="/checkout/'.$quote['id'].'/pay"', false);
+});
+
 it('CheckoutOrdersFree HTTP keeps privileged staff behind two-factor and leaves the storefront closed', function (): void {
     $owner = catalogInstalledOwner();
     $this->actingAs($owner, 'staff')->withSession(['staff_session_version' => 1]);
