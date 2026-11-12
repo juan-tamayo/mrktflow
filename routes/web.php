@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StaffInvitationController;
 use App\Http\Controllers\Admin\StaffSessionController;
 use App\Http\Controllers\Admin\TaxController;
+use App\Http\Controllers\Admin\TemplateImportController;
 use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\Admin\ThemePreviewController;
 use App\Http\Controllers\Admin\TwoFactorController;
@@ -170,6 +171,10 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::post('/admin/content/menus', [ContentController::class, 'storeMenu'])->middleware('throttle:30,1,content-menu:');
         Route::post('/admin/content/publish', [ContentController::class, 'publish'])->middleware('throttle:30,1,content-publish:');
         Route::post('/admin/content/restore', [ContentController::class, 'restore'])->middleware('throttle:30,1,content-restore:');
+        Route::get('/admin/content/import', [TemplateImportController::class, 'create']);
+        Route::post('/admin/content/import', [TemplateImportController::class, 'store'])->middleware('throttle:10,1,content-import:');
+        Route::get('/admin/content/import/{importId}', [TemplateImportController::class, 'show'])->whereUuid('importId');
+        Route::post('/admin/content/import/{importId}/apply', [TemplateImportController::class, 'apply'])->whereUuid('importId')->middleware('throttle:10,1,content-import-apply:');
         Route::get('/admin/themes', [ThemeController::class, 'show']);
         Route::post('/admin/themes/activate', [ThemeController::class, 'activate'])->middleware('throttle:30,1,theme-activate:');
         Route::put('/admin/layouts', [LayoutAssignmentController::class, 'update'])->middleware('throttle:30,1,content-layout:');

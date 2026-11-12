@@ -107,11 +107,12 @@ const logout = useForm({})
             <div>
               <div class="tool-links">
                 <a class="tool-link" href="/admin/content">Pages, articles, menus</a>
+                <a class="tool-link" href="/admin/content/import">Import template</a>
                 <a class="tool-link" href="/admin/themes">Themes</a>
               </div>
               <p>
-                Create content records with validated paths and navigation links. Activate a
-                reviewed theme.
+                Create content records with validated paths and navigation links. Import a data-only
+                template into drafts. Activate a reviewed theme.
               </p>
             </div>
             <span aria-hidden="true">↗</span>

@@ -79,6 +79,8 @@ The example category ID is illustrative; imports validate that references exist 
 
 Archive imports use a private staging directory, entry-count/uncompressed-size limits, path checks, MIME validation and atomic import only after validation. No network fetching from URLs embedded in imported content. Rejected imports leave published content unchanged. Identical checks apply to AI output.
 
+T069 implements that importer for section drafts: a `schemaVersion` `1.0` `template-package` ZIP with `manifest.json` and optional `media/` images. Catalog placeholders use `ref:{alias}` and must be mapped to published IDs before apply. Apply writes drafts only; publication remains T067.
+
 ## Marketing and hub sections
 
 Add typed `offer-banner`, `email-signup`, `stock-signal`, `offer-countdown`, `purchase-proof`, `product-reviews`, `referral-cta` and `hub-product-grid` sections plus a shared toast outlet. Settings select approved campaign/program/hub IDs and visual tokens; facts come from eligibility-checked DTOs with timestamps/expiry. The platform enforces route exclusions, frequency caps, dismissal and privacy even for theme requests. No arbitrary stock, sales, discount or review values come from imported/AI documents. These documents cannot activate campaigns, send email or issue rewards.
