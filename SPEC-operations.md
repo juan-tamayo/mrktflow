@@ -5,6 +5,8 @@ Objective: merchants can operate, diagnose, export, update and recover their own
 ## Requirements
 
 - **OPS-01:** Transactional email for verification/reset, order receipt, shipment, refund, download availability and subscribed watch alerts; preview/test sender; deduplicated intent and visible delivery failures. No unsolicited marketing subscription.
+
+T079 implements shared operations delivery (`notification_deliveries`, `DeliverNotification`): transactional templates remain essential under `DeliveryPolicy`, marketing templates recheck purpose grants and suppression at send time, staff preview/test-send from `/admin/email`, and failures/retries are visible at `/admin/notifications`. Identity challenge mail, watch-alert send, and domain receipt/shipment/download intent rows remain the source facts for those products; this slice does not claim exactly-once SMTP (`bin/php artisan test --filter=OperationsMail`).
 - **OPS-02:** Dashboard reports paid orders, gross merchandise sales, merchandise discounts/refunds, net merchandise sales, tax, shipping and average order value with documented definitions and store-timezone ranges. Exclude test/unpaid orders; show refunds on refund date and offer order-cohort detail separately.
 - **OPS-03:** Customer/order/product CSV export is permission-gated, audited, formula-safe and time-limited. Export jobs use private storage and expiry, not public permanent URLs.
 - **OPS-04:** Owner diagnostics show application version, disk usage, queue/scheduler heartbeat, pending payment reconciliation, failed jobs, email readiness, storage and backup freshness. Sanitized support export contains no secrets/customer payloads.

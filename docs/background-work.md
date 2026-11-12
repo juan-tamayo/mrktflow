@@ -12,6 +12,7 @@ Supervise these processes independently from the project directory:
 | `bin/worker media` | `media` | 60 / 90 seconds |
 | `bin/worker critical` | `payments`, `transactional-mail`, `default` | 60 / 90 seconds |
 | `bin/worker marketing` | `marketing`, `hubs` | 60 / 90 seconds |
+| `queue:work database-outbox --queue=transactional-mail,marketing` | operations notification send (T079) | 60 / 90 seconds; durable retries on the delivery row |
 | `bin/worker long-work` | `long-work` | 300 / 360 seconds |
 
 Each wrapper exits after at most an hour; the process supervisor must restart it. The timeout must remain shorter than the reservation. Outbox jobs make one queue attempt per delivery, while durable receipts own six application attempts with five retry delays of 10, 30, 120, 300 and 900 seconds. A killed worker leaves recoverable pending intent. A stale queue reservation can become a framework failed job while recovery publishes another ID-only delivery; completed receipts prevent duplicate local effects.
@@ -42,7 +43,7 @@ Install one cron entry under the same application user (example path):
 * * * * * cd /srv/mrktflow && /srv/mrktflow/bin/php artisan schedule:run >> /var/log/mrktflow/scheduler.log 2>&1
 ```
 
-The scheduler records its heartbeat and recovers up to 100 due outbox receipts and 100 pending images per minute. `payments:reconcile` queries a bounded batch of unknown payment attempts outside row locks. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
+The scheduler records its heartbeat and recovers up to 100 due outbox receipts, 100 pending images, identity credential mail, and operations notification mail per minute. `payments:reconcile` queries a bounded batch of unknown payment attempts outside row locks. `outbox:recover` has a shared cache overlap lock; use the database cache on the reference deployment. No provider call runs in the local event consumer transaction.
 
 `bin/php artisan platform:health` prints heartbeat freshness, pending/failed receipt counts, queue/failed-job counts and the oldest due receipt age. It exits 1 for a missing/older-than-180-second heartbeat, any quarantined/failed job, an unpurged failed media draft, or due outbox/media work older than 300 seconds. Freshness and queue age are observations, not proof of a running worker or a verified email sender. Monitor the command and alert operators on a failing exit status. `/up` alone cannot confirm readiness.
 

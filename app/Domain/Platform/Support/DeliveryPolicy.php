@@ -30,7 +30,7 @@ final class DeliveryPolicy
     public const TRANSPORTS = ['email', 'sms'];
 
     /** @var list<string> */
-    public const ESSENTIAL_TEMPLATES = ['order-receipt', 'shipment', 'download-access', 'customer-challenge'];
+    public const ESSENTIAL_TEMPLATES = ['order-receipt', 'shipment', 'download-access', 'refund', 'customer-challenge'];
 
     public function marketingAllowed(string $email, string $purpose, string $transport = 'email'): bool
     {

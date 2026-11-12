@@ -13,6 +13,7 @@ defineProps<{
   canManageContent: boolean
   canConfigureAi: boolean
   canUseAi: boolean
+  canManageEmail: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -141,8 +142,22 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canManageStaff" class="workspace-tool">
+          <div v-if="canManageEmail" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">09</span>
+            <div>
+              <div class="tool-links">
+                <a class="tool-link" href="/admin/email">Email</a>
+                <a class="tool-link" href="/admin/notifications">Notification failures</a>
+              </div>
+              <p>
+                Preview and test transactional and marketing templates. Failures stay visible and
+                retryable. Exactly-once SMTP is not claimed.
+              </p>
+            </div>
+            <span aria-hidden="true">↗</span>
+          </div>
+          <div v-if="canManageStaff" class="workspace-tool">
+            <span class="tool-number" aria-hidden="true">10</span>
             <div>
               <a class="tool-link" href="/admin/staff">Manage staff</a>
               <p>Invite your team and choose who can do what.</p>
@@ -150,7 +165,7 @@ const logout = useForm({})
             <span aria-hidden="true">↗</span>
           </div>
           <div class="workspace-tool">
-            <span class="tool-number" aria-hidden="true">10</span>
+            <span class="tool-number" aria-hidden="true">11</span>
             <div>
               <a class="tool-link" href="/admin/two-factor">Authenticator</a>
               <p>Confirm a sensitive change with a fresh authenticator code.</p>
