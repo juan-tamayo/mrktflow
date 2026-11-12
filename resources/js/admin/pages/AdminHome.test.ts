@@ -24,6 +24,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       canReadReports: true,
       canExport: true,
       canPrivacy: true,
+      canInspectHealth: true,
     },
   })
   expect(wrapper.get('section[aria-labelledby="launch-heading"]').text()).toContain(
@@ -53,6 +54,8 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/reports"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/exports"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/privacy"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/health"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/audit"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
   await wrapper.setProps({
@@ -69,6 +72,7 @@ it('shows the closed launch status and only authorized workspace actions', async
     canReadReports: false,
     canExport: false,
     canPrivacy: false,
+    canInspectHealth: false,
   })
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(false)
@@ -88,6 +92,8 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/reports"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/exports"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/privacy"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/health"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/audit"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
   expect(
@@ -115,6 +121,8 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/reports',
           '/admin/exports',
           '/admin/privacy',
+          '/admin/health',
+          '/admin/audit',
           '/admin/staff',
           '/admin/two-factor',
           '/admin/theme-preview',
@@ -141,6 +149,7 @@ it('escapes staff names in the branded workspace', () => {
       canReadReports: false,
       canExport: false,
       canPrivacy: false,
+      canInspectHealth: false,
     },
   })
   expect(wrapper.find('script').exists()).toBe(false)

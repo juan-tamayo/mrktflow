@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AiSettingsController;
 use App\Http\Controllers\Admin\AiStudioController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\ContentEditorController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\EmailSettingsController;
 use App\Http\Controllers\Admin\EntitlementController;
 use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\HealthController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\LayoutAssignmentController;
 use App\Http\Controllers\Admin\NotificationFailureController;
@@ -119,6 +121,9 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin', [StaffSessionController::class, 'home']);
         Route::get('/admin/email', [EmailSettingsController::class, 'show']);
         Route::post('/admin/email/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1,email-test:');
+        Route::get('/admin/health', [HealthController::class, 'show']);
+        Route::post('/admin/health/support-export', [HealthController::class, 'export'])->middleware('throttle:10,1,support-export:');
+        Route::get('/admin/audit', [AuditLogController::class, 'show']);
         Route::get('/admin/reports', [ReportsController::class, 'show']);
         Route::get('/admin/exports', [ExportController::class, 'index']);
         Route::post('/admin/exports', [ExportController::class, 'store'])->middleware('throttle:10,1,store-export:');

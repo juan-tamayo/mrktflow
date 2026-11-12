@@ -1813,7 +1813,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T083: Operational diagnostics and audit views
 
-- [ ] Complete T083.
+- [x] Complete T083.
+- **Evidence (November 12, 2026):** Failing `OperationsHealth` tests first, then `InspectHealth`, `/admin/health`, `/admin/audit`, redacted failed-job codes, owner support JSON export, `operations:health` WARN lines, and `operations:backup-observed`. Frontend type/lint/format/unit (188) and production build passed locally. Hosted Quality SUCCESS on `27827be` ([run 43318024370](https://github.com/juan-tamayo/mrktflow/actions/runs/43318024370), 2026-11-12): Pint, PHPStan, PHP/MySQL, coverage gate, Vitest, production build, Playwright. Isolated MySQL 8.4 via TestDatabaseGuard. Did not merge. Did not start T084. `GET /` stays HTTP 503.
 - **Module / requirements:** `operations` · OPS-04, PLAT-05.
 - **Depends on:** T079, T080.
 - **Acceptance:** Owner sees worker/scheduler lag, unknown payments, disk/backups and redacted job errors; support export excludes private payloads.

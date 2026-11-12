@@ -88,7 +88,7 @@ A crash after transport acceptance can produce a duplicate email when the lease 
 
 ## Customer profile and addresses
 
-Installed customers can edit their own profile at `/account/profile` and add, edit or remove up to 20 saved addresses at `/account/addresses`. These are native forms that work without JavaScript. Changing an email requires the current password, revokes previous challenges, clears verification, increments the session version and atomically queues confirmation for the new address. Name-only edits preserve email verification. Profile and address version fields reject stale writes. Saved addresses encrypt their payload; preserve the application key securely along with backups. Deleting an address removes its payload; the audit retains only object/account IDs and the version. Postal codes and regions are optional for international addresses. This storage is not postal/carrier validation: checkout will apply current shipping-country eligibility later. Account export/deletion is T082; backup retention remains later operations work.
+Installed customers can edit their own profile at `/account/profile` and add, edit or remove up to 20 saved addresses at `/account/addresses`. These are native forms that work without JavaScript. Changing an email requires the current password, revokes previous challenges, clears verification, increments the session version and atomically queues confirmation for the new address. Name-only edits preserve email verification. Profile and address version fields reject stale writes. Saved addresses encrypt their payload; preserve the application key securely along with backups. Deleting an address removes its payload; the audit retains only object/account IDs and the version. Postal codes and regions are optional for international addresses. This storage is not postal/carrier validation: checkout will apply current shipping-country eligibility later. Account export/deletion is T082. Owner backup observation and diagnostics are T083.
 
 ## Theme rendering preview
 
@@ -305,6 +305,10 @@ Authorized authors open `/admin/ai/studio/{run}` to review an editable candidate
 ## Product copy and schema suggestions
 
 Authorized catalog authors with `ai.use` open the product editor AI panel. `DraftProductContent` proposes title and description only; applying those fields never writes price or stock. `SuggestProductSchema` proposes typed fields against installed schema definitions. Merchants review semantic-key conflicts and migration previews before apply; an existing key such as `sensor.megapixels` cannot change type or comparison meaning, and incompatible camera suggestions stay unapplied. Price, stock, SKU and inventory remain core catalog fields outside the schema. Publication of products stays the existing catalog save. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=AiAuthoringProduct`.
+
+## Operational diagnostics and audit
+
+Owners open `/admin/health` after TOTP. The page reports application version `1.0.0`, scheduler heartbeat lag (warn after 180 seconds), worker/outbox due age (warn at 300 seconds), unknown payment attempts older than 10 minutes, redacted failed-job class names, email readiness counts, private/public disk writability, used-percent disk, and backup observation age (warn after 24 hours). Thresholds are `OPERATIONS_*` environment values. `operations:health` prints the same WARN codes without payloads; `operations:backup-observed` records that an off-host backup finished. The native support export is a private JSON download with no job payloads, exception text, secrets, or customer records. `/admin/audit` lists allowlisted actor/action/subject rows. Managers, other staff, and customers are forbidden. Privileged staff still must pass 2FA. `GET /` remains HTTP 503. Run `bin/php artisan test --filter=OperationsHealth`.
 
 ## Permission-gated private exports
 
