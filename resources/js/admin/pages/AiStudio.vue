@@ -2,7 +2,7 @@
 import BrandLogo from '../components/BrandLogo.vue'
 import DevicePreview from '../components/DevicePreview.vue'
 import DraftDiff from '../components/DraftDiff.vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 
 defineOptions({ name: 'AiStudio' })
@@ -24,17 +24,23 @@ type RunSummary = {
   runId: string
   draftId: string
   status: string
+  statusMessage?: string
   title: string
   updatedAt: string
 }
+type CatalogItem = { id: string; title: string }
 
 const props = defineProps<{
   runs?: RunSummary[]
+  pages?: CatalogItem[]
+  products?: CatalogItem[]
   runId: string | null
   draftId: string | null
   status: string | null
+  statusMessage?: string
   stale: boolean
   canApply: boolean
+  canCancel?: boolean
   canPublish: boolean
   expectedRevisionId: string | null
   currentRevisionId: string | null
@@ -57,6 +63,30 @@ const previewing = ref(false)
 const applying = ref(false)
 const announcement = ref('')
 const applied = ref(props.status === 'applied')
+const generate = useForm({
+  prompt: '',
+  locale: 'en-US',
+  product_ids: [] as string[],
+  page_id: props.pages?.[0]?.id ?? '',
+  max_output_tokens: 1024,
+  intent_id: crypto.randomUUID(),
+})
+
+const cancel = useForm({})
+
+function submitGenerate() {
+  generate.post('/admin/ai/studio', {
+    preserveScroll: true,
+    onSuccess: () => {
+      generate.intent_id = crypto.randomUUID()
+    },
+  })
+}
+
+function submitCancel() {
+  if (props.runId === null) return
+  cancel.post(`/admin/ai/studio/${props.runId}/cancel`, { preserveScroll: true })
+}
 
 const afterSummary = computed(() => JSON.stringify(draft.value?.sections ?? [], null, 2))
 const beforeSummary = computed(() =>
@@ -175,18 +205,64 @@ async function applyDraft() {
       <p class="eyebrow">Author review</p>
       <h1>AI studio<span class="accent">.</span></h1>
       <p class="lede">
-        Review usage, edit the candidate, preview desktop and mobile, and apply onto a matching
-        content draft. Publishing stays on pages, articles, and menus.
+        Queue a page draft from selected published products, review usage, edit the candidate,
+        preview desktop and mobile, and apply onto a matching content draft. Publishing stays on
+        pages, articles, and menus. Manual imports keep working when AI is off.
       </p>
       <p v-if="announcement" role="status">{{ announcement }}</p>
       <p v-if="applied" role="status">Applied to draft. Live publication is unchanged.</p>
+      <p v-if="statusMessage" role="status">{{ statusMessage }}</p>
+      <form
+        v-if="pages && pages.length > 0 && candidate === null"
+        class="setup-form"
+        @submit.prevent="submitGenerate"
+      >
+        <div
+          v-if="Object.keys(generate.errors).length"
+          role="alert"
+          tabindex="-1"
+          class="error-summary"
+        >
+          <p v-for="(message, field) in generate.errors" :key="field">{{ message }}</p>
+        </div>
+        <div class="setup-field">
+          <label for="ai-generate-page">Page to draft</label>
+          <select id="ai-generate-page" v-model="generate.page_id" required>
+            <option v-for="page in pages" :key="page.id" :value="page.id">{{ page.title }}</option>
+          </select>
+        </div>
+        <div class="setup-field">
+          <label for="ai-generate-prompt">Authoring prompt</label>
+          <textarea id="ai-generate-prompt" v-model="generate.prompt" maxlength="4000" required />
+        </div>
+        <fieldset class="setup-field">
+          <legend>Published products to include</legend>
+          <label v-for="product in products" :key="product.id">
+            <input v-model="generate.product_ids" type="checkbox" :value="product.id" />
+            {{ product.title }}
+          </label>
+        </fieldset>
+        <button type="submit" class="primary-button" :disabled="generate.processing">
+          {{ generate.processing ? 'Queuing…' : 'Generate a page draft' }}
+        </button>
+      </form>
+      <button
+        v-if="canCancel && runId"
+        type="button"
+        class="secondary-button"
+        :disabled="cancel.processing"
+        @click="submitCancel"
+      >
+        Cancel generation
+      </button>
       <ul v-if="runs && runs.length > 0 && candidate === null">
         <li v-for="run in runs" :key="run.runId">
           <a class="text-link" :href="`/admin/ai/studio/${run.runId}`">{{ run.title }}</a>
           <span class="hint"> {{ run.status }}</span>
+          <span v-if="run.statusMessage" class="hint"> {{ run.statusMessage }}</span>
         </li>
       </ul>
-      <p v-else-if="candidate === null" class="hint">No drafts are ready for review.</p>
+      <p v-else-if="candidate === null && !status" class="hint">No drafts are ready for review.</p>
       <template v-if="candidate !== null && draft !== null && base !== null">
         <p class="hint">
           {{ usageLabel }} · {{ model }} · page {{ pageId }} version {{ pageVersion }} · draft

@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 final class DispatchAuthoringRun
@@ -35,7 +36,7 @@ final class DispatchAuthoringRun
     public function queue(StaffAccount $actor, array $input): string
     {
         $data = Validator::make(['run' => $input], [
-            'run' => ['required', 'array:prompt,locale,product_ids,base_revision_id,max_output_tokens,operation,subject_id,schema_id,expected_version'],
+            'run' => ['required', 'array:prompt,locale,product_ids,base_revision_id,max_output_tokens,operation,subject_id,schema_id,expected_version,intent_id'],
             'run.prompt' => ['required', 'string', 'min:1', 'max:4000'],
             'run.locale' => ['required', 'string', 'max:16'],
             'run.product_ids' => ['present', 'array', 'max:20'],
@@ -46,6 +47,7 @@ final class DispatchAuthoringRun
             'run.schema_id' => ['nullable', 'uuid'],
             'run.expected_version' => ['required_if:run.operation,draft_product_copy', 'required_if:run.operation,suggest_product_schema', 'nullable', 'integer', 'min:1'],
             'run.max_output_tokens' => ['required', 'integer', 'min:1', 'max:8192'],
+            'run.intent_id' => ['sometimes', 'uuid'],
         ])->validate()['run'];
         $operation = is_string($data['operation'] ?? null) ? (string) $data['operation'] : AiAuthoringRequest::PAGE;
         $productIds = array_values(array_unique(array_map(strtolower(...), $data['product_ids'])));
@@ -65,16 +67,50 @@ final class DispatchAuthoringRun
             throw new AiAuthoringRejected;
         }
         $model = (string) $settings->model;
-        $runId = DB::transaction(function () use ($actor, $data, $productIds, $revision, $model, $operation, $subjectId, $schemaId, $expectedVersion): string {
-            $intentId = (string) Str::uuid();
+        $intentId = isset($data['intent_id']) && is_string($data['intent_id'])
+            ? strtolower($data['intent_id'])
+            : (string) Str::uuid();
+        $created = false;
+        $runId = DB::transaction(function () use (
+            $actor,
+            $data,
+            $productIds,
+            $revision,
+            $model,
+            $operation,
+            $subjectId,
+            $schemaId,
+            $expectedVersion,
+            $intentId,
+            &$created,
+        ): string {
+            $existing = DB::table('ai_runs')->where('intent_id', $intentId)->lockForUpdate()->first();
+            if ($existing !== null) {
+                $this->assertActor($actor, $existing);
+                if (! $this->sameRequest($existing, $data, $productIds, $revision, $operation, $subjectId, $schemaId, $expectedVersion)) {
+                    throw new HttpException(409, 'This AI request intent is already used.');
+                }
+
+                return $this->string($existing, 'id');
+            }
             $runId = (string) Str::uuid();
-            $hold = $this->usage->reserve($actor, new UsageHold(
-                $intentId,
-                (string) Str::uuid(),
-                $actor->id,
-                min(24576, (int) $data['max_output_tokens'] * 3),
-                now()->addMinutes(30)->toDateTimeImmutable(),
-            ));
+            try {
+                $hold = $this->usage->reserve($actor, new UsageHold(
+                    $intentId,
+                    (string) Str::uuid(),
+                    $actor->id,
+                    min(24576, (int) $data['max_output_tokens'] * 3),
+                    now()->addMinutes(30)->toDateTimeImmutable(),
+                ));
+            } catch (HttpException $exception) {
+                if ($exception->getStatusCode() === 409) {
+                    $raced = DB::table('ai_runs')->where('intent_id', $intentId)->lockForUpdate()->first();
+                    if ($raced !== null && $this->sameRequest($raced, $data, $productIds, $revision, $operation, $subjectId, $schemaId, $expectedVersion)) {
+                        return $this->string($raced, 'id');
+                    }
+                }
+                throw $exception;
+            }
             $now = now();
             DB::table('ai_runs')->insert([
                 'id' => $runId,
@@ -102,10 +138,13 @@ final class DispatchAuthoringRun
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
+            $created = true;
 
             return $runId;
         });
-        GenerateAuthoringDraft::dispatch($runId);
+        if ($created) {
+            GenerateAuthoringDraft::dispatch($runId);
+        }
 
         return $runId;
     }
@@ -332,6 +371,57 @@ final class DispatchAuthoringRun
             'status_message' => $message,
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  list<string>  $productIds
+     */
+    private function sameRequest(
+        object $run,
+        array $data,
+        array $productIds,
+        string $revision,
+        string $operation,
+        ?string $subjectId,
+        ?string $schemaId,
+        ?int $expectedVersion,
+    ): bool {
+        $storedIds = $this->storedProductIds($run);
+        $revisionMatch = $this->string($run, 'base_revision_id') === $revision;
+        if ($operation === AiAuthoringRequest::PAGE) {
+            $storedPage = (string) DB::table('content_revisions')->where('id', $this->string($run, 'base_revision_id'))->value('subject_id');
+            $requestedPage = (string) DB::table('content_revisions')->where('id', $revision)->value('subject_id');
+            $revisionMatch = $storedPage !== '' && $storedPage === $requestedPage;
+        }
+
+        return $this->string($run, 'prompt') === (string) $data['prompt']
+            && $this->string($run, 'locale') === (string) $data['locale']
+            && $storedIds === $productIds
+            && $revisionMatch
+            && (int) $this->string($run, 'max_output_tokens') === (int) $data['max_output_tokens']
+            && $this->string($run, 'operation') === $operation
+            && $this->string($run, 'subject_id') === (string) $subjectId
+            && $this->string($run, 'schema_id') === (string) $schemaId
+            && $this->string($run, 'expected_version') === ($expectedVersion === null ? '' : (string) $expectedVersion);
+    }
+
+    /** @return list<string> */
+    private function storedProductIds(object $run): array
+    {
+        $raw = get_object_vars($run)['product_ids'] ?? null;
+        $ids = is_string($raw) ? json_decode($raw, true, 8, JSON_THROW_ON_ERROR) : $raw;
+        if (! is_array($ids) || ! array_is_list($ids)) {
+            return [];
+        }
+        $products = [];
+        foreach ($ids as $id) {
+            if (is_string($id)) {
+                $products[] = strtolower($id);
+            }
+        }
+
+        return $products;
     }
 
     private function lockRun(string $runId): object

@@ -4,6 +4,12 @@ import AiStudio from './AiStudio.vue'
 
 vi.mock('@inertiajs/vue3', () => ({
   Head: { template: '<span />' },
+  useForm: (data: Record<string, unknown>) => ({
+    ...data,
+    processing: false,
+    errors: {},
+    post: vi.fn(),
+  }),
 }))
 
 const candidate = {
@@ -32,8 +38,10 @@ const studioProps = {
   runId: '11111111-1111-4111-8111-111111111111',
   draftId: '22222222-2222-4222-8222-222222222222',
   status: 'candidate',
+  statusMessage: 'Draft ready for review.',
   stale: false,
   canApply: true,
+  canCancel: false,
   canPublish: false,
   expectedRevisionId: '33333333-3333-4333-8333-333333333333',
   currentRevisionId: '33333333-3333-4333-8333-333333333333',
@@ -53,6 +61,12 @@ const studioProps = {
 
 beforeEach(() => {
   window.document.cookie = 'XSRF-TOKEN=test-token'
+  if (typeof crypto.randomUUID !== 'function') {
+    vi.stubGlobal('crypto', {
+      ...crypto,
+      randomUUID: () => '55555555-5555-4555-8555-555555555555',
+    })
+  }
 })
 
 it('shows usage and a diff and applies without a publish control', async () => {

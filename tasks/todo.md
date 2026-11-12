@@ -1397,6 +1397,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 - **Verify:** Run `php artisan test --filter=AiAuthoring` and `npm run test:e2e -- --project=chromium`; capped provider smoke if configured.
 - **Likely files:** `tests/Browser/ai-authoring.spec.ts`, `tests/Feature/AiAuthoringRecoveryTest.php`, `docs/ai-authoring-guide.md`.
 - **Scope:** Small/medium planned slice; split if actual scope exceeds the sizing rule.
+- **Evidence (November 12, 2026):** Failing `AiAuthoringRecovery` tests first (missing generate/cancel HTTP and failed-run studio status). Then studio `POST /admin/ai/studio` queues a page run after a budget hold, cancel releases a queued hold, duplicate `intent_id` is a no-op, failed/cancelled runs keep prior applied drafts, and template import still applies while AI is off. Privileged staff without TOTP go to `/admin/two-factor`. `GET /` stays HTTP 503. Pint PASS, PHPStan level 8 no errors, frontend typecheck/lint/format/unit (176 passed)/`bin/npm run build` green. Isolated MySQL 8.4 PHP suite and Playwright Chromium are GitHub Quality on this PR. Capped live-provider smoke pending: `MRKTFLOW_AI_SMOKE_KEY` is not configured. Did not merge. Did not start T079.
 
 #### Checkpoint after T076, T077, T078
 

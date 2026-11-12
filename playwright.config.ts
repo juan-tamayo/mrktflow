@@ -33,8 +33,14 @@ export default defineConfig({
     {
       name: 'shop',
       testIgnore:
-        /platform-smoke\.spec\.ts$|cart\.spec\.ts$|setup\.spec\.ts$|mixed-purchase\.spec\.ts$/,
+        /platform-smoke\.spec\.ts$|cart\.spec\.ts$|setup\.spec\.ts$|mixed-purchase\.spec\.ts$|ai-authoring\.spec\.ts$/,
       dependencies: ['shop-orders'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium',
+      testMatch: /ai-authoring\.spec\.ts$/,
+      dependencies: ['shop'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],
