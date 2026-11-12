@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ContentEditorController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DigitalAssetController;
 use App\Http\Controllers\Admin\EmailSettingsController;
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\EntitlementController;
 use App\Http\Controllers\Admin\InstallController;
 use App\Http\Controllers\Admin\LayoutAssignmentController;
@@ -117,6 +118,9 @@ Route::middleware(Middleware::class)->group(function (): void {
         Route::get('/admin/email', [EmailSettingsController::class, 'show']);
         Route::post('/admin/email/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1,email-test:');
         Route::get('/admin/reports', [ReportsController::class, 'show']);
+        Route::get('/admin/exports', [ExportController::class, 'index']);
+        Route::post('/admin/exports', [ExportController::class, 'store'])->middleware('throttle:10,1,store-export:');
+        Route::get('/admin/exports/{exportId}/download', [ExportController::class, 'download'])->whereUuid('exportId');
         Route::get('/admin/notifications', [NotificationFailureController::class, 'index']);
         Route::post('/admin/notifications/{deliveryId}/retry', [NotificationFailureController::class, 'retry'])->whereUuid('deliveryId')->middleware('throttle:30,1,notification-retry:');
         Route::get('/admin/ai', [AiSettingsController::class, 'show']);

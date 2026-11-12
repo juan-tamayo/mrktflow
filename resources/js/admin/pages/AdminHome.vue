@@ -15,6 +15,7 @@ defineProps<{
   canUseAi: boolean
   canManageEmail: boolean
   canReadReports: boolean
+  canExport: boolean
 }>()
 const logout = useForm({})
 </script>
@@ -157,13 +158,17 @@ const logout = useForm({})
             </div>
             <span aria-hidden="true">↗</span>
           </div>
-          <div v-if="canReadReports" class="workspace-tool">
+          <div v-if="canReadReports || canExport" class="workspace-tool">
             <span class="tool-number" aria-hidden="true">10</span>
             <div>
-              <a class="tool-link" href="/admin/reports">Sales reports</a>
+              <div class="tool-links">
+                <a v-if="canReadReports" class="tool-link" href="/admin/reports">Sales reports</a>
+                <a v-if="canExport" class="tool-link" href="/admin/exports">Exports</a>
+              </div>
               <p>
                 Paid live captures, merchandise discounts and refunds, tax, shipping, and average
-                order value in the store timezone.
+                order value in the store timezone. Customer, order, and product CSVs stay private
+                and expire.
               </p>
             </div>
             <span aria-hidden="true">↗</span>

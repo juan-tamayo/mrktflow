@@ -1774,7 +1774,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T080: Sales and refund reporting
 
-- [ ] Complete T080.
+- [x] Complete T080.
+- **Evidence (November 12, 2026):** Squash `5264050` / [PR #50](https://github.com/juan-tamayo/mrktflow/pull/50). Paid live captures and local zero-total completions included; Stripe test-mode and unpaid/unknown excluded; store-timezone inclusive dates; activity refunds on succeeded timestamp; cohort refunds on capture date.
 - **Module / requirements:** `operations` · OPS-02.
 - **Depends on:** T041, T044.
 - **Acceptance:** Paid/test/unpaid inclusion and date/timezone rules are explicit; dashboard figures reconcile to captured/refunded fixtures.
@@ -1785,6 +1786,7 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 ### T081: Permission-gated private exports
 
 - [ ] Complete T081.
+- **Progress:** Failing `OperationsExport` tests first, then `export_jobs`, queued private CSVs, session-bound download tokens, formula neutralization, owner-only download, 24h expiry prune, `/admin/exports` native form, and `exports.read` for owner/manager. Frontend type/lint/format/unit (184) and production build passed locally. PHP 8.4 / isolated MySQL 8.4 / Pint / PHPStan / Playwright are hosted Quality evidence (this image has no PHP 8.4 and MySQL client). Did not merge. Did not start T082. `GET /` stays HTTP 503.
 - **Module / requirements:** `operations` · OPS-03.
 - **Depends on:** T080, T023.
 - **Acceptance:** Customer/order/product exports are audited, formula-safe and privately downloadable with expiry; other staff/customers cannot access them.
