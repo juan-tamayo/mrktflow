@@ -114,7 +114,9 @@ test('staff import, edit, preview, publish and rollback without opening GET /', 
 
   await page.getByRole('link', { name: 'Preview search content sections', exact: true }).click()
   await expect(page.getByText('Edited search banner')).toBeVisible()
-  await expect(page.getByText('Content preview')).toBeVisible()
+  await expect(
+    page.getByRole('complementary', { name: 'Preview status', exact: true }),
+  ).toContainText('Content preview')
   await page.goto('/admin/content-editor')
   await page.locator('#editor-page').selectOption('search')
   await expect(page.getByRole('status')).toContainText(/Loaded the search /)

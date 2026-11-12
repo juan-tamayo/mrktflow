@@ -6,7 +6,7 @@
     'mainId' => 'content-preview-main',
     'mainClass' => 'theme-page',
     'skipLabel' => 'Skip to preview',
-    'footerLabel' => 'Content preview',
+    'footerLabel' => 'Draft preview chrome',
     'preview' => true,
 ])
 @section('content')
