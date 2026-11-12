@@ -8,6 +8,7 @@
     'skipLabel' => 'Skip to product',
     'footerLabel' => $preview ? 'Example storefront presentation' : 'Catalog',
     'masthead' => ['cartIndicator' => ['itemCount' => $cartItemCount, 'revision' => $cartRevision]],
+    'assignedTemplateKey' => $assignedTemplateKey ?? 'product.default',
 ])
 @section('pre-main')
         @if($preview)
@@ -20,7 +21,7 @@
 @endsection
 @section('content')
             <div class="theme-product-image"><img id="product-hero" src="{{ ($selectionState === 'selected' ? $selected['image']['url'] : $product->image['url']) }}" alt="{{ ($selectionState === 'selected' ? $selected['image']['alt'] : $product->image['alt']) }}" width="640" height="720"></div>
-            <section class="theme-product-detail" aria-labelledby="product-title">
+            <section class="theme-product-detail" aria-labelledby="product-title" data-visual-template="{{ $assignedTemplateKey ?? 'product.default' }}">
                 <p class="eyebrow">{{ $preview ? 'A considered everyday' : (data_get(collect($product->attributes)->firstWhere('label', 'Delivery'), 'value') === 'Digital download' ? 'Downloadable' : 'Physical product') }}</p>
                 <h1 id="product-title">{{ $product->title }}<span class="accent">.</span></h1>
                 <p class="theme-description">{{ $product->description }}</p>

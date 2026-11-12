@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BrandLogo from '../components/BrandLogo.vue'
+import TemplatePicker from '../components/TemplatePicker.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { nextTick, ref } from 'vue'
 
@@ -12,6 +13,7 @@ type PageRecord = {
   path: string
   status: string
   version: number
+  template_key?: string
 }
 type ArticleRecord = PageRecord & { excerpt: string }
 type MenuRecord = {
@@ -30,6 +32,8 @@ defineProps<{
   pageSaved: boolean
   articleSaved: boolean
   menuSaved: boolean
+  layoutOptions?: { key: string; label: string }[]
+  layoutSaved?: boolean
 }>()
 
 const pageErrors = ref<HTMLElement | null>(null)
@@ -103,6 +107,16 @@ function saveMenu() {
           <li v-for="page in pages" :key="page.id">
             <p class="tool-link">{{ page.title }}</p>
             <p>/{{ page.path }} · {{ page.status }}</p>
+            <TemplatePicker
+              v-if="canWrite && (layoutOptions?.length ?? 0) > 0"
+              subject-type="page"
+              :subject-id="page.id"
+              :subject-label="page.title"
+              :template-key="page.template_key ?? 'page.default'"
+              :options="layoutOptions ?? []"
+              :can-assign="canWrite"
+              :saved="layoutSaved ?? false"
+            />
           </li>
         </ul>
         <form v-if="canWrite" class="setup-form" @submit.prevent="savePage">

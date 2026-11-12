@@ -1233,7 +1233,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T066: Product and category visual assignments
 
-- [ ] Complete T066.
+- [x] Complete T066 locally.
+- **Evidence:** Focused `ThemesContentAssignment`: 8 passed / 84 assertions (red first: all 8 failed before `AssignLayout` existed). Switching `product.compact` leaves schema `default_template_key`, typed attributes and quote `grand_total` unchanged; `category.landing` renders live catalog money and follows a later price change without storing amounts on `layout_assignments`. Guests/customers/fulfillment denied; owner without TOTP is redirected to `/admin/two-factor`; `GET /` stays HTTP 503. Related theme/catalog/storefront filters 107 passed; full PHP suite 700 passed / 6,977 assertions; Pint, PHPStan level 8, frontend type/lint/format/unit (156 passed) and production build green. Hosted Quality evidence is the PR check, not claimed here.
 - **Module / requirements:** `themes-content` · THEME-02, CAT-04.
 - **Depends on:** T065, T018.
 - **Acceptance:** Assign visual templates independent of product schemas; category landing pages bind live products without copying prices.

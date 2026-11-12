@@ -13,6 +13,8 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffMediaUploadAuthorization;
 use App\Domain\Platform\Actions\ProcessMedia;
 use App\Domain\Platform\Actions\StoreMedia;
+use App\Domain\ThemesContent\Actions\ResolveLayout;
+use App\Domain\ThemesContent\Support\VisualTemplates;
 use App\Http\Requests\ArchiveProductRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,12 +67,16 @@ final class ProductController
             'categories' => $catalog->staffCategories(),
             'schemas' => $catalog->staffSchemas(),
             'saved' => session()->get('product_saved', false),
+            'layout' => null,
+            'layoutSaved' => false,
         ]);
     }
 
-    public function edit(string $productId, ReadCatalog $catalog): Response
+    public function edit(Request $request, string $productId, ReadCatalog $catalog, ResolveLayout $layouts): Response
     {
         Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
         try {
             $product = $catalog->staffProduct($productId);
         } catch (CatalogProductNotFound) {
@@ -82,6 +88,12 @@ final class ProductController
             'categories' => $catalog->staffCategories(),
             'schemas' => $catalog->staffSchemas(),
             'saved' => session()->get('product_saved', false),
+            'layout' => [
+                'templateKey' => $layouts->templateKey('product', $productId),
+                'options' => VisualTemplates::options('product'),
+                'canAssign' => $staff->hasPermission('content.write'),
+            ],
+            'layoutSaved' => session()->get('layout_saved', false),
         ]);
     }
 

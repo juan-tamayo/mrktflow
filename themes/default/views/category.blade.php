@@ -7,6 +7,7 @@
     'mainClass' => 'theme-category',
     'skipLabel' => 'Skip to category',
     'footerLabel' => 'Catalog',
+    'assignedTemplateKey' => $assignedTemplateKey ?? 'category.default',
 ])
 @section('pre-main')
         @if($category->breadcrumbs !== [])
@@ -16,7 +17,7 @@
         @endif
 @endsection
 @section('content')
-            <p class="eyebrow">Category</p>
+            <p class="eyebrow" data-visual-template="{{ $assignedTemplateKey ?? 'category.default' }}">Category</p>
             <h1>{{ $category->title }}<span class="accent">.</span></h1>
             <p class="theme-description">{{ $category->description }}</p>
             @if($category->products === [])

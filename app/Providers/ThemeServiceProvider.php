@@ -54,9 +54,11 @@ final class ThemeServiceProvider extends ServiceProvider
                 return;
             }
             $slotViews = $data['slotViews'] ?? [];
+            $assignedTemplateKey = $data['assignedTemplateKey'] ?? null;
             $view->with('composedPage', app(ComposePage::class)->compose(
                 $pageKey,
                 is_array($slotViews) ? $slotViews : [],
+                is_string($assignedTemplateKey) ? $assignedTemplateKey : null,
             ));
         });
     }

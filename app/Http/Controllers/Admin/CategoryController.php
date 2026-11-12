@@ -8,6 +8,8 @@ use App\Domain\Catalog\Actions\ReadCatalog;
 use App\Domain\Catalog\Actions\SaveCategory;
 use App\Domain\Catalog\Exceptions\CatalogCategoryNotFound;
 use App\Domain\Identity\Models\StaffAccount;
+use App\Domain\ThemesContent\Actions\ResolveLayout;
+use App\Domain\ThemesContent\Support\VisualTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -38,12 +40,16 @@ final class CategoryController
             'category' => null,
             'parents' => $catalog->staffCategories(),
             'saved' => session()->get('category_saved', false),
+            'layout' => null,
+            'layoutSaved' => false,
         ]);
     }
 
-    public function edit(string $categoryId, ReadCatalog $catalog): Response
+    public function edit(Request $request, string $categoryId, ReadCatalog $catalog, ResolveLayout $layouts): Response
     {
         Gate::authorize('catalog.write');
+        $staff = $request->user('staff');
+        abort_unless($staff instanceof StaffAccount, 403);
         try {
             $category = $catalog->staffCategory($categoryId);
         } catch (CatalogCategoryNotFound) {
@@ -61,6 +67,12 @@ final class CategoryController
             'category' => $category,
             'parents' => $parents,
             'saved' => session()->get('category_saved', false),
+            'layout' => [
+                'templateKey' => $layouts->templateKey('category', $categoryId),
+                'options' => VisualTemplates::options('category'),
+                'canAssign' => $staff->hasPermission('content.write'),
+            ],
+            'layoutSaved' => session()->get('layout_saved', false),
         ]);
     }
 

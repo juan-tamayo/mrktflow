@@ -7,13 +7,14 @@ namespace App\Domain\ThemesContent\Rendering;
 use App\Domain\ThemesContent\Data\CategoryView;
 use App\Domain\ThemesContent\Data\ProductView;
 use App\Domain\ThemesContent\Data\SearchView;
+use App\Domain\ThemesContent\Support\VisualTemplates;
 use Illuminate\Contracts\View\View;
 use InvalidArgumentException;
 
 final class DefaultThemeRenderer
 {
     /** @param list<array{title: string, url: string}> $breadcrumbs */
-    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected', int $cartRevision = 1, int $cartItemCount = 0): View
+    public function product(ProductView $product, string $selectedId, bool $preview = true, array $breadcrumbs = [], string $selectionState = 'selected', int $cartRevision = 1, int $cartItemCount = 0, string $templateKey = 'product.default'): View
     {
         $selected = null;
         foreach ($product->variants as $variant) {
@@ -35,7 +36,7 @@ final class DefaultThemeRenderer
             throw new InvalidArgumentException('Unknown cart item count.');
         }
 
-        return view('default-theme::product', [
+        return view(VisualTemplates::view('product', $templateKey), [
             'product' => $product,
             'selected' => $selected,
             'preview' => $preview,
@@ -43,6 +44,7 @@ final class DefaultThemeRenderer
             'selectionState' => $selectionState,
             'cartRevision' => $cartRevision,
             'cartItemCount' => $cartItemCount,
+            'assignedTemplateKey' => $templateKey,
         ]);
     }
 
@@ -89,9 +91,12 @@ final class DefaultThemeRenderer
         ]);
     }
 
-    public function category(CategoryView $category): View
+    public function category(CategoryView $category, string $templateKey = 'category.default'): View
     {
-        return view('default-theme::category', ['category' => $category]);
+        return view(VisualTemplates::view('category', $templateKey), [
+            'category' => $category,
+            'assignedTemplateKey' => $templateKey,
+        ]);
     }
 
     public function search(SearchView $search): View

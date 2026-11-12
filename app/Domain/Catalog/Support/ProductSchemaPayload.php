@@ -23,7 +23,7 @@ final class ProductSchemaPayload
             'schema.key' => ['required', 'string', 'max:40', 'regex:/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/'],
             'schema.label' => ['required', 'string', 'max:80'],
             'schema.comparison_group' => ['required', 'string', 'max:40', 'regex:/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/'],
-            'schema.default_template_key' => ['required', 'string', Rule::in(['product.default'])],
+            'schema.default_template_key' => ['required', 'string', Rule::in(['product.default', 'product.compact'])],
             'schema.attributes' => ['required', 'array', 'list', 'min:1', 'max:30'],
             'schema.attributes.*' => ['required', 'array'],
             'schema.attributes.*.key' => ['required', 'string', 'max:80', 'distinct:strict', 'regex:/^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*){0,4}$/'],
