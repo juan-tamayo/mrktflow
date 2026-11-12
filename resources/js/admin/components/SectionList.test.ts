@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { SectionDefinition, SectionInstance } from '../section-editor'
 import SectionList from './SectionList.vue'
@@ -60,6 +60,43 @@ describe('SectionList', () => {
     expect(wrapper.emitted('announce')?.[0]).toEqual(['Rich text moved to position 1 of 3.'])
   })
 
+  it('keeps focus on Move up after a keyboard move to position 1 even when that control cannot move further', async () => {
+    const parent = mount(
+      {
+        components: { SectionList },
+        data: () => ({
+          sections: [hero, copy] as SectionInstance[],
+          definitions,
+          errors: { document: [] as string[], sections: {} as Record<string, string[]> },
+          selectedId: null as string | null,
+        }),
+        template: `
+          <SectionList
+            :sections="sections"
+            :definitions="definitions"
+            :errors="errors"
+            :selected-id="selectedId"
+            :can-write="true"
+            @update="sections = $event"
+          />
+        `,
+      },
+      { attachTo: document.body },
+    )
+    await parent
+      .get('[data-section-id="copy"]')
+      .trigger('keydown', { key: 'ArrowUp', altKey: true })
+    await flushPromises()
+    const moveUp = parent.get('[data-section-id="copy"] [data-action="move-up"]')
+    expect(
+      parent.findAll('.section-list-item').map((item) => item.attributes('data-section-id')),
+    ).toEqual(['copy', 'hero'])
+    expect(moveUp.attributes('aria-disabled')).toBe('true')
+    expect(moveUp.attributes('disabled')).toBeUndefined()
+    expect(document.activeElement).toBe(moveUp.element)
+    parent.unmount()
+  })
+
   it('moves focus to the neighbouring section after a removal', async () => {
     const wrapper = mountList([hero, copy, notes])
     await wrapper.get('[data-section-id="copy"] [data-action="remove"]').trigger('click')
@@ -81,11 +118,11 @@ describe('SectionList', () => {
   it('disables move buttons at the edges and block types at their limit', async () => {
     const wrapper = mountList([hero, copy])
     expect(
-      wrapper.get('[data-section-id="hero"] [data-action="move-up"]').attributes('disabled'),
-    ).toBeDefined()
+      wrapper.get('[data-section-id="hero"] [data-action="move-up"]').attributes('aria-disabled'),
+    ).toBe('true')
     expect(
-      wrapper.get('[data-section-id="copy"] [data-action="move-down"]').attributes('disabled'),
-    ).toBeDefined()
+      wrapper.get('[data-section-id="copy"] [data-action="move-down"]').attributes('aria-disabled'),
+    ).toBe('true')
     const heroOption = wrapper.get('option[value="hero"]')
     expect(heroOption.attributes('disabled')).toBeDefined()
     expect(heroOption.text()).toContain('limit 1 reached')

@@ -207,6 +207,11 @@ it('CheckoutOrdersQuote HTML review with blank delivery uses billing and renders
         'variantId' => $catalog['physical_variant'], 'quantity' => 1, 'expectedRevision' => 1,
     ])->assertOk();
     $cart = $this->getJson('/store-api/v1/cart')->assertOk()->json('data');
+    $this->get('/checkout')->assertOk()
+        ->assertSee('id="shipping-recipient"', false)
+        ->assertDontSee('id="shipping-recipient" required', false)
+        ->assertDontSee('id="shipping-country" required', false)
+        ->assertSee('id="billing-recipient"', false);
     $created = $this->from('/checkout')->post('/checkout', [
         'expected_revision' => $cart['revision'],
         'email' => 'layout@example.test',

@@ -53,6 +53,7 @@ async function move(index: number, delta: -1 | 1) {
   emit('update', next)
   emit('announce', `${label(section)} moved to position ${index + delta + 1} of ${next.length}.`)
   await nextTick()
+  await nextTick()
   focusControl(section.id, delta === -1 ? 'move-up' : 'move-down')
 }
 
@@ -114,18 +115,20 @@ function add() {
           <button
             type="button"
             data-action="move-up"
-            :disabled="!canWrite || index === 0"
+            :disabled="!canWrite"
+            :aria-disabled="index === 0 ? 'true' : 'false'"
             :aria-label="`Move ${label(section)} up`"
-            @click="move(index, -1)"
+            @click="index === 0 ? undefined : move(index, -1)"
           >
             Move up
           </button>
           <button
             type="button"
             data-action="move-down"
-            :disabled="!canWrite || index === sections.length - 1"
+            :disabled="!canWrite"
+            :aria-disabled="index === sections.length - 1 ? 'true' : 'false'"
             :aria-label="`Move ${label(section)} down`"
-            @click="move(index, 1)"
+            @click="index === sections.length - 1 ? undefined : move(index, 1)"
           >
             Move down
           </button>

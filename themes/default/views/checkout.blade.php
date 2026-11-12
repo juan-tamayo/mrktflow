@@ -63,12 +63,12 @@
                     @foreach(['recipient' => ['Recipient', 120], 'line1' => ['Street address', 200], 'line2' => ['Apartment or suite (optional)', 200], 'city' => ['City', 120], 'region' => ['Region or state (optional)', 120], 'postal_code' => ['Postal code (optional)', 32]] as $field => $options)
                         <div class="setup-field">
                             <label for="shipping-{{ $field }}">{{ $options[0] }}</label>
-                            <input id="shipping-{{ $field }}" name="shipping[{{ $field }}]" value="{{ $shipping[$field] ?? '' }}" maxlength="{{ $options[1] }}" @required(in_array($field, ['recipient','line1','city'], true))>
+                            <input id="shipping-{{ $field }}" name="shipping[{{ $field }}]" value="{{ $shipping[$field] ?? '' }}" maxlength="{{ $options[1] }}">
                         </div>
                     @endforeach
                     <div class="setup-field">
                         <label for="shipping-country">Country</label>
-                        <select id="shipping-country" name="shipping[country_code]" required>
+                        <select id="shipping-country" name="shipping[country_code]">
                             <option value="">Choose a country</option>
                             @foreach($countries as $country)
                                 <option value="{{ $country['code'] }}" @selected(($shipping['country_code'] ?? '') === $country['code'])>{{ $country['label'] }}</option>

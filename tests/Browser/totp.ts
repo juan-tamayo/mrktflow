@@ -1,5 +1,7 @@
 import { createHmac } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+
+const TOTP_STEP_PATH = '.runtime/browser-owner-totp-step'
 
 export function browserOwnerTotpSecret(): string {
   const fromEnv =
@@ -37,8 +39,36 @@ function byte(buffer: Buffer, index: number): number {
   return value
 }
 
+function lastIssuedStep(): number | null {
+  try {
+    const raw = Number.parseInt(readFileSync(TOTP_STEP_PATH, 'utf8').trim(), 10)
+    return Number.isInteger(raw) ? raw : null
+  } catch {
+    return null
+  }
+}
+
+function rememberStep(step: number): void {
+  mkdirSync('.runtime', { recursive: true })
+  writeFileSync(TOTP_STEP_PATH, String(step), { encoding: 'utf8', mode: 0o600 })
+}
+
+function waitUntil(epochMs: number): void {
+  const ms = epochMs - Date.now()
+  if (ms > 0) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+  }
+}
+
 export function totpCode(secret: string, timestamp = Math.floor(Date.now() / 1000)): string {
-  const counter = Math.floor(timestamp / 30)
+  let at = timestamp
+  let counter = Math.floor(at / 30)
+  const previous = lastIssuedStep()
+  while (previous !== null && previous === counter) {
+    waitUntil((counter + 1) * 30_000 + 200)
+    at = Math.floor(Date.now() / 1000)
+    counter = Math.floor(at / 30)
+  }
   const buffer = Buffer.alloc(8)
   buffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0)
   buffer.writeUInt32BE(counter >>> 0, 4)
@@ -49,5 +79,6 @@ export function totpCode(secret: string, timestamp = Math.floor(Date.now() / 100
     ((byte(hmac, offset + 1) & 0xff) << 16) |
     ((byte(hmac, offset + 2) & 0xff) << 8) |
     (byte(hmac, offset + 3) & 0xff)
+  rememberStep(counter)
   return String(binary % 1_000_000).padStart(6, '0')
 }
