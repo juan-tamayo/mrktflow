@@ -296,14 +296,6 @@ it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads a
     $this->post('/checkout/'.$quote['id'].'/pay', [
         'fingerprint' => $quote['fingerprint'],
     ])->assertRedirect();
-    $this->artisan('queue:work', [
-        'connection' => 'database-outbox',
-        '--queue' => 'outbox',
-        '--stop-when-empty' => true,
-        '--sleep' => 0,
-        '--timeout' => 60,
-        '--tries' => 1,
-    ])->assertSuccessful();
     $this->get('/account/downloads')->assertOk()
         ->assertSee('Lighting guide')
         ->assertSee('5 of 5 downloads remaining');

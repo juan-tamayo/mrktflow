@@ -6,6 +6,7 @@ namespace App\Domain\CheckoutOrders\Actions;
 
 use App\Domain\Catalog\Contracts\InventoryAllocator;
 use App\Domain\CheckoutOrders\Support\OrderStates;
+use App\Domain\Platform\Actions\ConsumeEvent;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -22,20 +23,20 @@ final class CompleteFreeOrder
             return;
         }
 
-        DB::transaction(function () use ($attemptId): void {
+        $eventId = DB::transaction(function () use ($attemptId): ?string {
             $attempt = DB::table('payment_attempts')->where('id', $attemptId)->lockForUpdate()->first();
             if ($attempt === null) {
-                return;
+                return null;
             }
             $orderId = $this->string($attempt, 'order_id');
             $order = DB::table('orders')->where('id', $orderId)->lockForUpdate()->first();
             if ($order === null || ! $this->bool($order, 'zero_total')
                 || $this->int($order, 'grand_total_amount') !== 0 || $this->int($attempt, 'amount') !== 0) {
-                return;
+                return null;
             }
             $status = $this->string($attempt, 'status');
             if (in_array($status, ['failed', 'expired'], true)) {
-                return;
+                return null;
             }
             $captureId = 'local_'.$attemptId;
             $now = now();
@@ -55,8 +56,12 @@ final class CompleteFreeOrder
                 $this->recordCompletion($order, $attempt, $captureId, $now);
                 $this->commitAllocations($orderId);
             }
-            $this->emitPaid($order, $attemptId, $captureId);
+
+            return $this->emitPaid($order, $attemptId, $captureId);
         });
+        if (is_string($eventId)) {
+            app(ConsumeEvent::class)->consume($eventId, 'fulfillment.entitlements');
+        }
     }
 
     private function recordCompletion(object $order, object $attempt, string $captureId, mixed $now): void
@@ -94,10 +99,11 @@ final class CompleteFreeOrder
         }
     }
 
-    private function emitPaid(object $order, string $attemptId, string $captureId): void
+    private function emitPaid(object $order, string $attemptId, string $captureId): string
     {
         $orderId = $this->string($order, 'id');
-        app(RecordEvent::class)->record('checkout.order.paid', 'order:paid:'.$orderId, [
+
+        return app(RecordEvent::class)->record('checkout.order.paid', 'order:paid:'.$orderId, [
             'order_id' => $orderId,
             'order_number' => $this->string($order, 'number'),
             'attempt_id' => $attemptId,
