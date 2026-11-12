@@ -355,6 +355,7 @@ it('StorefrontTheme renders a paid order, its downloads and the grant page throu
         ->assertSee('data-page="account-order"', false);
     $this->get('/account/downloads')->assertOk()
         ->assertSee('data-page="account-downloads"', false)
+        ->assertSee('<h1>Downloads', false)
         ->assertSee('data-platform-slot="downloads.issue"', false)
         ->assertSee('action="/account/downloads/'.$entitlementId.'/grants"', false);
     $this->post('/account/downloads/'.$entitlementId.'/grants')->assertRedirect();

@@ -59,6 +59,7 @@ it('CatalogVariant saves unique combinations and lets a shopper see the selected
     $this->getJson('/products/studio-lamp?variant=not-a-variant')->assertUnprocessable();
     $missing = $this->get('/products/studio-lamp');
     $missing->assertOk()->assertSee('Choose a finish and size to see the current price')
+        ->assertSee('USD 24.99')
         ->assertSee('<label for="cart-variant">Variant</label>', false)
         ->assertSee('<label for="wishlist-variant">Item to save</label>', false)
         ->assertSee('<label for="watch-variant">Item for alerts</label>', false);

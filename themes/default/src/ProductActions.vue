@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue'
 import {
+  COMPARE_FULL_MESSAGE,
   sharedCompareTrayStore,
   type CompareTrayStore,
   type ProductActionsInput,
@@ -38,7 +39,7 @@ function toggle(): void {
     title: props.title,
     variantLabel: variant?.label ?? 'Standard',
   })
-  status.value = store.announcement.value
+  status.value = store.announcement.value === COMPARE_FULL_MESSAGE ? '' : store.announcement.value
 }
 </script>
 

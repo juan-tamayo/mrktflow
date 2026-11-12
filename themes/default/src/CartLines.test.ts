@@ -37,6 +37,7 @@ describe('default theme cart lines', () => {
     expect(wrapper.text()).toContain('Totals are calculated at checkout')
     expect(wrapper.find('a[href="/checkout"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/search"]').exists()).toBe(true)
+    expect(wrapper.find('[data-platform-slot="cart.line-actions"]').exists()).toBe(true)
   })
 
   it('keeps empty and unavailable carts from trapping the shopper', () => {

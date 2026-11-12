@@ -16,7 +16,7 @@
                     <option value="">Choose a combination</option>
                     @foreach($product->variants as $variant)
                         @if($variant['available'])
-                            <option value="{{ $variant['id'] }}">{{ $variant['label'] }}</option>
+                            <option value="{{ $variant['id'] }}" @selected($variant['id'] === $selected['id'])>{{ $variant['label'] }}</option>
                         @endif
                     @endforeach
                 </select>

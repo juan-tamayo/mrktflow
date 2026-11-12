@@ -297,6 +297,7 @@ it('CheckoutOrdersFree mixed FREE100 lists Lighting guide on account downloads a
         'fingerprint' => $quote['fingerprint'],
     ])->assertRedirect();
     $this->get('/account/downloads')->assertOk()
+        ->assertSee('<h1>Downloads', false)
         ->assertSee('Lighting guide')
         ->assertSee('5 of 5 downloads remaining');
     $entitlementId = (string) DB::table('entitlements')->where('customer_id', $customer->id)->value('id');

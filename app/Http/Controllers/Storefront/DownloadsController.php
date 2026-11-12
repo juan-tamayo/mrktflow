@@ -93,7 +93,7 @@ final class DownloadsController
         $area = $downloads->forCustomer($customer);
 
         return response()->view('default-theme::account-downloads', [
-            'heading' => 'Your downloads',
+            'heading' => 'Downloads',
             'orders' => $area['orders'],
             'claimable' => $area['claimable'],
             'guest' => false,

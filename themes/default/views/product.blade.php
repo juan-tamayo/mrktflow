@@ -41,6 +41,7 @@
                             <div class="setup-field"><label for="native-variant">Finish</label><select id="native-variant" name="variant">@foreach($product->variants as $variant)<option value="{{ $variant['id'] }}" @selected($variant['id'] === $selected['id'])>{{ $variant['label'] }}</option>@endforeach</select></div>
                         @endif
                         @if($selectionState === 'missing')
+                            <p class="theme-price"><span>Price</span><strong>{{ $selected['money']['formatted'] }}</strong></p>
                             <p class="theme-variant-prompt" role="status">Choose a finish and size to see the current price.</p>
                         @elseif($selectionState === 'unavailable')
                             <p class="theme-variant-prompt" role="status">This combination is unavailable.</p>
