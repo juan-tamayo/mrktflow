@@ -69,12 +69,7 @@ final class EnsureBrowserCapturedMixedOrder
 
         try {
             $cartOwner = CartOwner::customer($customer->id);
-            $existing = app(ReadCart::class)->snapshot($cartOwner);
-            $cart = app(UpdateCart::class)->replaceLine($cartOwner, [
-                'variant_id' => $lampVariant,
-                'quantity' => 2,
-                'expected_revision' => $existing['revision'],
-            ]);
+            $cart = $this->cartWithOnlyLamps($cartOwner, $lampVariant);
             $quote = app(CreateQuote::class)->create($cartOwner, [
                 'expected_revision' => $cart['revision'],
                 'email' => $customer->email,
@@ -102,8 +97,12 @@ final class EnsureBrowserCapturedMixedOrder
             config($previousStripe);
         }
 
-        if ($this->capturedOrderId($customer->id) === null) {
+        $capturedId = $this->capturedOrderId($customer->id);
+        if ($capturedId === null) {
             throw new RuntimeException('The captured mixed order for mixed@example.test was not confirmed.');
+        }
+        if (DB::table('order_lines')->where('order_id', $capturedId)->where('type', 'digital')->exists()) {
+            throw new RuntimeException('The captured refund fixture must not entitle a second Lighting guide.');
         }
     }
 
@@ -118,6 +117,31 @@ final class EnsureBrowserCapturedMixedOrder
             ->value('id');
 
         return is_string($id) && $id !== '' ? $id : null;
+    }
+
+    /**
+     * @return array{id: ?string, revision: int, lines: list<array<string, mixed>>, subtotal: array{amount: int, currency: string, exponent: int, formatted: string}, notices: list<string>}
+     */
+    private function cartWithOnlyLamps(CartOwner $cartOwner, string $lampVariant): array
+    {
+        $cart = app(ReadCart::class)->snapshot($cartOwner);
+        foreach ($cart['lines'] as $line) {
+            $lineId = is_string($line['id'] ?? null) ? $line['id'] : '';
+            $variantId = is_string($line['variant_id'] ?? null) ? $line['variant_id'] : '';
+            if ($lineId === '' || $variantId === $lampVariant) {
+                continue;
+            }
+            $cart = app(UpdateCart::class)->removeLine($cartOwner, $lineId, [
+                'expected_revision' => $cart['revision'],
+            ]);
+        }
+        $cart = app(ReadCart::class)->snapshot($cartOwner);
+
+        return app(UpdateCart::class)->replaceLine($cartOwner, [
+            'variant_id' => $lampVariant,
+            'quantity' => 2,
+            'expected_revision' => $cart['revision'],
+        ]);
     }
 
     private function chalkLampVariantId(): string

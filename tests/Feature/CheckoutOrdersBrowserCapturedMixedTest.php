@@ -6,11 +6,14 @@ use App\Domain\CheckoutOrders\Actions\AcceptQuote;
 use App\Domain\CheckoutOrders\Actions\CreateCheckoutIntent;
 use App\Domain\CheckoutOrders\Actions\CreateQuote;
 use App\Domain\CheckoutOrders\Actions\ReadAdminOrders;
+use App\Domain\CheckoutOrders\Actions\ReadCart;
 use App\Domain\CheckoutOrders\Actions\ReadCustomerOrders;
 use App\Domain\CheckoutOrders\Actions\StartPayment;
 use App\Domain\CheckoutOrders\Actions\UpdateCart;
 use App\Domain\CheckoutOrders\Support\CartOwner;
+use App\Domain\Fulfillment\Actions\ReadDownloads;
 use App\Domain\Identity\Models\CustomerAccount;
+use App\Domain\Platform\Actions\ConsumeEvent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -97,6 +100,46 @@ it('CheckoutOrdersBrowserCapturedMixed staff list prefers a captured mixed order
         ->where('refundSaved', true));
     $customerOrders = app(ReadCustomerOrders::class)->list($fixture['customer']);
     expect($customerOrders['data'][0]['id'])->toBe($paidId);
+    $this->get('/')->assertStatus(503);
+});
+
+it('CheckoutOrdersBrowserCapturedMixed leftover cart digital does not add a second Lighting guide', function (): void {
+    $fixture = browserMixedFreeOrder();
+    $customer = $fixture['customer'];
+    $owner = $fixture['owner'];
+    $entitlement = DB::table('entitlements')->where('customer_id', $customer->id)->first();
+    expect($entitlement)->not->toBeNull();
+    DB::table('entitlements')->where('id', $entitlement->id)->update(['downloads_used' => 1, 'updated_at' => now()]);
+    $cartOwner = CartOwner::customer($customer->id);
+    $cart = app(ReadCart::class)->snapshot($cartOwner);
+    $guideId = (string) DB::table('products')->where('slug', 'studio-guide')->value('id');
+    $digital = (string) DB::table('product_variants')->where('product_id', $guideId)->value('id');
+    app(UpdateCart::class)->replaceLine($cartOwner, [
+        'variant_id' => $digital, 'quantity' => 1, 'expected_revision' => $cart['revision'],
+    ]);
+    $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
+    $this->get('/admin/orders')->assertOk();
+    $paidId = app(ReadAdminOrders::class)->search($owner, [])['data'][0]['id'];
+    expect($paidId)->not->toBe($fixture['free_order_id']);
+    $paidEvent = DB::table('outbox_events')->where('event_type', 'checkout.order.paid')
+        ->where('intent_key', 'order:paid:'.$paidId)->first();
+    expect($paidEvent)->not->toBeNull();
+    app(ConsumeEvent::class)->consume((string) $paidEvent->id, 'fulfillment.entitlements');
+    expect(DB::table('order_lines')->where('order_id', $paidId)->where('type', 'digital')->count())->toBe(0);
+    $area = app(ReadDownloads::class)->forCustomer($customer);
+    $labels = [];
+    foreach ($area['orders'] as $order) {
+        foreach ($order['downloads'] as $download) {
+            $labels[] = $download['label'];
+        }
+    }
+    expect($labels)->toBe(['Lighting guide'])
+        ->and($area['orders'][0]['downloads'][0]['downloads_remaining'])->toBe(4);
+    $this->actingAs($customer, 'customer')->withSession(['customer_session_version' => 1]);
+    $this->get('/account/downloads')->assertOk()
+        ->assertSee('Lighting guide')
+        ->assertSee('4 of 5 downloads remaining');
+    expect(substr_count((string) $this->get('/account/downloads')->getContent(), 'Lighting guide ·'))->toBe(1);
     $this->get('/')->assertStatus(503);
 });
 
