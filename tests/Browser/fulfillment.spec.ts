@@ -60,7 +60,7 @@ test('staff partial physical refund leaves the digital half untouched, then ship
   await staff.getByLabel('Password', { exact: true }).fill('Fictional owner passphrase 471!')
   await staff.getByRole('button', { name: 'Sign in' }).click()
   await staff.getByLabel('Authentication code').fill(totpCode(ownerTotpSecret))
-  await staff.getByRole('button', { name: 'Confirm authenticator' }).click()
+  await staff.getByRole('button', { name: 'Verify' }).click()
   await staff.goto('/admin/orders')
   await staff.locator('a[href^="/admin/orders/"]').first().click()
   await expect(staff.getByRole('heading', { name: 'Refunds' })).toBeVisible()

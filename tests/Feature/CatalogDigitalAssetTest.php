@@ -84,13 +84,15 @@ it('CatalogDigitalAsset versions private files, pins them to digital variants, a
         ->and($publicJson)->not->toContain('checksum')
         ->and($publicJson)->not->toContain('/original');
     $this->get('/search')->assertOk()->assertSee('Studio Lighting Guide');
-    $this->get('/products/studio-guide')->assertOk()
+    $guidePage = $this->get('/products/studio-guide')->assertOk();
+    $guidePage
         ->assertSee('Studio Lighting Guide')
         ->assertSee('Digital download')
         ->assertSee('Lighting guide PDF')
         ->assertSee('Quantity one')
         ->assertSee('Add to cart')
         ->assertDontSee($originalKey);
+    expect(substr_count((string) $guidePage->getContent(), 'Digital download'))->toBe(1);
     $this->get('/storage/'.$originalKey)->assertNotFound();
 });
 

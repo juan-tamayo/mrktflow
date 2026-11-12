@@ -25,9 +25,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'shop',
-      testIgnore: /platform-smoke\.spec\.ts$|cart\.spec\.ts$|setup\.spec\.ts$/,
+      name: 'shop-orders',
+      testMatch: /mixed-purchase\.spec\.ts$/,
       dependencies: ['install'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'shop',
+      testIgnore:
+        /platform-smoke\.spec\.ts$|cart\.spec\.ts$|setup\.spec\.ts$|mixed-purchase\.spec\.ts$/,
+      dependencies: ['shop-orders'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],

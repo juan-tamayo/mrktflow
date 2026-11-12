@@ -198,7 +198,13 @@ it('StorefrontTheme renders every public route type through the one layout', fun
             ->assertSee('data-platform-slot="masthead"', false)
             ->assertSee('data-platform-slot="footer"', false);
     }
-    $this->get('/')->assertStatus(503)->assertSee('This store is getting ready')->assertDontSee('data-page="home"', false);
+    $this->get('/')->assertStatus(503)
+        ->assertSee('This store is getting ready')
+        ->assertSee('data-layout="storefront"', false)
+        ->assertSee('data-page="home"', false)
+        ->assertSee('data-platform-slot="masthead"', false)
+        ->assertSee('data-platform-slot="footer"', false)
+        ->assertDontSee('Studio Lamp');
     $this->get('/categories/lighting')->assertSee('data-page="category"', false);
     $this->get('/products/studio-lamp')->assertSee('data-page="product"', false);
     $this->get('/search')->assertSee('data-page="search"', false);

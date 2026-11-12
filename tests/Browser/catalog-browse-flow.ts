@@ -1,5 +1,42 @@
+import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+
+function browserProcessEnv(): NodeJS.ProcessEnv {
+  const extra: NodeJS.ProcessEnv = { ...process.env }
+  for (const line of readFileSync('.env.browser', 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      continue
+    }
+    const separator = trimmed.indexOf('=')
+    if (separator < 1) {
+      continue
+    }
+    let value = trimmed.slice(separator + 1)
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    extra[trimmed.slice(0, separator)] = value
+  }
+
+  return extra
+}
+
+function seedShopCatalog(): void {
+  const result = spawnSync(
+    'bin/php',
+    ['artisan', 'db:seed', '--class=Database\\Seeders\\BrowserShopCatalogSeeder', '--force'],
+    { encoding: 'utf8', env: browserProcessEnv() },
+  )
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout || 'Browser shop catalog seed failed.')
+  }
+}
 
 export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await page.goto('http://127.0.0.1:8011/admin')
@@ -312,6 +349,10 @@ export async function exerciseCatalogBrowse(page: Page): Promise<void> {
   await expect(page.getByText('This product is archived')).toBeVisible()
   expect((await page.request.get('/products/studio-lamp')).status()).toBe(404)
   expect((await page.request.get('/store-api/v1/products/studio-lamp')).status()).toBe(404)
+  expect((await page.request.get('/')).status()).toBe(503)
+  seedShopCatalog()
+  expect((await page.request.get('/products/studio-lamp')).status()).toBe(200)
+  expect((await page.request.get('/products/alpha-camera')).status()).toBe(200)
   expect((await page.request.get('/')).status()).toBe(503)
   expect(
     (

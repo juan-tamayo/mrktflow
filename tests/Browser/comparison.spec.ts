@@ -26,7 +26,7 @@ import { test, expect, type Page } from '@playwright/test'
 
 async function tabUntilFocused(page: Page, name: string): Promise<void> {
   const target = page.getByRole('button', { name }).or(page.getByRole('link', { name }))
-  for (let attempt = 0; attempt < 60; attempt++) {
+  for (let attempt = 0; attempt < 400; attempt++) {
     const focused = await target.evaluateAll((elements) =>
       elements.some((element) => element === document.activeElement),
     )

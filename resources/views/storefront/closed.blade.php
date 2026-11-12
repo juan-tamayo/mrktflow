@@ -11,8 +11,8 @@
 </head>
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <div class="page-shell">
-        <header class="masthead">
+    <div class="page-shell" data-layout="storefront" data-page="home">
+        <header class="masthead" data-platform-slot="masthead">
             <a class="wordmark" href="/" aria-label="MRKTFlow"><img src="/brand/mark.svg" width="36" height="36" alt=""><span>mrktflow</span></a>
             <span class="status"><span class="status-dot" aria-hidden="true"></span>Opening soon</span>
         </header>
@@ -24,7 +24,7 @@
                 <details class="store-notice"><summary>Can I place an order?</summary><p>Not yet. This store hasn't opened. Please check back soon.</p></details>
             </div>
         </main>
-        <footer class="footer"><span>Independent by design.</span><a href="/admin">Store administration <span aria-hidden="true">↗</span></a></footer>
+        <footer class="footer" data-platform-slot="footer"><span>Independent by design.</span><a href="/admin">Store administration <span aria-hidden="true">↗</span></a></footer>
     </div>
 </body>
 </html>
