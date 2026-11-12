@@ -20,27 +20,6 @@ use JsonException;
 final class ReadAuthoringDraft
 {
     /**
-     * @return array{
-     *     runId: string,
-     *     draftId: string,
-     *     status: string,
-     *     stale: bool,
-     *     canApply: bool,
-     *     canPublish: bool,
-     *     expectedRevisionId: string,
-     *     currentRevisionId: string,
-     *     pageId: string,
-     *     pageVersion: int,
-     *     publishedRevision: int,
-     *     prompt: string,
-     *     model: string,
-     *     candidate: array<string, mixed>,
-     *     base: array<string, mixed>,
-     *     usage: array{input_tokens: int|null, output_tokens: int|null, total_tokens: int|null, known: bool},
-     *     warnings: list<string>
-     * }
-     */
-    /**
      * @return list<array{runId: string, draftId: string, status: string, title: string, updatedAt: string}>
      */
     public function listFor(StaffAccount $actor): array
@@ -69,6 +48,27 @@ final class ReadAuthoringDraft
         return $items;
     }
 
+    /**
+     * @return array{
+     *     runId: string,
+     *     draftId: string,
+     *     status: string,
+     *     stale: bool,
+     *     canApply: bool,
+     *     canPublish: bool,
+     *     expectedRevisionId: string,
+     *     currentRevisionId: string,
+     *     pageId: string,
+     *     pageVersion: int,
+     *     publishedRevision: int,
+     *     prompt: string,
+     *     model: string,
+     *     candidate: array<string, mixed>,
+     *     base: array<string, mixed>,
+     *     usage: array{input_tokens: int|null, output_tokens: int|null, total_tokens: int|null, known: bool},
+     *     warnings: list<string>
+     * }
+     */
     public function forRun(StaffAccount $actor, string $runId): array
     {
         $this->assertRunId($runId);
