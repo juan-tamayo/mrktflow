@@ -23,6 +23,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       canManageEmail: true,
       canReadReports: true,
       canExport: true,
+      canPrivacy: true,
     },
   })
   expect(wrapper.get('section[aria-labelledby="launch-heading"]').text()).toContain(
@@ -51,6 +52,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/notifications"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/reports"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/exports"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/privacy"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(true)
   await wrapper.setProps({
@@ -66,6 +68,7 @@ it('shows the closed launch status and only authorized workspace actions', async
     canManageEmail: false,
     canReadReports: false,
     canExport: false,
+    canPrivacy: false,
   })
   expect(wrapper.find('a[href="/admin/products"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(false)
@@ -84,6 +87,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/notifications"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/reports"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/exports"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/privacy"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/theme-preview"]').exists()).toBe(false)
   expect(
@@ -110,6 +114,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/notifications',
           '/admin/reports',
           '/admin/exports',
+          '/admin/privacy',
           '/admin/staff',
           '/admin/two-factor',
           '/admin/theme-preview',
@@ -135,6 +140,7 @@ it('escapes staff names in the branded workspace', () => {
       canManageEmail: false,
       canReadReports: false,
       canExport: false,
+      canPrivacy: false,
     },
   })
   expect(wrapper.find('script').exists()).toBe(false)
