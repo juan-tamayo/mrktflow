@@ -54,6 +54,7 @@ return new class extends Migration
         Schema::table('promotion_versions', function (Blueprint $table): void {
             $table->dropColumn(['discount_budget', 'max_discount_amount', 'first_customer_only']);
         });
+        DB::statement('ALTER TABLE promotion_campaigns DROP CHECK promotion_campaigns_budget_usage_check');
         Schema::table('promotion_campaigns', function (Blueprint $table): void {
             $table->dropColumn(['held_amount', 'redeemed_amount']);
         });
