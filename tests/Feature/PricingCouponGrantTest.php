@@ -603,8 +603,8 @@ it('PricingCouponGrant resumes a queued unique batch and refuses finished or inv
         'source_intent_id' => (string) Str::uuid(),
         'customer_ids' => [$alice->id],
     ]))->toThrow(AuthorizationException::class);
-    $owner->forceFill(['role' => 'owner', 'permissions' => StaffPermissions::forRole('owner')])->save();
-    $owner = $owner->fresh();
+    $denied->forceFill(['role' => 'owner', 'permissions' => StaffPermissions::forRole('owner')])->save();
+    $owner = $denied->fresh();
     $import = app(ImportRecipientGrants::class)->import($owner, [
         'campaign_id' => $recipient['id'],
         'source_intent_id' => (string) Str::uuid(),
