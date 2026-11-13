@@ -287,7 +287,7 @@ final class HoldPromotionBudget
         return hash('sha256', json_encode(['action' => $action, 'intent_id' => $intentId], JSON_THROW_ON_ERROR));
     }
 
-    /** @param  Collection<int, object>  $holds */
+    /** @param  Collection<int, \stdClass>  $holds */
     private function firstReceipt(Collection $holds, string $intentId, string $operationKey): PromotionBudgetReceipt
     {
         foreach ($holds as $first) {
