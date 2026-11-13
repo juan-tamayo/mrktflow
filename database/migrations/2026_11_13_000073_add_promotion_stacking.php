@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         DB::statement('ALTER TABLE promotion_campaigns DROP CHECK promotion_campaigns_kind_check');
-        DB::statement("ALTER TABLE promotion_campaigns ADD CONSTRAINT promotion_campaigns_kind_check CHECK (kind IN ('reusable', 'batch', 'recipient'))");
+        DB::statement("ALTER TABLE promotion_campaigns ADD CONSTRAINT promotion_campaigns_kind_check CHECK (kind IN ('reusable', 'batch', 'recipient', 'automatic'))");
         Schema::table('coupons', function (Blueprint $table): void {
             $table->dropColumn(['allows_stacking', 'exclude_sale_priced']);
         });

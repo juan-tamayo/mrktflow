@@ -118,7 +118,7 @@ it('PricingPromotionStack prefers the better automatic total and leaves the ente
         ->and($rejected[0]->kind)->toBe('entered_code')
         ->and($rejected[0]->code)->toBe('SAVE10')
         ->and($rejected[0]->reasonCode)->toBe('rejected_worse_total')
-        ->and($rejected[0]->reason)->toContain('not applied');
+        ->and($rejected[0]->reason)->toContain('Not applied');
     $quote = stackQuote($lines, $selection->discounts, $shipping, $tax);
     expect($quote->merchandiseDiscount->amount)->toBe(220)
         ->and($quote->discountedMerchandise->amount)->toBe(879)
