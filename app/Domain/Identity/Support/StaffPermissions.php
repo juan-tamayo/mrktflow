@@ -17,7 +17,7 @@ final class StaffPermissions
             'catalog.read', 'catalog.write', 'pricing.manage', 'shipping.manage',
             'orders.read', 'orders.manage', 'orders.refund', 'fulfillment.manage', 'customers.read',
             'content.read', 'content.write', 'content.publish', 'media.read', 'media.upload',
-            'marketing.write', 'marketing.send', 'referrals.manage', 'seo.manage', 'hubs.write',
+            'marketing.write', 'marketing.activate', 'marketing.send', 'referrals.manage', 'seo.manage', 'hubs.write',
             'reports.read', 'exports.read', 'ai.use',
         ];
     }

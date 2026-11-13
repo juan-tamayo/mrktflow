@@ -21,6 +21,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       canConfigureAi: true,
       canUseAi: true,
       canManageEmail: true,
+      canManageMarketing: true,
       canReadReports: true,
       canExport: true,
       canPrivacy: true,
@@ -49,6 +50,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/ai"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/ai/studio"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/marketing/campaigns"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/email"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/notifications"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/reports"]').exists()).toBe(true)
@@ -69,6 +71,7 @@ it('shows the closed launch status and only authorized workspace actions', async
     canConfigureAi: false,
     canUseAi: false,
     canManageEmail: false,
+    canManageMarketing: false,
     canReadReports: false,
     canExport: false,
     canPrivacy: false,
@@ -87,6 +90,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/orders"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/ai"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/ai/studio"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/marketing/campaigns"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/email"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/notifications"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/reports"]').exists()).toBe(false)
@@ -116,6 +120,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/orders',
           '/admin/ai',
           '/admin/ai/studio',
+          '/admin/marketing/campaigns',
           '/admin/email',
           '/admin/notifications',
           '/admin/reports',
@@ -146,6 +151,7 @@ it('escapes staff names in the branded workspace', () => {
       canConfigureAi: false,
       canUseAi: false,
       canManageEmail: false,
+      canManageMarketing: false,
       canReadReports: false,
       canExport: false,
       canPrivacy: false,

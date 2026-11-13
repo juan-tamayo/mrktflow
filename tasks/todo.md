@@ -1409,7 +1409,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T092: Campaign configuration and audience preview
 
-- [ ] Complete T092.
+- [x] Complete T092.
+- **Evidence (November 12, 2026):** Failing `MarketingCampaign` tests first, then `marketing_campaigns` / `campaign_versions` / `audience_snapshots`, `SaveCampaign`, `PreviewAudience`, `ActivateCampaign`, `PauseCampaign`, `PreviewSchedule`, `/admin/marketing/campaigns`, and CampaignEdit. Draft/activate/send permissions are distinct; paused schedules are not due; activation snapshots verified newsletter opt-in audiences and does not send mail (array mailer stays empty). Frontend: typecheck/lint/format, Vitest 192/192, production build, npm audit 0 / signatures verified. PHP 8.4, isolated MySQL 8.4, Pint, PHPStan, Playwright, and `composer audit` are not runnable in this cloud image (no PHP 8.4 / MySQL); hosted Quality is the PHP evidence. Did not merge. Did not start T093 or T085. `GET /` stays HTTP 503.
 - **Module / requirements:** `marketing` · MKT-01, MKT-10.
 - **Depends on:** T091, T064.
 - **Acceptance:** Merchant drafts versioned campaigns, filters verified opt-in audiences and previews schedules/caps; activate/send permissions are distinct.
