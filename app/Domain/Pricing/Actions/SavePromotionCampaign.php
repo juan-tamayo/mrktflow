@@ -27,7 +27,7 @@ final class SavePromotionCampaign
         if (! $actor->hasPermission('pricing.manage')) {
             throw new AuthorizationException;
         }
-        foreach (['starts_at', 'ends_at', 'amount', 'percent_numerator', 'percent_denominator', 'max_redemptions', 'max_redemptions_per_customer', 'id', 'version'] as $empty) {
+        foreach (['starts_at', 'ends_at', 'amount', 'percent_numerator', 'percent_denominator', 'max_redemptions', 'max_redemptions_per_customer', 'discount_budget', 'max_discount_amount', 'id', 'version'] as $empty) {
             if (($input[$empty] ?? null) === '') {
                 $input[$empty] = null;
             }
@@ -36,7 +36,7 @@ final class SavePromotionCampaign
             unset($input['id'], $input['version']);
         }
         $data = Validator::make(['campaign' => $input], [
-            'campaign' => ['required', 'array:id,version,name,kind,status,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,product_ids,category_ids,allows_stacking,exclude_sale_priced'],
+            'campaign' => ['required', 'array:id,version,name,kind,status,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,discount_budget,max_discount_amount,first_customer_only,product_ids,category_ids,allows_stacking,exclude_sale_priced'],
             'campaign.id' => ['nullable', 'uuid'],
             'campaign.version' => ['required_with:campaign.id', 'integer', 'min:1', 'max:4294967295'],
             'campaign.name' => ['required', 'string', 'max:120'],
@@ -51,6 +51,9 @@ final class SavePromotionCampaign
             'campaign.ends_at' => ['nullable', 'date', 'after:campaign.starts_at'],
             'campaign.max_redemptions' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'campaign.max_redemptions_per_customer' => ['nullable', 'integer', 'min:1', 'max:99'],
+            'campaign.discount_budget' => ['nullable', 'integer', 'min:1', 'max:'.Money::MAX_SAFE],
+            'campaign.max_discount_amount' => ['nullable', 'integer', 'min:1', 'max:'.Money::MAX_SAFE],
+            'campaign.first_customer_only' => ['sometimes', 'boolean'],
             'campaign.product_ids' => ['sometimes', 'array', 'max:100'],
             'campaign.product_ids.*' => ['uuid', 'distinct:strict'],
             'campaign.category_ids' => ['sometimes', 'array', 'max:100'],
@@ -68,6 +71,9 @@ final class SavePromotionCampaign
         $denominator = $mode === 'percentage' ? (int) ($data['percent_denominator'] ?? 100) : null;
         if ($mode === 'percentage' && ($denominator === null || $denominator < 1 || (int) $data['percent_numerator'] > $denominator)) {
             throw ValidationException::withMessages(['campaign.percent_numerator' => 'The percentage must be between 1 and 100.']);
+        }
+        if (isset($data['discount_budget']) && $mode === 'percentage' && ! is_numeric($data['max_discount_amount'] ?? null)) {
+            throw ValidationException::withMessages(['campaign.max_discount_amount' => 'A percent campaign budget needs a finite per-order discount cap.']);
         }
         $records = app(PromotionRecords::class);
         $starts = $records->instant($data['starts_at'] ?? null);
@@ -133,6 +139,9 @@ final class SavePromotionCampaign
                 'category_ids' => json_encode($categories, JSON_THROW_ON_ERROR),
                 'allows_stacking' => $this->flag($data['allows_stacking'] ?? false),
                 'exclude_sale_priced' => $this->flag($data['exclude_sale_priced'] ?? false),
+                'discount_budget' => isset($data['discount_budget']) ? (int) $data['discount_budget'] : null,
+                'max_discount_amount' => isset($data['max_discount_amount']) ? (int) $data['max_discount_amount'] : null,
+                'first_customer_only' => $this->flag($data['first_customer_only'] ?? false),
                 'created_by' => $actor->id,
                 'created_at' => $now,
             ]);

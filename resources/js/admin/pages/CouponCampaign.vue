@@ -41,6 +41,9 @@ const props = defineProps<{
     category_ids: string[]
     allows_stacking: boolean
     exclude_sale_priced: boolean
+    discount_budget: number | null
+    max_discount_amount: number | null
+    first_customer_only: boolean
     grants: Grant[]
     batches: Batch[]
   } | null
@@ -70,6 +73,9 @@ const form = useForm({
     version: props.campaign?.version,
     allows_stacking: props.campaign?.allows_stacking ?? false,
     exclude_sale_priced: props.campaign?.exclude_sale_priced ?? false,
+    discount_budget: props.campaign?.discount_budget,
+    max_discount_amount: props.campaign?.max_discount_amount,
+    first_customer_only: props.campaign?.first_customer_only ?? false,
   },
 })
 const grantForm = useForm({
@@ -249,7 +255,35 @@ function importRecipients() {
             />
             Exclude sale-priced lines
           </label>
+          <label>
+            <input
+              v-model="form.campaign.first_customer_only"
+              type="checkbox"
+              name="first_customer_only"
+            />
+            Verified first-customer orders only
+          </label>
         </fieldset>
+        <div class="setup-field">
+          <label for="campaign-budget">Campaign discount budget</label>
+          <input
+            id="campaign-budget"
+            v-model.number="form.campaign.discount_budget"
+            name="discount_budget"
+            type="number"
+            min="1"
+          />
+        </div>
+        <div v-if="form.campaign.mode === 'percentage'" class="setup-field">
+          <label for="campaign-max-discount">Maximum discount per order</label>
+          <input
+            id="campaign-max-discount"
+            v-model.number="form.campaign.max_discount_amount"
+            name="max_discount_amount"
+            type="number"
+            min="1"
+          />
+        </div>
         <div class="setup-field">
           <label for="campaign-min">Minimum eligible subtotal</label>
           <input

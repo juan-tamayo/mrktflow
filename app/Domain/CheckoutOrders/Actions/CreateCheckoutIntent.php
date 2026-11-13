@@ -17,7 +17,9 @@ use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\CheckoutOrders\Support\OrderStates;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Actions\HoldPromotionBudget;
 use App\Domain\Pricing\Data\CouponHold;
+use App\Domain\Pricing\Data\PromotionBudgetHold;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -284,6 +286,7 @@ final class CreateCheckoutIntent
                 $holdUntil,
             ));
         }
+        $this->holdPromotions($orderId, $snapshot, $owner->customerId, $holdUntil);
         $this->complete($claimId, $orderId, $attemptId);
         if ($zero) {
             app(CompleteFreeOrder::class)->complete($attemptId);
@@ -389,6 +392,33 @@ final class CreateCheckoutIntent
             'country_code' => $country,
             'created_at' => $now,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function holdPromotions(string $orderId, array $snapshot, ?string $customerId, DateTimeImmutable $expires): void
+    {
+        $promotions = is_array($snapshot['promotions'] ?? null) ? $snapshot['promotions'] : [];
+        foreach ($promotions as $promotion) {
+            if (! is_array($promotion) || ! is_string($promotion['campaign_id'] ?? null) || ! is_numeric($promotion['revision'] ?? null)) {
+                throw new CheckoutQuoteStale;
+            }
+            $couponId = is_string($promotion['coupon_id'] ?? null) ? (string) $promotion['coupon_id'] : null;
+            app(HoldPromotionBudget::class)->hold(new PromotionBudgetHold(
+                $orderId,
+                (string) Str::uuid(),
+                (string) $promotion['campaign_id'],
+                (int) $promotion['revision'],
+                is_numeric($promotion['amount'] ?? null) ? (int) $promotion['amount'] : 0,
+                $couponId,
+                $customerId,
+                ($promotion['first_customer'] ?? false) === true
+                    || ($promotion['first_customer'] ?? false) === 1
+                    || ($promotion['first_customer'] ?? false) === '1',
+                $expires,
+            ));
+        }
     }
 
     private function holdStock(string $orderId, DateTimeImmutable $expires): void

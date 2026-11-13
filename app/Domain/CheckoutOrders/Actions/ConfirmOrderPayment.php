@@ -10,6 +10,7 @@ use App\Domain\CheckoutOrders\Data\PaymentSession;
 use App\Domain\CheckoutOrders\Support\OrderStates;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Actions\HoldPromotionBudget;
 use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -119,20 +120,35 @@ final class ConfirmOrderPayment
             }
         }
         $coupon = DB::table('coupon_holds')->where('intent_id', $orderId)->lockForUpdate()->first();
-        if ($coupon === null) {
+        if ($coupon !== null) {
+            $couponStatus = $this->string($coupon, 'status');
+            if ($couponStatus === 'released') {
+                try {
+                    app(HoldCoupon::class)->rehold($orderId, $this->operationKey('coupon-rehold', $orderId));
+                } catch (PricingCouponExhausted) {
+                    return false;
+                }
+                $couponStatus = 'active';
+            }
+            if ($couponStatus === 'active') {
+                app(HoldCoupon::class)->commit($orderId, $this->operationKey('coupon-commit', $orderId));
+            }
+        }
+        $budget = DB::table('promotion_budget_holds')->where('intent_id', $orderId)->lockForUpdate()->first();
+        if ($budget === null) {
             return true;
         }
-        $couponStatus = $this->string($coupon, 'status');
-        if ($couponStatus === 'released') {
+        $budgetStatus = $this->string($budget, 'status');
+        if ($budgetStatus === 'released') {
             try {
-                app(HoldCoupon::class)->rehold($orderId, $this->operationKey('coupon-rehold', $orderId));
+                app(HoldPromotionBudget::class)->rehold($orderId, $this->operationKey('promotion-rehold', $orderId));
             } catch (PricingCouponExhausted) {
                 return false;
             }
-            $couponStatus = 'active';
+            $budgetStatus = 'active';
         }
-        if ($couponStatus === 'active') {
-            app(HoldCoupon::class)->commit($orderId, $this->operationKey('coupon-commit', $orderId));
+        if ($budgetStatus === 'active') {
+            app(HoldPromotionBudget::class)->commit($orderId, $this->operationKey('promotion-commit', $orderId));
         }
 
         return true;

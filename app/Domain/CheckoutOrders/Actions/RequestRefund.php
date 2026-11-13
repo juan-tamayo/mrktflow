@@ -247,6 +247,7 @@ final class RequestRefund
                     throw ValidationException::withMessages(['lines' => 'Refund quantities must stay within remaining unshipped units.']);
                 }
                 $consumed = $this->int($line, 'cancelled_qty') + $this->int($line, 'held_qty');
+                // Refunds slice the frozen order-line totals; they never reprice against the live campaign.
                 $lineAmount = $allocator->slice($allocator->unitAmounts($this->int($line, 'total_amount'), $this->int($line, 'quantity')), $consumed, $item['quantity'])
                     + $allocator->slice($allocator->unitAmounts($this->int($line, 'tax_amount'), $this->int($line, 'quantity')), $consumed, $item['quantity']);
                 $claimedLines[] = ['id' => $item['id'], 'quantity' => $item['quantity'], 'amount' => $lineAmount];

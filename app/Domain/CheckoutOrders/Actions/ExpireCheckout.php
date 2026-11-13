@@ -11,6 +11,7 @@ use App\Domain\CheckoutOrders\Contracts\PaymentGateway;
 use App\Domain\CheckoutOrders\Data\PaymentIntent;
 use App\Domain\CheckoutOrders\Data\PaymentSession;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Actions\HoldPromotionBudget;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
@@ -130,6 +131,9 @@ final class ExpireCheckout
             }
             if (DB::table('coupon_holds')->where('intent_id', $orderId)->where('status', 'active')->lockForUpdate()->exists()) {
                 app(HoldCoupon::class)->release($orderId, $this->operationKey('coupon-release', $orderId));
+            }
+            if (DB::table('promotion_budget_holds')->where('intent_id', $orderId)->where('status', 'active')->lockForUpdate()->exists()) {
+                app(HoldPromotionBudget::class)->release($orderId, $this->operationKey('promotion-release', $orderId));
             }
         });
     }
