@@ -6,6 +6,7 @@ namespace App\Domain\Pricing\Actions;
 
 use App\Domain\Pricing\Contracts\PriceCalculator;
 use App\Domain\Pricing\Data\LineAllocation;
+use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Data\PricedLine;
 use App\Domain\Pricing\Data\PriceQuote;
@@ -42,37 +43,15 @@ final class CalculatePrice implements PriceCalculator
             }
             $merchandise += $amount;
         }
-        $discount = $request->discount();
-        $eligible = $subtotals;
-        if ($discount->eligibleLineIds !== null) {
-            $eligible = [];
-            foreach ($discount->eligibleLineIds as $lineId) {
-                if (! array_key_exists($lineId, $subtotals)) {
-                    throw new PricingInvalidQuote;
-                }
-                $eligible[$lineId] = $subtotals[$lineId];
-            }
-        }
-        $eligibleTotal = 0;
-        foreach ($eligible as $amount) {
-            $eligibleTotal += $amount;
-        }
-        if ($discount->mode === 'none') {
-            $discountAmount = 0;
-        } elseif ($discount->mode === 'fixed') {
-            if ($discount->fixed === null) {
+        $stack = $request->stackedDiscounts();
+        $shares = $this->allocator->sequential($subtotals, $stack);
+        $discountAmount = 0;
+        foreach ($shares as $appliedShare) {
+            if ($discountAmount > Money::MAX_SAFE - $appliedShare) {
                 throw new PricingInvalidQuote;
             }
-            $discountAmount = $discount->fixed->amount;
-        } elseif ($discount->mode === 'percentage') {
-            if ($discount->percentNumerator === null) {
-                throw new PricingInvalidQuote;
-            }
-            $discountAmount = $this->allocator->percentageOf($eligibleTotal, $discount->percentNumerator, $discount->percentDenominator);
-        } else {
-            throw new PricingInvalidQuote;
+            $discountAmount += $appliedShare;
         }
-        $shares = $this->allocator->allocate($eligible, $discountAmount);
         $allocations = [];
         $zero = Money::of(0, $currency, $exponent);
         foreach ($priced as $item) {
@@ -131,13 +110,13 @@ final class CalculatePrice implements PriceCalculator
     {
         $payload = [
             'quotedAt' => $request->quotedAt->format('Y-m-d\\TH:i:s\\Z'),
-            'discount' => [
-                'mode' => $request->discount()->mode,
-                'fixed' => $request->discount()->fixed?->amount,
-                'percentNumerator' => $request->discount()->percentNumerator,
-                'percentDenominator' => $request->discount()->percentDenominator,
-                'eligibleLineIds' => $request->discount()->eligibleLineIds,
-            ],
+            'discount' => array_map(fn (MerchandiseDiscount $discount): array => [
+                'mode' => $discount->mode,
+                'fixed' => $discount->fixed?->amount,
+                'percentNumerator' => $discount->percentNumerator,
+                'percentDenominator' => $discount->percentDenominator,
+                'eligibleLineIds' => $discount->eligibleLineIds,
+            ], $request->stackedDiscounts()),
             'shipping' => $request->shipping === null ? 0 : $request->shipping->amount,
             'priceMode' => $quote->priceMode,
             'taxLines' => array_map(fn (TaxAllocation $line): array => $line->toArray(), $quote->taxLines),

@@ -63,6 +63,8 @@ final class ReadCoupons
             'version' => $this->int($coupon, 'revision'),
             'product_ids' => $productIds,
             'category_ids' => $categoryIds,
+            'allows_stacking' => $this->int($coupon, 'allows_stacking') === 1,
+            'exclude_sale_priced' => $this->int($coupon, 'exclude_sale_priced') === 1,
         ];
     }
 

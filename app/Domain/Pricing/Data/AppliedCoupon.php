@@ -15,5 +15,6 @@ final readonly class AppliedCoupon
         public MerchandiseDiscount $discount,
         public bool $waivesShipping,
         public array $eligibleLineIds,
+        public bool $allowsStacking = false,
     ) {}
 }

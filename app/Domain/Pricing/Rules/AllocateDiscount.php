@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Pricing\Rules;
 
+use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Exceptions\PricingInvalidCoupon;
 use App\Domain\Pricing\Exceptions\PricingInvalidMoney;
@@ -59,6 +60,73 @@ final class AllocateDiscount
             }
             $shares[$lineId]++;
             $leftover--;
+        }
+
+        return $shares;
+    }
+
+    /**
+     * @param  array<string, int>  $lineSubtotals
+     * @param  list<MerchandiseDiscount>  $discounts
+     * @return array<string, int>
+     */
+    public function sequential(array $lineSubtotals, array $discounts): array
+    {
+        $remaining = $lineSubtotals;
+        $shares = [];
+        $appliedAny = false;
+        foreach ($lineSubtotals as $lineId => $subtotal) {
+            if ($subtotal < 0) {
+                throw new PricingInvalidCoupon;
+            }
+            $shares[$lineId] = 0;
+        }
+        foreach ($discounts as $discount) {
+            if ($discount->mode === 'none') {
+                continue;
+            }
+            $eligible = [];
+            $ids = $discount->eligibleLineIds ?? array_keys($remaining);
+            foreach ($ids as $lineId) {
+                if (! array_key_exists($lineId, $remaining)) {
+                    throw new PricingInvalidCoupon;
+                }
+                if ($remaining[$lineId] > 0) {
+                    $eligible[$lineId] = $remaining[$lineId];
+                }
+            }
+            $eligibleTotal = 0;
+            foreach ($eligible as $amount) {
+                $eligibleTotal += $amount;
+            }
+            if ($eligibleTotal === 0) {
+                continue;
+            }
+            if ($discount->mode === 'fixed') {
+                if ($discount->fixed === null) {
+                    throw new PricingInvalidCoupon;
+                }
+                if ($discount->fixed->amount > $eligibleTotal && ! $appliedAny) {
+                    throw new PricingInvalidCoupon;
+                }
+                $amount = min($discount->fixed->amount, $eligibleTotal);
+            } elseif ($discount->mode === 'percentage') {
+                if ($discount->percentNumerator === null) {
+                    throw new PricingInvalidCoupon;
+                }
+                $amount = min($this->percentageOf($eligibleTotal, $discount->percentNumerator, $discount->percentDenominator), $eligibleTotal);
+            } else {
+                throw new PricingInvalidCoupon;
+            }
+            if ($amount === 0) {
+                continue;
+            }
+            $piece = $this->allocate($eligible, $amount);
+            foreach ($piece as $lineId => $value) {
+                $shares[$lineId] += $value;
+                $remaining[$lineId] -= $value;
+            }
+            $appliedAny = true;
         }
 
         return $shares;

@@ -56,6 +56,9 @@ final class IssuePromotionGrant
                 throw ValidationException::withMessages(['campaign' => 'Only an active campaign can issue grants.']);
             }
             $kind = $this->records->string($campaign, 'kind');
+            if ($kind === 'automatic') {
+                throw ValidationException::withMessages(['campaign' => 'Automatic offers do not issue coupon codes.']);
+            }
             if ($recipient !== null && $kind !== 'recipient') {
                 throw ValidationException::withMessages(['grant.recipient_customer_id' => 'Recipient grants need a recipient campaign.']);
             }
@@ -191,6 +194,8 @@ final class IssuePromotionGrant
             'redeemed_count' => 0,
             'revision' => 1,
             'status' => 'active',
+            'allows_stacking' => $this->records->int($version, 'allows_stacking') === 1 ? 1 : 0,
+            'exclude_sale_priced' => $this->records->int($version, 'exclude_sale_priced') === 1 ? 1 : 0,
             'created_at' => $now,
             'updated_at' => $now,
         ]);

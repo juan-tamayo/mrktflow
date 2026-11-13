@@ -4,6 +4,15 @@ export interface QuoteMoney {
   exponent: number
   formatted: string
 }
+export interface QuoteOffer {
+  id: string
+  kind: string
+  status: string
+  reasonCode: string
+  reason: string
+  code: string | null
+  name: string | null
+}
 export interface QuoteLine {
   id: string
   title: string
@@ -24,6 +33,7 @@ export interface CheckoutQuote {
   requiresDelivery: boolean
   digitalOnly: boolean
   coupon: string | null
+  offers: QuoteOffer[]
   merchandise: QuoteMoney
   discount: QuoteMoney
   shipping: QuoteMoney
@@ -75,6 +85,30 @@ function money(value: unknown): value is QuoteMoney {
     value.formatted.length <= 40
   )
 }
+function offer(value: unknown): value is QuoteOffer {
+  if (
+    !record(value) ||
+    !keysAllowed(
+      value,
+      ['id', 'kind', 'status', 'reasonCode', 'reason', 'code', 'name'],
+      ['id', 'kind', 'status', 'reasonCode', 'reason', 'code', 'name'],
+    )
+  )
+    return false
+  return (
+    uuid(value.id) &&
+    (value.kind === 'entered_code' || value.kind === 'automatic') &&
+    (value.status === 'applied' || value.status === 'rejected') &&
+    typeof value.reasonCode === 'string' &&
+    value.reasonCode.length >= 1 &&
+    value.reasonCode.length <= 64 &&
+    typeof value.reason === 'string' &&
+    value.reason.length >= 1 &&
+    value.reason.length <= 240 &&
+    (value.code === null || (typeof value.code === 'string' && value.code.length <= 32)) &&
+    (value.name === null || (typeof value.name === 'string' && value.name.length <= 120))
+  )
+}
 function line(value: unknown): value is QuoteLine {
   if (
     !record(value) ||
@@ -113,6 +147,7 @@ export function parseCheckoutQuote(value: unknown): CheckoutQuote | null {
     'requiresDelivery',
     'digitalOnly',
     'coupon',
+    'offers',
     'merchandise',
     'discount',
     'shipping',
@@ -135,6 +170,7 @@ export function parseCheckoutQuote(value: unknown): CheckoutQuote | null {
     'requiresDelivery',
     'digitalOnly',
     'coupon',
+    'offers',
     'merchandise',
     'discount',
     'shipping',
@@ -157,6 +193,9 @@ export function parseCheckoutQuote(value: unknown): CheckoutQuote | null {
     typeof value.requiresDelivery !== 'boolean' ||
     typeof value.digitalOnly !== 'boolean' ||
     (value.coupon !== null && typeof value.coupon !== 'string') ||
+    !Array.isArray(value.offers) ||
+    value.offers.length > 20 ||
+    !value.offers.every(offer) ||
     !money(value.merchandise) ||
     !money(value.discount) ||
     !money(value.shipping) ||
@@ -179,6 +218,7 @@ export function parseCheckoutQuote(value: unknown): CheckoutQuote | null {
     requiresDelivery: value.requiresDelivery,
     digitalOnly: value.digitalOnly,
     coupon: value.coupon,
+    offers: value.offers,
     merchandise: value.merchandise,
     discount: value.discount,
     shipping: value.shipping,

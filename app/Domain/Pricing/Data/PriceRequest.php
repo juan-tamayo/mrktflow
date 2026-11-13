@@ -11,6 +11,7 @@ final readonly class PriceRequest
 {
     /**
      * @param  list<PricedLine>  $lines
+     * @param  list<MerchandiseDiscount>|null  $discounts
      */
     public function __construct(
         public array $lines,
@@ -18,6 +19,7 @@ final readonly class PriceRequest
         public ?MerchandiseDiscount $discount = null,
         public ?Money $shipping = null,
         public ?TaxContext $tax = null,
+        public ?array $discounts = null,
     ) {
         if ($this->lines === [] || ! PricedLine::isUtc($this->quotedAt)) {
             throw new PricingInvalidQuote;
@@ -38,10 +40,25 @@ final readonly class PriceRequest
             && ($this->discount->fixed->currency !== $currency || $this->discount->fixed->exponent !== $exponent)) {
             throw new PricingInvalidQuote;
         }
+        foreach ($this->stackedDiscounts() as $stacked) {
+            if ($stacked->fixed !== null && ($stacked->fixed->currency !== $currency || $stacked->fixed->exponent !== $exponent)) {
+                throw new PricingInvalidQuote;
+            }
+        }
     }
 
     public function discount(): MerchandiseDiscount
     {
         return $this->discount ?? MerchandiseDiscount::none();
+    }
+
+    /** @return list<MerchandiseDiscount> */
+    public function stackedDiscounts(): array
+    {
+        if ($this->discounts === null) {
+            return [$this->discount()];
+        }
+
+        return $this->discounts;
     }
 }

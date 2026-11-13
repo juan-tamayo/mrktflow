@@ -17,6 +17,17 @@
     </ul>
     <p class="theme-price"><span>Merchandise</span><strong>{{ $quote['merchandise']['formatted'] }}</strong></p>
     <p class="theme-price"><span>Discount</span><strong>{{ $quote['discount']['formatted'] }}</strong></p>
+    @if(!empty($quote['offers']))
+        <ul class="theme-checkout-offers">
+            @foreach($quote['offers'] as $offer)
+                <li>
+                    <strong>{{ $offer['status'] === 'applied' ? 'Applied' : 'Not applied' }}</strong>
+                    {{ $offer['name'] ?? $offer['code'] ?? $offer['kind'] }}
+                    — {{ $offer['reason'] }}
+                </li>
+            @endforeach
+        </ul>
+    @endif
     <p class="theme-price"><span>Shipping</span><strong>{{ $quote['shipping']['formatted'] }}</strong></p>
     <p class="theme-price"><span>Tax</span><strong>{{ $quote['tax']['formatted'] }}</strong></p>
     <p class="theme-price"><span>Total</span><strong>{{ $quote['grand_total']['formatted'] }}</strong></p>

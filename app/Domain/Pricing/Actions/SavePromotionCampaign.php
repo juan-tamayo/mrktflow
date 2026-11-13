@@ -36,11 +36,11 @@ final class SavePromotionCampaign
             unset($input['id'], $input['version']);
         }
         $data = Validator::make(['campaign' => $input], [
-            'campaign' => ['required', 'array:id,version,name,kind,status,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,product_ids,category_ids'],
+            'campaign' => ['required', 'array:id,version,name,kind,status,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,product_ids,category_ids,allows_stacking,exclude_sale_priced'],
             'campaign.id' => ['nullable', 'uuid'],
             'campaign.version' => ['required_with:campaign.id', 'integer', 'min:1', 'max:4294967295'],
             'campaign.name' => ['required', 'string', 'max:120'],
-            'campaign.kind' => ['required', Rule::in(['reusable', 'batch', 'recipient'])],
+            'campaign.kind' => ['required', Rule::in(['reusable', 'batch', 'recipient', 'automatic'])],
             'campaign.status' => ['required', Rule::in(['draft', 'active', 'paused'])],
             'campaign.mode' => ['required', Rule::in(['fixed', 'percentage', 'free_shipping'])],
             'campaign.amount' => ['nullable', 'integer', 'min:1', 'max:'.Money::MAX_SAFE],
@@ -55,6 +55,8 @@ final class SavePromotionCampaign
             'campaign.product_ids.*' => ['uuid', 'distinct:strict'],
             'campaign.category_ids' => ['sometimes', 'array', 'max:100'],
             'campaign.category_ids.*' => ['uuid', 'distinct:strict'],
+            'campaign.allows_stacking' => ['sometimes', 'boolean'],
+            'campaign.exclude_sale_priced' => ['sometimes', 'boolean'],
         ])->validate()['campaign'];
         $mode = (string) $data['mode'];
         if ($mode === 'fixed' && ! is_numeric($data['amount'] ?? null)) {
@@ -129,6 +131,8 @@ final class SavePromotionCampaign
                 'max_redemptions_per_customer' => isset($data['max_redemptions_per_customer']) ? (int) $data['max_redemptions_per_customer'] : null,
                 'product_ids' => json_encode($products, JSON_THROW_ON_ERROR),
                 'category_ids' => json_encode($categories, JSON_THROW_ON_ERROR),
+                'allows_stacking' => $this->flag($data['allows_stacking'] ?? false),
+                'exclude_sale_priced' => $this->flag($data['exclude_sale_priced'] ?? false),
                 'created_by' => $actor->id,
                 'created_at' => $now,
             ]);
@@ -151,5 +155,10 @@ final class SavePromotionCampaign
         foreach ($ids as $id) {
             abort_unless(DB::table($table)->where('id', $id)->exists(), 422, 'Choose catalog items that exist.');
         }
+    }
+
+    private function flag(mixed $value): int
+    {
+        return $value === true || $value === 1 || $value === '1' || $value === 'true' ? 1 : 0;
     }
 }

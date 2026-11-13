@@ -84,6 +84,8 @@ final class ReadPromotionCampaigns
             'max_redemptions_per_customer' => $this->records->nullableInt($version, 'max_redemptions_per_customer'),
             'product_ids' => $this->records->idList($version, 'product_ids'),
             'category_ids' => $this->records->idList($version, 'category_ids'),
+            'allows_stacking' => $this->records->int($version, 'allows_stacking') === 1,
+            'exclude_sale_priced' => $this->records->int($version, 'exclude_sale_priced') === 1,
             'grants' => $grants,
             'batches' => $batches,
         ];

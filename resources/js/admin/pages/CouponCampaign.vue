@@ -39,6 +39,8 @@ const props = defineProps<{
     max_redemptions_per_customer: number | null
     product_ids: string[]
     category_ids: string[]
+    allows_stacking: boolean
+    exclude_sale_priced: boolean
     grants: Grant[]
     batches: Batch[]
   } | null
@@ -66,6 +68,8 @@ const form = useForm({
     max_redemptions: props.campaign?.max_redemptions,
     max_redemptions_per_customer: props.campaign?.max_redemptions_per_customer,
     version: props.campaign?.version,
+    allows_stacking: props.campaign?.allows_stacking ?? false,
+    exclude_sale_priced: props.campaign?.exclude_sale_priced ?? false,
   },
 })
 const grantForm = useForm({
@@ -188,6 +192,7 @@ function importRecipients() {
               <option value="reusable">Reusable public code</option>
               <option value="batch">Unique code batch</option>
               <option value="recipient">Recipient-bound grant</option>
+              <option value="automatic">Automatic offer</option>
             </select>
           </div>
           <div class="setup-field">
@@ -230,6 +235,21 @@ function importRecipients() {
             required
           />
         </div>
+        <fieldset class="setup-field">
+          <legend>Stacking and sale prices</legend>
+          <label>
+            <input v-model="form.campaign.allows_stacking" type="checkbox" name="allows_stacking" />
+            Allow stacking with one entered coupon
+          </label>
+          <label>
+            <input
+              v-model="form.campaign.exclude_sale_priced"
+              type="checkbox"
+              name="exclude_sale_priced"
+            />
+            Exclude sale-priced lines
+          </label>
+        </fieldset>
         <div class="setup-field">
           <label for="campaign-min">Minimum eligible subtotal</label>
           <input
