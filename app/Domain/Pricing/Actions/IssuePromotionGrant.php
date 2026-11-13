@@ -146,21 +146,19 @@ final class IssuePromotionGrant
 
     private function createCoupon(object $version, bool $unique, ?string $code, ?DateTimeImmutable $expires, ?string $recipient): string
     {
-        $last = null;
         for ($attempt = 0; $attempt < 16; $attempt++) {
             try {
                 $assigned = $unique ? $this->uniqueCode() : (string) $code;
 
                 return $this->insertCoupon($version, $assigned, $unique, $expires, $recipient);
             } catch (UniqueConstraintViolationException $exception) {
-                $last = $exception;
                 if (! $unique) {
                     throw $exception;
                 }
             }
         }
 
-        throw $last ?? ValidationException::withMessages(['grant.code' => 'A unique coupon code could not be generated.']);
+        throw ValidationException::withMessages(['grant.code' => 'A unique coupon code could not be generated.']);
     }
 
     private function insertCoupon(object $version, string $code, bool $unique, ?DateTimeImmutable $expires, ?string $recipient): string
