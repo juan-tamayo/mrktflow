@@ -1431,7 +1431,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T094: Automatic offers and deterministic stacking
 
-- [ ] Complete T094.
+- [x] Complete T094.
+- **Evidence (November 13, 2026):** Failing `PricingPromotionStack` tests first, then `SelectPromotions`, sequential `AllocateDiscount`, campaign `kind=automatic` plus stacking/sale flags, checkout quote offers, and CheckoutForm applied/rejected copy. One entered code plus at most one automatic offer; default no-stacking uses best grand total with entered-code tie-break; mutual stacking applies automatic merch then entered merch then at most one shipping reduction; sale prices are the base unless excluded; losing entered codes stay visible and are not held. Hosted Quality SUCCESS on `3f264fe` for [PR #58](https://github.com/juan-tamayo/mrktflow/pull/58): [PR run 43349796173](https://github.com/juan-tamayo/mrktflow/actions/runs/43349796173) and [push run 43349787442](https://github.com/juan-tamayo/mrktflow/actions/runs/43349787442) (Pint, PHPStan, PHP/MySQL 8.4 tests, coverage gate, Vitest, production build, Playwright 28 passed, Composer/npm audit). This image has no PHP 8.4/MySQL 8.4 runtime. Did not merge. Did not start T095 or T085. `GET /` stays HTTP 503.
 - **Module / requirements:** `pricing` · PRICE-07.
 - **Depends on:** T027, T031, T093.
 - **Acceptance:** One entered code plus at most one automatic offer obey best-total/tie-break and mutual-stacking rules; show applied/rejected reasons.
