@@ -9,6 +9,7 @@ final readonly class PromotionSelection
     /**
      * @param  list<PromotionOffer>  $offers
      * @param  list<MerchandiseDiscount>  $discounts
+     * @param  list<array{campaign_id: string, revision: int, coupon_id: ?string, amount: int, first_customer: bool}>  $holds
      */
     public function __construct(
         public array $offers,
@@ -16,5 +17,6 @@ final readonly class PromotionSelection
         public bool $waivesShipping,
         public ?string $enteredCode,
         public bool $enteredCodeApplied,
+        public array $holds = [],
     ) {}
 }

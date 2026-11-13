@@ -86,6 +86,9 @@ final class ReadPromotionCampaigns
             'category_ids' => $this->records->idList($version, 'category_ids'),
             'allows_stacking' => $this->records->int($version, 'allows_stacking') === 1,
             'exclude_sale_priced' => $this->records->int($version, 'exclude_sale_priced') === 1,
+            'discount_budget' => $this->records->nullableInt($version, 'discount_budget'),
+            'max_discount_amount' => $this->records->nullableInt($version, 'max_discount_amount'),
+            'first_customer_only' => $this->records->int($version, 'first_customer_only') === 1,
             'grants' => $grants,
             'batches' => $batches,
         ];

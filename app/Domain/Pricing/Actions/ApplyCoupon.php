@@ -10,7 +10,9 @@ use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
 use App\Domain\Pricing\Exceptions\PricingCouponRejected;
+use App\Domain\Pricing\Rules\AllocateDiscount;
 use App\Domain\Pricing\Rules\MatchPromotionLines;
+use App\Domain\Pricing\Support\FirstCustomerEligibility;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +20,11 @@ use Illuminate\Support\Str;
 
 final class ApplyCoupon
 {
-    public function __construct(private readonly MatchPromotionLines $matcher = new MatchPromotionLines) {}
+    public function __construct(
+        private readonly MatchPromotionLines $matcher = new MatchPromotionLines,
+        private readonly FirstCustomerEligibility $firstCustomers = new FirstCustomerEligibility,
+        private readonly AllocateDiscount $allocator = new AllocateDiscount,
+    ) {}
 
     /**
      * @param  list<CouponBasketLine>  $lines
@@ -73,8 +79,16 @@ final class ApplyCoupon
         $mode = $this->string($coupon, 'mode');
         $currency = $this->string($coupon, 'currency');
         $exponent = $this->int($coupon, 'exponent');
+        $cap = $this->grantMaxDiscount($coupon);
         if ($mode === 'percentage') {
-            $discount = MerchandiseDiscount::percentage($this->int($coupon, 'percent_numerator'), $this->int($coupon, 'percent_denominator'), $ids);
+            $raw = $this->allocator->percentageOf($matched['total'], $this->int($coupon, 'percent_numerator'), $this->int($coupon, 'percent_denominator'));
+            $capped = $cap === null ? $raw : min($raw, $cap);
+            if ($capped < 1) {
+                throw new PricingCouponRejected;
+            }
+            $discount = $cap !== null
+                ? MerchandiseDiscount::fixed(Money::of($capped, $currency, $exponent), $ids)
+                : MerchandiseDiscount::percentage($this->int($coupon, 'percent_numerator'), $this->int($coupon, 'percent_denominator'), $ids);
         } elseif ($mode === 'fixed') {
             $amount = $this->int($coupon, 'amount');
             if ($amount > $matched['total']) {
@@ -89,7 +103,8 @@ final class ApplyCoupon
 
         $fullPercent = $mode === 'percentage'
             && $this->int($coupon, 'percent_numerator') > 0
-            && $this->int($coupon, 'percent_numerator') === $this->int($coupon, 'percent_denominator');
+            && $this->int($coupon, 'percent_numerator') === $this->int($coupon, 'percent_denominator')
+            && $cap === null;
 
         return new AppliedCoupon(
             $this->string($coupon, 'id'),
@@ -124,6 +139,35 @@ final class ApplyCoupon
         if ($recipient !== '' && $customerKey !== $recipient) {
             throw new PricingCouponRejected;
         }
+        $versionId = $this->nullableString($campaign, 'current_version_id');
+        $version = $versionId === null ? null : DB::table('promotion_versions')->where('id', $versionId)->first();
+        if ($version !== null && $this->flag($version, 'first_customer_only') && ! $this->firstCustomers->eligible($customerKey, $this->string($campaign, 'id'))) {
+            throw new PricingCouponRejected;
+        }
+        $budget = $version === null ? null : $this->nullableInt($version, 'discount_budget');
+        if ($budget !== null && $this->int($campaign, 'held_amount') + $this->int($campaign, 'redeemed_amount') >= $budget) {
+            throw new PricingCouponExhausted;
+        }
+    }
+
+    private function grantMaxDiscount(object $coupon): ?int
+    {
+        $grant = DB::table('coupon_grants')->where('coupon_id', $this->string($coupon, 'id'))->first();
+        if ($grant === null) {
+            return null;
+        }
+        $campaign = DB::table('promotion_campaigns')->where('id', $this->string($grant, 'campaign_id'))->first();
+        $versionId = $campaign === null ? null : $this->nullableString($campaign, 'current_version_id');
+        $version = $versionId === null ? null : DB::table('promotion_versions')->where('id', $versionId)->first();
+
+        return $version === null ? null : $this->nullableInt($version, 'max_discount_amount');
+    }
+
+    private function nullableString(object $row, string $key): ?string
+    {
+        $value = $this->string($row, $key);
+
+        return $value === '' ? null : $value;
     }
 
     private function instant(object $row, string $key): ?DateTimeImmutable

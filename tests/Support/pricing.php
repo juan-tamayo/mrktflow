@@ -75,5 +75,8 @@ function pricingCampaignInput(array $overrides = []): array
         'category_ids' => [],
         'allows_stacking' => false,
         'exclude_sale_priced' => false,
+        'discount_budget' => null,
+        'max_discount_amount' => null,
+        'first_customer_only' => false,
     ], $overrides);
 }

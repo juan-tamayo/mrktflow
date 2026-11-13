@@ -13,7 +13,9 @@ use App\Domain\Pricing\Data\PriceRequest;
 use App\Domain\Pricing\Data\PromotionOffer;
 use App\Domain\Pricing\Data\PromotionSelection;
 use App\Domain\Pricing\Data\TaxContext;
+use App\Domain\Pricing\Rules\AllocateDiscount;
 use App\Domain\Pricing\Rules\MatchPromotionLines;
+use App\Domain\Pricing\Support\FirstCustomerEligibility;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,8 @@ final class SelectPromotions
         private readonly ApplyCoupon $coupons = new ApplyCoupon,
         private readonly CalculatePrice $prices = new CalculatePrice,
         private readonly MatchPromotionLines $matcher = new MatchPromotionLines,
+        private readonly FirstCustomerEligibility $firstCustomers = new FirstCustomerEligibility,
+        private readonly AllocateDiscount $allocator = new AllocateDiscount,
     ) {}
 
     /**
@@ -42,7 +46,7 @@ final class SelectPromotions
         if ($normalized !== null) {
             $entered = $this->coupons->apply($normalized, $lines, $quotedAt, $customerKey);
         }
-        $automatics = $this->automatics($lines, $quotedAt);
+        $automatics = $this->automatics($lines, $quotedAt, $customerKey);
         /** @var list<array{auto: ?array<string, mixed>, coupon: ?AppliedCoupon, stack: bool}> $candidates */
         $candidates = [];
         if ($entered !== null) {
@@ -159,6 +163,7 @@ final class SelectPromotions
             $built['waives'],
             $entered?->code,
             $winner['coupon'] !== null,
+            $this->holds($winner['auto'], $winner['coupon'] instanceof AppliedCoupon ? $winner['coupon'] : null, $priced, $quotedAt, $shipping, $tax),
         );
     }
 
@@ -166,7 +171,7 @@ final class SelectPromotions
      * @param  list<CouponBasketLine>  $lines
      * @return list<array<string, mixed>>
      */
-    private function automatics(array $lines, DateTimeImmutable $quotedAt): array
+    private function automatics(array $lines, DateTimeImmutable $quotedAt, ?string $customerKey): array
     {
         $rows = [];
         $query = DB::table('promotion_campaigns')
@@ -177,6 +182,9 @@ final class SelectPromotions
             ->select([
                 'promotion_campaigns.id',
                 'promotion_campaigns.name',
+                'promotion_campaigns.revision',
+                'promotion_campaigns.held_amount',
+                'promotion_campaigns.redeemed_amount',
                 'promotion_versions.mode',
                 'promotion_versions.amount',
                 'promotion_versions.percent_numerator',
@@ -190,6 +198,9 @@ final class SelectPromotions
                 'promotion_versions.category_ids',
                 'promotion_versions.allows_stacking',
                 'promotion_versions.exclude_sale_priced',
+                'promotion_versions.discount_budget',
+                'promotion_versions.max_discount_amount',
+                'promotion_versions.first_customer_only',
             ]);
         foreach ($query->get() as $row) {
             $starts = $this->instant($row, 'starts_at');
@@ -199,6 +210,9 @@ final class SelectPromotions
             }
             $products = $this->ids($row, 'product_ids');
             $categories = $this->ids($row, 'category_ids');
+            if ($this->flag($row, 'first_customer_only') && ! $this->firstCustomers->eligible($customerKey, $this->string($row, 'id'))) {
+                continue;
+            }
             $matched = $this->matcher->eligible($lines, $quotedAt, $products, $categories, $this->flag($row, 'exclude_sale_priced'));
             if ($matched['lines'] === [] || $matched['total'] < $this->int($row, 'min_eligible_subtotal')) {
                 continue;
@@ -208,7 +222,19 @@ final class SelectPromotions
             $currency = $this->string($row, 'currency');
             $exponent = $this->int($row, 'exponent');
             if ($mode === 'percentage') {
-                $discount = MerchandiseDiscount::percentage($this->int($row, 'percent_numerator'), $this->int($row, 'percent_denominator'), $ids);
+                $raw = $this->allocator->percentageOf(
+                    $matched['total'],
+                    $this->int($row, 'percent_numerator'),
+                    $this->int($row, 'percent_denominator'),
+                );
+                $cap = $this->nullableInt($row, 'max_discount_amount');
+                $capped = $cap === null ? $raw : min($raw, $cap);
+                if ($capped < 1) {
+                    continue;
+                }
+                $discount = $cap !== null
+                    ? MerchandiseDiscount::fixed(Money::of($capped, $currency, $exponent), $ids)
+                    : MerchandiseDiscount::percentage($this->int($row, 'percent_numerator'), $this->int($row, 'percent_denominator'), $ids);
             } elseif ($mode === 'fixed') {
                 $amount = $this->int($row, 'amount');
                 if ($amount > $matched['total']) {
@@ -220,16 +246,28 @@ final class SelectPromotions
             } else {
                 continue;
             }
+            $estimated = $mode === 'fixed' ? $this->int($row, 'amount') : ($mode === 'percentage'
+                ? ($discount instanceof MerchandiseDiscount && $discount->mode === 'fixed' && $discount->fixed !== null
+                    ? $discount->fixed->amount
+                    : $this->allocator->percentageOf($matched['total'], $this->int($row, 'percent_numerator'), $this->int($row, 'percent_denominator')))
+                : 0);
+            $budget = $this->nullableInt($row, 'discount_budget');
+            if ($budget !== null && $this->int($row, 'held_amount') + $this->int($row, 'redeemed_amount') + $estimated > $budget) {
+                continue;
+            }
             $fullPercent = $mode === 'percentage'
                 && $this->int($row, 'percent_numerator') > 0
-                && $this->int($row, 'percent_numerator') === $this->int($row, 'percent_denominator');
+                && $this->int($row, 'percent_numerator') === $this->int($row, 'percent_denominator')
+                && $this->nullableInt($row, 'max_discount_amount') === null;
             $rows[] = [
                 'id' => $this->string($row, 'id'),
                 'name' => $this->string($row, 'name'),
+                'revision' => $this->int($row, 'revision'),
                 'mode' => $mode,
                 'discount' => $discount,
                 'waives' => $mode === 'free_shipping' || $fullPercent,
                 'allows_stacking' => $this->flag($row, 'allows_stacking'),
+                'first_customer' => $this->flag($row, 'first_customer_only'),
             ];
         }
 
@@ -277,6 +315,58 @@ final class SelectPromotions
     }
 
     /**
+     * @param  array<string, mixed>|null  $automatic
+     * @param  list<PricedLine>  $priced
+     * @return list<array{campaign_id: string, revision: int, coupon_id: ?string, amount: int, first_customer: bool}>
+     */
+    private function holds(?array $automatic, ?AppliedCoupon $coupon, array $priced, DateTimeImmutable $quotedAt, ?Money $shipping, ?TaxContext $tax): array
+    {
+        $holds = [];
+        if (is_array($automatic)) {
+            $autoAmount = $this->merchandiseDiscount(['auto' => $automatic, 'coupon' => null, 'stack' => false], $priced, $quotedAt, $shipping, $tax);
+            $holds[] = [
+                'campaign_id' => (string) $automatic['id'],
+                'revision' => (int) $automatic['revision'],
+                'coupon_id' => null,
+                'amount' => $autoAmount,
+                'first_customer' => (bool) $automatic['first_customer'],
+            ];
+        }
+        if ($coupon !== null) {
+            $grant = DB::table('coupon_grants')->where('coupon_id', $coupon->couponId)->first();
+            if ($grant !== null) {
+                $campaignId = $this->string($grant, 'campaign_id');
+                $campaign = DB::table('promotion_campaigns')->where('id', $campaignId)->first();
+                $version = $campaign === null ? null : DB::table('promotion_versions')->where('id', $this->string($campaign, 'current_version_id'))->first();
+                $stacked = $automatic !== null;
+                $total = $this->merchandiseDiscount(['auto' => $automatic, 'coupon' => $coupon, 'stack' => $stacked], $priced, $quotedAt, $shipping, $tax);
+                $autoAmount = $automatic === null ? 0 : $this->merchandiseDiscount(['auto' => $automatic, 'coupon' => null, 'stack' => false], $priced, $quotedAt, $shipping, $tax);
+                $holds[] = [
+                    'campaign_id' => $campaignId,
+                    'revision' => $campaign === null ? $coupon->revision : $this->int($campaign, 'revision'),
+                    'coupon_id' => $coupon->couponId,
+                    'amount' => max(0, $total - $autoAmount),
+                    'first_customer' => $version !== null && $this->flag($version, 'first_customer_only'),
+                ];
+            }
+        }
+
+        return $holds;
+    }
+
+    /**
+     * @param  array{auto: ?array<string, mixed>, coupon: ?AppliedCoupon, stack: bool}  $candidate
+     * @param  list<PricedLine>  $priced
+     */
+    private function merchandiseDiscount(array $candidate, array $priced, DateTimeImmutable $quotedAt, ?Money $shipping, ?TaxContext $tax): int
+    {
+        $built = $this->build($candidate['auto'], $candidate['coupon']);
+        $charge = $built['waives'] ? ($shipping?->withAmount(0) ?? null) : $shipping;
+
+        return $this->prices->quote(new PriceRequest($priced, $quotedAt, null, $charge, $tax, $built['discounts']))->merchandiseDiscount->amount;
+    }
+
+    /**
      * @param  array{auto: ?array<string, mixed>, coupon: ?AppliedCoupon, stack: bool}  $candidate
      * @param  list<PricedLine>  $priced
      */
@@ -310,6 +400,13 @@ final class SelectPromotions
         $value = get_object_vars($row)[$key] ?? null;
 
         return is_numeric($value) ? (int) $value : 0;
+    }
+
+    private function nullableInt(object $row, string $key): ?int
+    {
+        $value = get_object_vars($row)[$key] ?? null;
+
+        return is_numeric($value) ? (int) $value : null;
     }
 
     private function flag(object $row, string $key): bool

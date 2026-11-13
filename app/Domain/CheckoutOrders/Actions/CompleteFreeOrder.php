@@ -9,6 +9,7 @@ use App\Domain\CheckoutOrders\Support\OrderStates;
 use App\Domain\Platform\Actions\ConsumeEvent;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Actions\HoldPromotionBudget;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -96,6 +97,10 @@ final class CompleteFreeOrder
         $coupon = DB::table('coupon_holds')->where('intent_id', $orderId)->lockForUpdate()->first();
         if ($coupon !== null && $this->string($coupon, 'status') === 'active') {
             app(HoldCoupon::class)->commit($orderId, $this->operationKey('coupon-commit', $orderId));
+        }
+        $budget = DB::table('promotion_budget_holds')->where('intent_id', $orderId)->lockForUpdate()->first();
+        if ($budget !== null && $this->string($budget, 'status') === 'active') {
+            app(HoldPromotionBudget::class)->commit($orderId, $this->operationKey('promotion-commit', $orderId));
         }
     }
 

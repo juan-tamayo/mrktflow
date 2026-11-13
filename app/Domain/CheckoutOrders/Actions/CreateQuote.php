@@ -265,6 +265,7 @@ final class CreateQuote
             'digital_only' => $shippingQuote->digitalOnly,
             'coupon' => $couponCode,
             'offers' => array_map(fn (PromotionOffer $offer): array => $offer->toArray(), $selection->offers),
+            'promotions' => $selection->holds,
             'merchandise' => CartMoney::format($taxed->merchandiseSubtotal->amount, $taxed->merchandiseSubtotal->currency, $taxed->merchandiseSubtotal->exponent),
             'discount' => CartMoney::format($taxed->merchandiseDiscount->amount, $taxed->merchandiseDiscount->currency, $taxed->merchandiseDiscount->exponent),
             'shipping' => CartMoney::format($taxed->shipping->amount, $taxed->shipping->currency, $taxed->shipping->exponent),
