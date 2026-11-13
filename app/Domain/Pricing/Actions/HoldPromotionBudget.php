@@ -12,6 +12,7 @@ use App\Domain\Pricing\Exceptions\PricingCouponRejected;
 use App\Domain\Pricing\Support\FirstCustomerEligibility;
 use App\Domain\Pricing\Support\PromotionRecords;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -134,12 +135,9 @@ final class HoldPromotionBudget
                 return null;
             }
             if ($this->claim($operationKey, $intentId, 'commit', $this->mutationHash('commit', $intentId))) {
-                $first = $holds->first();
-
-                return $first === null ? null : $this->receipt($intentId, $this->records->string($first, 'campaign_id'), $operationKey);
+                return $this->firstReceipt($holds, $intentId, $operationKey);
             }
             $now = now();
-            $last = null;
             foreach ($holds as $hold) {
                 DB::table('promotion_campaigns')->where('id', $this->records->string($hold, 'campaign_id'))->lockForUpdate()->first();
                 if ($this->records->string($hold, 'status') !== 'active') {
@@ -153,10 +151,9 @@ final class HoldPromotionBudget
                 DB::table('promotion_campaigns')->where('id', $this->records->string($hold, 'campaign_id'))->decrement('held_amount', $amount);
                 DB::table('promotion_campaigns')->where('id', $this->records->string($hold, 'campaign_id'))->increment('redeemed_amount', $amount);
                 DB::table('promotion_campaigns')->where('id', $this->records->string($hold, 'campaign_id'))->update(['updated_at' => $now]);
-                $last = $hold;
             }
 
-            return $last === null ? null : $this->receipt($intentId, $this->records->string($last, 'campaign_id'), $operationKey);
+            return $this->firstReceipt($holds, $intentId, $operationKey);
         });
     }
 
@@ -170,17 +167,12 @@ final class HoldPromotionBudget
                 return null;
             }
             if ($this->claim($operationKey, $intentId, 'hold', $this->mutationHash('rehold', $intentId))) {
-                $first = $holds->first();
-
-                return $first === null ? null : $this->receipt($intentId, $this->records->string($first, 'campaign_id'), $operationKey);
+                return $this->firstReceipt($holds, $intentId, $operationKey);
             }
             $now = now();
-            $last = null;
             foreach ($holds as $hold) {
                 $status = $this->records->string($hold, 'status');
                 if (in_array($status, ['active', 'committed'], true)) {
-                    $last = $hold;
-
                     continue;
                 }
                 if ($status !== 'released') {
@@ -214,10 +206,9 @@ final class HoldPromotionBudget
                 ]);
                 DB::table('promotion_campaigns')->where('id', $campaignId)->increment('held_amount', $amount);
                 DB::table('promotion_campaigns')->where('id', $campaignId)->update(['updated_at' => $now]);
-                $last = $hold;
             }
 
-            return $last === null ? null : $this->receipt($intentId, $this->records->string($last, 'campaign_id'), $operationKey);
+            return $this->firstReceipt($holds, $intentId, $operationKey);
         });
     }
 
@@ -231,12 +222,9 @@ final class HoldPromotionBudget
                 return null;
             }
             if ($this->claim($operationKey, $intentId, 'release', $this->mutationHash('release', $intentId))) {
-                $first = $holds->first();
-
-                return $first === null ? null : $this->receipt($intentId, $this->records->string($first, 'campaign_id'), $operationKey);
+                return $this->firstReceipt($holds, $intentId, $operationKey);
             }
             $now = now();
-            $last = null;
             foreach ($holds as $hold) {
                 DB::table('promotion_campaigns')->where('id', $this->records->string($hold, 'campaign_id'))->lockForUpdate()->first();
                 if ($this->records->string($hold, 'status') !== 'active') {
@@ -249,10 +237,9 @@ final class HoldPromotionBudget
                 ]);
                 DB::table('promotion_campaigns')->where('id', $this->records->string($hold, 'campaign_id'))
                     ->decrement('held_amount', $this->records->int($hold, 'amount'));
-                $last = $hold;
             }
 
-            return $last === null ? null : $this->receipt($intentId, $this->records->string($last, 'campaign_id'), $operationKey);
+            return $this->firstReceipt($holds, $intentId, $operationKey);
         });
     }
 
@@ -298,6 +285,16 @@ final class HoldPromotionBudget
     private function mutationHash(string $action, string $intentId): string
     {
         return hash('sha256', json_encode(['action' => $action, 'intent_id' => $intentId], JSON_THROW_ON_ERROR));
+    }
+
+    /** @param  Collection<int, object>  $holds */
+    private function firstReceipt(Collection $holds, string $intentId, string $operationKey): PromotionBudgetReceipt
+    {
+        foreach ($holds as $first) {
+            return $this->receipt($intentId, $this->records->string($first, 'campaign_id'), $operationKey);
+        }
+
+        throw new PricingCouponRejected;
     }
 
     private function receipt(string $intentId, string $campaignId, string $operationKey): PromotionBudgetReceipt

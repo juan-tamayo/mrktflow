@@ -246,11 +246,13 @@ final class SelectPromotions
             } else {
                 continue;
             }
-            $estimated = $mode === 'fixed' ? $this->int($row, 'amount') : ($mode === 'percentage'
-                ? ($discount instanceof MerchandiseDiscount && $discount->mode === 'fixed' && $discount->fixed !== null
-                    ? $discount->fixed->amount
-                    : $this->allocator->percentageOf($matched['total'], $this->int($row, 'percent_numerator'), $this->int($row, 'percent_denominator')))
-                : 0);
+            $estimated = $mode === 'fixed'
+                ? $this->int($row, 'amount')
+                : ($mode === 'percentage'
+                    ? ($discount->mode === 'fixed' && $discount->fixed !== null
+                        ? $discount->fixed->amount
+                        : $this->allocator->percentageOf($matched['total'], $this->int($row, 'percent_numerator'), $this->int($row, 'percent_denominator')))
+                    : 0);
             $budget = $this->nullableInt($row, 'discount_budget');
             if ($budget !== null && $this->int($row, 'held_amount') + $this->int($row, 'redeemed_amount') + $estimated > $budget) {
                 continue;
