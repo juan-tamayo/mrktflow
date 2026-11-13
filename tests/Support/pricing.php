@@ -52,3 +52,24 @@ function pricingSavedCoupon(StaffAccount $owner, array $overrides = []): array
 {
     return app(SaveCoupon::class)->save($owner, pricingCouponInput($overrides));
 }
+
+/** @param array<string, mixed> $overrides */
+function pricingCampaignInput(array $overrides = []): array
+{
+    return array_replace([
+        'name' => 'Studio welcome offer',
+        'kind' => 'reusable',
+        'status' => 'active',
+        'mode' => 'percentage',
+        'percent_numerator' => 10,
+        'percent_denominator' => 100,
+        'amount' => null,
+        'min_eligible_subtotal' => 0,
+        'starts_at' => '2026-01-01T00:00:00Z',
+        'ends_at' => '2026-12-31T00:00:00Z',
+        'max_redemptions' => 100,
+        'max_redemptions_per_customer' => 1,
+        'product_ids' => [],
+        'category_ids' => [],
+    ], $overrides);
+}

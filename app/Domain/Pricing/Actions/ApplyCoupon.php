@@ -31,6 +31,7 @@ final class ApplyCoupon
         if ($coupon === null || $this->string($coupon, 'status') !== 'active') {
             throw new PricingCouponRejected;
         }
+        $this->assertGrant($coupon, $quotedAt, $customerKey);
         $starts = $this->instant($coupon, 'starts_at');
         $ends = $this->instant($coupon, 'ends_at');
         if (($starts !== null && $quotedAt < $starts) || ($ends !== null && $quotedAt >= $ends)) {
@@ -163,6 +164,29 @@ final class ApplyCoupon
         }
 
         return false;
+    }
+
+    private function assertGrant(object $coupon, DateTimeImmutable $quotedAt, ?string $customerKey): void
+    {
+        $grant = DB::table('coupon_grants')->where('coupon_id', $this->string($coupon, 'id'))->first();
+        if ($grant === null) {
+            return;
+        }
+        if ($this->string($grant, 'status') !== 'issued') {
+            throw new PricingCouponRejected;
+        }
+        $campaign = DB::table('promotion_campaigns')->where('id', $this->string($grant, 'campaign_id'))->first();
+        if ($campaign === null || $this->string($campaign, 'status') !== 'active') {
+            throw new PricingCouponRejected;
+        }
+        $expires = $this->instant($grant, 'expires_at');
+        if ($expires !== null && $quotedAt >= $expires) {
+            throw new PricingCouponRejected;
+        }
+        $recipient = $this->string($grant, 'recipient_customer_id');
+        if ($recipient !== '' && $customerKey !== $recipient) {
+            throw new PricingCouponRejected;
+        }
     }
 
     private function instant(object $row, string $key): ?DateTimeImmutable

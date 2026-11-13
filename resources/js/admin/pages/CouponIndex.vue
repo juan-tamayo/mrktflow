@@ -34,6 +34,7 @@ defineProps<{
       </p>
       <p v-if="canWrite">
         <a class="primary-button" href="/admin/coupons/create">Create a coupon</a>
+        <a class="text-link" href="/admin/coupon-campaigns">Coupon campaigns</a>
       </p>
       <p v-if="coupons.length === 0" class="workspace-note">No coupons yet.</p>
       <ul v-else class="product-list">

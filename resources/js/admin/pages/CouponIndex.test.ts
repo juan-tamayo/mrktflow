@@ -23,9 +23,11 @@ it('lists coupons and only offers create when pricing write is allowed', async (
     },
   })
   expect(wrapper.find('a[href="/admin/coupons/create"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/coupon-campaigns"]').exists()).toBe(true)
   expect(wrapper.text()).toContain('Studio welcome')
   expect(wrapper.text()).toContain('SAVE10')
   await wrapper.setProps({ canWrite: false, coupons: [] })
   expect(wrapper.find('a[href="/admin/coupons/create"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/coupon-campaigns"]').exists()).toBe(false)
   expect(wrapper.text()).toContain('No coupons yet.')
 })

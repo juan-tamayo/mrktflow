@@ -35,6 +35,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/schemas"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/coupons"]').exists()).toBe(true)
+  expect(wrapper.find('a[href="/admin/coupon-campaigns"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/taxes"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/pricing-preview"]').exists()).toBe(true)
   expect(
@@ -42,7 +43,7 @@ it('shows the closed launch status and only authorized workspace actions', async
       .get('.tool-links')
       .findAll('.tool-link')
       .map((link) => link.attributes('href')),
-  ).toEqual(['/admin/coupons', '/admin/taxes', '/admin/pricing-preview'])
+  ).toEqual(['/admin/coupons', '/admin/coupon-campaigns', '/admin/taxes', '/admin/pricing-preview'])
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/content"]').exists()).toBe(true)
   expect(wrapper.find('a[href="/admin/content/import"]').exists()).toBe(true)
@@ -81,6 +82,7 @@ it('shows the closed launch status and only authorized workspace actions', async
   expect(wrapper.find('a[href="/admin/categories"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/schemas"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/coupons"]').exists()).toBe(false)
+  expect(wrapper.find('a[href="/admin/coupon-campaigns"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/taxes"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/pricing-preview"]').exists()).toBe(false)
   expect(wrapper.find('a[href="/admin/shipping"]').exists()).toBe(false)
@@ -111,6 +113,7 @@ it('shows the closed launch status and only authorized workspace actions', async
           '/admin/categories',
           '/admin/schemas',
           '/admin/coupons',
+          '/admin/coupon-campaigns',
           '/admin/taxes',
           '/admin/pricing-preview',
           '/admin/shipping',
