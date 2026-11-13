@@ -1420,7 +1420,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T093: Coupon batches and stable recipient grants
 
-- [ ] Complete T093.
+- [x] Complete T093 locally; hosted Quality evidence pending.
+- **Evidence November 13:** Failing `PricingCouponGrant` tests were written first, then `promotion_campaigns` / `coupon_batches` / `coupon_grants`, `IssuePromotionGrant`, bounded `GenerateCouponBatch`, recipient import, and `/admin/coupon-campaigns`. Reusable, batch, and recipient issuance use unique `(issuer, sourceIntentId)`; replay returns the same grant; a changed payload conflicts; colliding generated codes retry; `ApplyCoupon` denies the wrong recipient or a guest. Privileged staff still must pass 2FA. `GET /` remains 503. This environment has no PHP 8.4/MySQL 8.4 runtime; frontend checks are local and PHP/Pint/PHPStan/Playwright/`composer audit` evidence is hosted Quality.
 - **Module / requirements:** `pricing` · PRICE-06, MKT-05.
 - **Depends on:** T028, T092.
 - **Acceptance:** Reusable codes, bounded batches and recipient grants issue through stable source intents; code collision/replay never duplicates benefits.

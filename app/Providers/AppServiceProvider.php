@@ -14,7 +14,9 @@ use App\Domain\Identity\Models\StaffAccount;
 use App\Domain\Identity\Support\StaffPermissions;
 use App\Domain\Platform\Support\TestDatabaseGuard;
 use App\Domain\Pricing\Actions\CalculatePrice;
+use App\Domain\Pricing\Contracts\CouponCodeGenerator;
 use App\Domain\Pricing\Contracts\PriceCalculator;
+use App\Domain\Pricing\Support\RandomCouponCodeGenerator;
 use App\Domain\Shipping\Actions\QuoteShipping;
 use App\Domain\Shipping\Contracts\ShippingQuoter;
 use App\Domain\ThemesContent\Actions\RegisterTheme;
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CatalogReader::class, ReadCatalog::class);
         $this->app->singleton(InventoryAllocator::class, AllocateInventory::class);
         $this->app->singleton(PriceCalculator::class, CalculatePrice::class);
+        $this->app->singleton(CouponCodeGenerator::class, RandomCouponCodeGenerator::class);
         $this->app->singleton(ShippingQuoter::class, QuoteShipping::class);
         $this->app->singleton(PaymentGateway::class, StripeGateway::class);
         $this->app->singleton(ThemeRegistry::class, RegisterTheme::class);
