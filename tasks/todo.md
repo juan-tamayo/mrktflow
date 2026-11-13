@@ -1447,7 +1447,8 @@ Implementation slices: T005a — CLI secret lifecycle, database lock/settings ag
 
 ### T095: Promotion budgets and first-customer claims
 
-- [ ] Complete T095.
+- [x] Complete T095 locally; hosted Quality succeeded on this PR; not merged.
+- **Evidence November 13:** Failing `PricingPromotionBudget` tests first, then `promotion_budget_holds` / `promotion_budget_operations`, campaign `held_amount`/`redeemed_amount`, version `discount_budget`/`max_discount_amount`/`first_customer_only`, `HoldPromotionBudget`, checkout freeze/commit/rehold/release, and refunds that slice frozen order-line allocations. Campaign row locks serialize the last budget unit and simultaneous verified first-order claims; guests and unverified customers cannot claim first-customer offers; refunds and campaign pause do not replenish budget or restore first-customer claims. Percent campaigns with a budget require a finite per-order cap. Privileged staff still must pass 2FA. `GET /` remains 503. This environment has no PHP 8.4/MySQL 8.4 runtime. Hosted Quality on `8b76a7c` ([run 43355447416](https://github.com/juan-tamayo/mrktflow/actions/runs/43355447416)): Pint 697 files, PHPStan no errors, PHP 821 passed / 1 skipped (9347 assertions) on isolated MySQL 8.4, coverage Pricing 90.68% / Catalog 92.50% / CheckoutOrders 91.02% / Fulfillment 93.27%, Vitest 195/195, production build, Playwright 28 Chromium, composer audit 0, npm audit 0, 238 signatures / 97 attestations. Did not merge. Did not start T096 or T085.
 - **Module / requirements:** `pricing` · PRICE-08, PRICE-06.
 - **Depends on:** T034, T041, T094.
 - **Acceptance:** Budget/recipient/first-order eligibility is atomically held with checkout; refunds and campaign pause preserve frozen allocations and provider outcomes.
