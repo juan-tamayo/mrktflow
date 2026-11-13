@@ -21,6 +21,12 @@ defineProps<{ quote: CheckoutQuote }>()
     <p class="theme-price">
       <span>Discount</span><strong>{{ quote.discount.formatted }}</strong>
     </p>
+    <ul v-if="quote.offers.length > 0" class="theme-checkout-offers">
+      <li v-for="offer in quote.offers" :key="offer.id">
+        <strong>{{ offer.status === 'applied' ? 'Applied' : 'Not applied' }}</strong>
+        {{ offer.name ?? offer.code ?? offer.kind }} — {{ offer.reason }}
+      </li>
+    </ul>
     <p class="theme-price">
       <span>Shipping</span><strong>{{ quote.shipping.formatted }}</strong>
     </p>

@@ -47,6 +47,8 @@ it('requests a unique batch for a saved campaign', async () => {
         max_redemptions_per_customer: 1,
         product_ids: [],
         category_ids: [],
+        allows_stacking: false,
+        exclude_sale_priced: false,
         grants: [],
         batches: [],
       },

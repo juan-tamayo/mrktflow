@@ -14,6 +14,26 @@ const quote = {
   requiresDelivery: true,
   digitalOnly: false,
   coupon: 'SAVE10',
+  offers: [
+    {
+      id: '10000000-0000-4000-8000-000000000033',
+      kind: 'entered_code',
+      status: 'rejected',
+      reasonCode: 'rejected_worse_total',
+      reason: 'Not applied: another offer produced a better payable total.',
+      code: 'SAVE10',
+      name: 'SAVE10',
+    },
+    {
+      id: '10000000-0000-4000-8000-000000000034',
+      kind: 'automatic',
+      status: 'applied',
+      reasonCode: 'applied_best_total',
+      reason: 'Applied because it produced the better payable total.',
+      code: null,
+      name: 'Sitewide twenty',
+    },
+  ],
   merchandise: { amount: 2500, currency: 'USD', exponent: 2, formatted: 'USD 25.00' },
   discount: { amount: 250, currency: 'USD', exponent: 2, formatted: 'USD 2.50' },
   shipping: { amount: 300, currency: 'USD', exponent: 2, formatted: 'USD 3.00' },
@@ -37,6 +57,8 @@ describe('default theme checkout quote', () => {
     const wrapper = mount(CheckoutForm, { props: { quote } })
     expect(wrapper.attributes('data-platform-slot')).toBe('checkout.summary')
     expect(wrapper.text()).toContain('USD 28.05')
+    expect(wrapper.text()).toContain('Not applied: another offer produced a better payable total.')
+    expect(wrapper.text()).toContain('Applied because it produced the better payable total.')
     expect(wrapper.text()).toContain('Confirm these totals before payment')
     expect(wrapper.text()).not.toContain('Pay now')
     expect(parseCheckoutQuote(quote)).not.toBeNull()

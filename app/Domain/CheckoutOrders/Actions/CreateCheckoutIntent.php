@@ -207,6 +207,18 @@ final class CreateCheckoutIntent
             new DateTimeZone('UTC'),
         );
         $couponCode = is_string($snapshot['coupon'] ?? null) ? (string) $snapshot['coupon'] : null;
+        $enteredApplied = $couponCode !== null;
+        if (is_array($snapshot['offers'] ?? null)) {
+            $enteredApplied = false;
+            foreach ($snapshot['offers'] as $offer) {
+                if (is_array($offer) && ($offer['kind'] ?? null) === 'entered_code' && ($offer['status'] ?? null) === 'applied') {
+                    $enteredApplied = true;
+                }
+            }
+        }
+        if (! $enteredApplied) {
+            $couponCode = null;
+        }
         $coupon = $couponCode === null ? null : DB::table('coupons')->where('code_normalized', strtoupper($couponCode))->lockForUpdate()->first();
         DB::table('orders')->insert([
             'id' => $orderId,

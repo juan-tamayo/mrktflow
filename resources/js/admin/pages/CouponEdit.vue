@@ -24,6 +24,8 @@ const props = defineProps<{
     version: number
     product_ids: string[]
     category_ids: string[]
+    allows_stacking: boolean
+    exclude_sale_priced: boolean
   } | null
   products: CatalogItem[]
   categories: CatalogItem[]
@@ -47,6 +49,8 @@ const form = useForm({
     version: props.coupon?.version,
     product_ids: [...(props.coupon?.product_ids ?? [])],
     category_ids: [...(props.coupon?.category_ids ?? [])],
+    allows_stacking: props.coupon?.allows_stacking ?? false,
+    exclude_sale_priced: props.coupon?.exclude_sale_priced ?? false,
   },
 })
 function toggle(list: 'product_ids' | 'category_ids', id: string) {
@@ -189,6 +193,21 @@ function submit() {
             />
           </div>
         </div>
+        <fieldset class="setup-field">
+          <legend>Stacking and sale prices</legend>
+          <label>
+            <input v-model="form.coupon.allows_stacking" type="checkbox" name="allows_stacking" />
+            Allow stacking with one automatic offer
+          </label>
+          <label>
+            <input
+              v-model="form.coupon.exclude_sale_priced"
+              type="checkbox"
+              name="exclude_sale_priced"
+            />
+            Exclude sale-priced lines
+          </label>
+        </fieldset>
         <div class="setup-field">
           <label for="coupon-status">Status</label>
           <select id="coupon-status" v-model="form.coupon.status" name="status" required>

@@ -33,7 +33,7 @@ final class SaveCoupon
             }
         }
         $data = Validator::make(['coupon' => $input], [
-            'coupon' => ['required', 'array:id,version,code,name,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,status,product_ids,category_ids'],
+            'coupon' => ['required', 'array:id,version,code,name,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,status,product_ids,category_ids,allows_stacking,exclude_sale_priced'],
             'coupon.id' => ['nullable', 'uuid'],
             'coupon.version' => ['required_with:coupon.id', 'integer', 'min:1', 'max:4294967295'],
             'coupon.code' => ['required', 'string', 'max:32', 'regex:/^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/'],
@@ -52,6 +52,8 @@ final class SaveCoupon
             'coupon.product_ids.*' => ['uuid', 'distinct:strict'],
             'coupon.category_ids' => ['sometimes', 'array', 'max:100'],
             'coupon.category_ids.*' => ['uuid', 'distinct:strict'],
+            'coupon.allows_stacking' => ['sometimes', 'boolean'],
+            'coupon.exclude_sale_priced' => ['sometimes', 'boolean'],
         ])->validate()['coupon'];
         $code = strtoupper((string) $data['code']);
         $mode = (string) $data['mode'];
@@ -103,6 +105,8 @@ final class SaveCoupon
                     'max_redemptions_per_customer' => isset($data['max_redemptions_per_customer']) ? (int) $data['max_redemptions_per_customer'] : null,
                     'revision' => $revision,
                     'status' => $data['status'],
+                    'allows_stacking' => $this->flag($data['allows_stacking'] ?? false),
+                    'exclude_sale_priced' => $this->flag($data['exclude_sale_priced'] ?? false),
                     'updated_at' => $now,
                 ];
                 if ($existing === null) {
@@ -176,5 +180,10 @@ final class SaveCoupon
         }
 
         return $time->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    }
+
+    private function flag(mixed $value): int
+    {
+        return $value === true || $value === 1 || $value === '1' || $value === 'true' ? 1 : 0;
     }
 }

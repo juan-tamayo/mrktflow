@@ -80,7 +80,7 @@ final class CouponController
     /** @return array<string, mixed> */
     private function validated(Request $request, bool $update): array
     {
-        $keys = 'id,version,code,name,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,status,product_ids,category_ids';
+        $keys = 'id,version,code,name,mode,amount,percent_numerator,percent_denominator,min_eligible_subtotal,starts_at,ends_at,max_redemptions,max_redemptions_per_customer,status,product_ids,category_ids,allows_stacking,exclude_sale_priced';
         $data = $request->validate([
             'coupon' => ['required', 'array:'.$keys],
             'coupon.code' => ['required', 'string', 'max:32'],

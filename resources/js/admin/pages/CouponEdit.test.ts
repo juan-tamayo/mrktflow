@@ -48,6 +48,8 @@ it('does not execute untrusted coupon names', () => {
         version: 1,
         product_ids: [],
         category_ids: [],
+        allows_stacking: false,
+        exclude_sale_priced: false,
       },
     },
   })

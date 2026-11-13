@@ -10,6 +10,7 @@ use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
 use App\Domain\Pricing\Exceptions\PricingCouponRejected;
+use App\Domain\Pricing\Rules\MatchPromotionLines;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
 
 final class ApplyCoupon
 {
+    public function __construct(private readonly MatchPromotionLines $matcher = new MatchPromotionLines) {}
+
     /**
      * @param  list<CouponBasketLine>  $lines
      */
@@ -62,24 +65,11 @@ final class ApplyCoupon
                 $categoryScopes[] = $this->string($scope, 'target_id');
             }
         }
-        $categoryPaths = $this->categoryPaths($lines, $categoryScopes);
-        $eligible = [];
-        $eligibleTotal = 0;
-        foreach ($lines as $line) {
-            if (! $this->lineEligible($line, $productScopes, $categoryScopes, $categoryPaths)) {
-                continue;
-            }
-            $subtotal = $line->line->unitPriceAt($quotedAt)->times($line->line->quantity);
-            if ($eligibleTotal > Money::MAX_SAFE - $subtotal->amount) {
-                throw new PricingCouponRejected;
-            }
-            $eligible[] = $line;
-            $eligibleTotal += $subtotal->amount;
-        }
-        if ($eligible === [] || $eligibleTotal < $this->int($coupon, 'min_eligible_subtotal')) {
+        $matched = $this->matcher->eligible($lines, $quotedAt, $productScopes, $categoryScopes, $this->flag($coupon, 'exclude_sale_priced'));
+        if ($matched['lines'] === [] || $matched['total'] < $this->int($coupon, 'min_eligible_subtotal')) {
             throw new PricingCouponRejected;
         }
-        $ids = array_map(fn (CouponBasketLine $line): string => $line->line->lineId, $eligible);
+        $ids = array_map(fn (CouponBasketLine $line): string => $line->line->lineId, $matched['lines']);
         $mode = $this->string($coupon, 'mode');
         $currency = $this->string($coupon, 'currency');
         $exponent = $this->int($coupon, 'exponent');
@@ -87,7 +77,7 @@ final class ApplyCoupon
             $discount = MerchandiseDiscount::percentage($this->int($coupon, 'percent_numerator'), $this->int($coupon, 'percent_denominator'), $ids);
         } elseif ($mode === 'fixed') {
             $amount = $this->int($coupon, 'amount');
-            if ($amount > $eligibleTotal) {
+            if ($amount > $matched['total']) {
                 throw new PricingCouponRejected;
             }
             $discount = MerchandiseDiscount::fixed(Money::of($amount, $currency, $exponent), $ids);
@@ -109,61 +99,8 @@ final class ApplyCoupon
             $discount,
             $mode === 'free_shipping' || $fullPercent,
             $ids,
+            $this->flag($coupon, 'allows_stacking'),
         );
-    }
-
-    /**
-     * @param  list<CouponBasketLine>  $lines
-     * @param  list<string>  $categoryScopes
-     * @return array<string, string>
-     */
-    private function categoryPaths(array $lines, array $categoryScopes): array
-    {
-        $ids = $categoryScopes;
-        foreach ($lines as $line) {
-            foreach ($line->categoryIds as $categoryId) {
-                $ids[] = $categoryId;
-            }
-        }
-        $ids = array_values(array_unique($ids));
-        if ($ids === []) {
-            return [];
-        }
-        $paths = [];
-        foreach (DB::table('categories')->whereIn('id', $ids)->get() as $row) {
-            $paths[$this->string($row, 'id')] = $this->string($row, 'path');
-        }
-
-        return $paths;
-    }
-
-    /**
-     * @param  list<string>  $productScopes
-     * @param  list<string>  $categoryScopes
-     * @param  array<string, string>  $categoryPaths
-     */
-    private function lineEligible(CouponBasketLine $line, array $productScopes, array $categoryScopes, array $categoryPaths): bool
-    {
-        if ($productScopes === [] && $categoryScopes === []) {
-            return true;
-        }
-        if (in_array($line->productId, $productScopes, true)) {
-            return true;
-        }
-        foreach ($categoryScopes as $scopeId) {
-            $scopePath = $categoryPaths[$scopeId] ?? null;
-            if ($scopePath === null) {
-                continue;
-            }
-            foreach ($line->categoryIds as $categoryId) {
-                $path = $categoryPaths[$categoryId] ?? null;
-                if ($path === $scopePath || ($path !== null && str_starts_with($path, $scopePath.'/'))) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     private function assertGrant(object $coupon, DateTimeImmutable $quotedAt, ?string $customerKey): void
@@ -218,5 +155,12 @@ final class ApplyCoupon
         $value = get_object_vars($row)[$key] ?? null;
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    private function flag(object $row, string $key): bool
+    {
+        $value = get_object_vars($row)[$key] ?? null;
+
+        return $value === true || $value === 1 || $value === '1';
     }
 }

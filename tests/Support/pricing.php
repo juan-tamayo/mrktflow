@@ -27,6 +27,8 @@ function pricingCouponInput(array $overrides = []): array
         'status' => 'active',
         'product_ids' => [],
         'category_ids' => [],
+        'allows_stacking' => false,
+        'exclude_sale_priced' => false,
     ], $overrides);
 }
 
@@ -71,5 +73,7 @@ function pricingCampaignInput(array $overrides = []): array
         'max_redemptions_per_customer' => 1,
         'product_ids' => [],
         'category_ids' => [],
+        'allows_stacking' => false,
+        'exclude_sale_priced' => false,
     ], $overrides);
 }

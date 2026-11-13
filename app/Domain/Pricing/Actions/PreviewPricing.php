@@ -8,7 +8,6 @@ use App\Domain\Catalog\Support\StoreCurrency;
 use App\Domain\Pricing\Contracts\PriceCalculator;
 use App\Domain\Pricing\Data\CouponBasketLine;
 use App\Domain\Pricing\Data\LineAllocation;
-use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Data\PricedLine;
 use App\Domain\Pricing\Data\PriceRequest;
@@ -108,8 +107,6 @@ final class PreviewPricing
             $coupons[] = new CouponBasketLine($digitalLine, (string) Str::uuid());
             $taxable[] = new TaxableLine($digitalId, $digitalTax, 'digital');
         }
-        $discount = MerchandiseDiscount::none();
-        $waivesShipping = false;
         $couponCode = $input['coupon'] ?? null;
         if ($couponCode === '') {
             $couponCode = null;
@@ -117,14 +114,14 @@ final class PreviewPricing
         if ($couponCode !== null && ! is_string($couponCode)) {
             return $failed('This coupon cannot be applied.');
         }
+        $discounts = [];
+        $waivesShipping = false;
         try {
-            if ($couponCode !== null) {
-                $applied = app(ApplyCoupon::class)->apply($couponCode, $coupons, $quotedAt, null);
-                $discount = $applied->discount;
-                $waivesShipping = $applied->waivesShipping;
-                $couponCode = $applied->code;
-            }
-            $untaxed = app(PriceCalculator::class)->quote(new PriceRequest($priced, $quotedAt, $discount));
+            $selection = app(SelectPromotions::class)->select($coupons, $quotedAt, is_string($couponCode) ? $couponCode : null);
+            $waivesShipping = $selection->waivesShipping;
+            $couponCode = $selection->enteredCode;
+            $discounts = $selection->discounts;
+            $untaxed = app(PriceCalculator::class)->quote(new PriceRequest($priced, $quotedAt, null, null, null, $discounts));
         } catch (PricingCouponRejected|PricingCouponExhausted|PricingInvalidQuote $exception) {
             return $failed($exception->getMessage());
         }
@@ -209,9 +206,10 @@ final class PreviewPricing
             $taxed = app(PriceCalculator::class)->quote(new PriceRequest(
                 $priced,
                 $quotedAt,
-                $discount,
+                null,
                 $shippingMoney,
                 new TaxContext($taxable, $settings['price_mode'], $billing, $shippingTax, $settings['shipping_tax_class_key']),
+                $discounts,
             ));
         } catch (PricingTaxCoverageMissing|PricingInvalidQuote|InvalidArgumentException $exception) {
             return $failed($exception->getMessage());

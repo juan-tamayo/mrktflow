@@ -28,6 +28,21 @@ final class CheckoutQuoteResource extends JsonResource
             'requiresDelivery' => $quote['requires_delivery'],
             'digitalOnly' => $quote['digital_only'],
             'coupon' => $quote['coupon'],
+            'offers' => array_map(static function (mixed $offer): array {
+                if (! is_array($offer)) {
+                    return [];
+                }
+
+                return [
+                    'id' => $offer['id'] ?? '',
+                    'kind' => $offer['kind'] ?? '',
+                    'status' => $offer['status'] ?? '',
+                    'reasonCode' => $offer['reason_code'] ?? '',
+                    'reason' => $offer['reason'] ?? '',
+                    'code' => $offer['code'] ?? null,
+                    'name' => $offer['name'] ?? null,
+                ];
+            }, is_array($quote['offers'] ?? null) ? $quote['offers'] : []),
             'merchandise' => $quote['merchandise'],
             'discount' => $quote['discount'],
             'shipping' => $quote['shipping'],

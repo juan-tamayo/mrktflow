@@ -11,12 +11,12 @@ use App\Domain\CheckoutOrders\Support\CartMoney;
 use App\Domain\CheckoutOrders\Support\CartOwner;
 use App\Domain\Platform\Actions\RecordEvent;
 use App\Domain\Platform\Support\SetupChoices;
-use App\Domain\Pricing\Actions\ApplyCoupon;
+use App\Domain\Pricing\Actions\SelectPromotions;
 use App\Domain\Pricing\Contracts\PriceCalculator;
 use App\Domain\Pricing\Data\CouponBasketLine;
 use App\Domain\Pricing\Data\LineAllocation;
-use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
+use App\Domain\Pricing\Data\PromotionOffer;
 use App\Domain\Pricing\Data\PricedLine;
 use App\Domain\Pricing\Data\PriceRequest;
 use App\Domain\Pricing\Data\TaxableLine;
@@ -140,16 +140,11 @@ final class CreateQuote
                 $physical = true;
             }
         }
-        $discount = MerchandiseDiscount::none();
-        $waivesShipping = false;
-        $couponCode = $data['coupon'];
-        if ($couponCode !== null) {
-            $applied = app(ApplyCoupon::class)->apply($couponCode, $coupons, $quotedAt, $owner->customerId);
-            $discount = $applied->discount;
-            $waivesShipping = $applied->waivesShipping;
-            $couponCode = $applied->code;
-        }
-        $untaxed = app(PriceCalculator::class)->quote(new PriceRequest($priced, $quotedAt, $discount));
+        $selection = app(SelectPromotions::class)->select($coupons, $quotedAt, $data['coupon'], $owner->customerId);
+        $waivesShipping = $selection->waivesShipping;
+        $couponCode = $selection->enteredCode;
+        $discounts = $selection->discounts;
+        $untaxed = app(PriceCalculator::class)->quote(new PriceRequest($priced, $quotedAt, null, null, null, $discounts));
         $byId = [];
         foreach ($untaxed->lines as $allocation) {
             $byId[$allocation->lineId] = $allocation;
@@ -190,8 +185,6 @@ final class CreateQuote
         } else {
             $shippingQuote = app(ShippingQuoter::class)->quote(new ShippingQuoteRequest($shippingLines, $delivery, $data['shipping_method_id']));
         }
-        $charge = $waivesShipping ? 0 : (int) ($shippingQuote->charge ?? 0);
-        $shippingMoney = $untaxed->discountedMerchandise->withAmount($charge);
         $settings = DB::table('pricing_settings')->where('id', 1)->first();
         if ($settings === null) {
             throw new PricingTaxCoverageMissing;
@@ -209,12 +202,21 @@ final class CreateQuote
         } elseif (! $physical) {
             $shippingTax = $billing;
         }
+        $taxContext = new TaxContext($taxable, $mode, $billing, $shippingTax, $shippingClass);
+        $quotedShipping = $untaxed->discountedMerchandise->withAmount((int) ($shippingQuote->charge ?? 0));
+        $selection = app(SelectPromotions::class)->select($coupons, $quotedAt, $data['coupon'], $owner->customerId, $quotedShipping, $taxContext);
+        $waivesShipping = $selection->waivesShipping;
+        $couponCode = $selection->enteredCode;
+        $discounts = $selection->discounts;
+        $charge = $waivesShipping ? 0 : (int) ($shippingQuote->charge ?? 0);
+        $shippingMoney = $untaxed->discountedMerchandise->withAmount($charge);
         $taxed = app(PriceCalculator::class)->quote(new PriceRequest(
             $priced,
             $quotedAt,
-            $discount,
+            null,
             $shippingMoney,
-            new TaxContext($taxable, $mode, $billing, $shippingTax, $shippingClass),
+            $taxContext,
+            $discounts,
         ));
         $lines = [];
         foreach ($taxed->lines as $allocation) {
@@ -254,6 +256,7 @@ final class CreateQuote
             'requires_delivery' => $shippingQuote->requiresDeliveryAddress,
             'digital_only' => $shippingQuote->digitalOnly,
             'coupon' => $couponCode,
+            'offers' => array_map(fn (PromotionOffer $offer): array => $offer->toArray(), $selection->offers),
             'merchandise' => CartMoney::format($taxed->merchandiseSubtotal->amount, $taxed->merchandiseSubtotal->currency, $taxed->merchandiseSubtotal->exponent),
             'discount' => CartMoney::format($taxed->merchandiseDiscount->amount, $taxed->merchandiseDiscount->currency, $taxed->merchandiseDiscount->exponent),
             'shipping' => CartMoney::format($taxed->shipping->amount, $taxed->shipping->currency, $taxed->shipping->exponent),
