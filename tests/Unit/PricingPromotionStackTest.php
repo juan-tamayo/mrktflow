@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 use App\Domain\Pricing\Actions\CalculatePrice;
 use App\Domain\Pricing\Actions\HoldCoupon;
+use App\Domain\Pricing\Actions\ReadTaxRules;
 use App\Domain\Pricing\Actions\SavePromotionCampaign;
+use App\Domain\Pricing\Actions\SaveTaxRules;
 use App\Domain\Pricing\Actions\SelectPromotions;
 use App\Domain\Pricing\Data\CouponBasketLine;
 use App\Domain\Pricing\Data\CouponHold;
 use App\Domain\Pricing\Data\MerchandiseDiscount;
 use App\Domain\Pricing\Data\Money;
 use App\Domain\Pricing\Data\PricedLine;
+use App\Domain\Pricing\Data\PriceQuote;
 use App\Domain\Pricing\Data\PriceRequest;
 use App\Domain\Pricing\Data\PromotionOffer;
 use App\Domain\Pricing\Data\TaxableLine;
 use App\Domain\Pricing\Data\TaxContext;
+use App\Domain\Pricing\Exceptions\PricingCouponExhausted;
+use App\Domain\Pricing\Exceptions\PricingCouponRejected;
 use App\Domain\Pricing\Rules\AllocateDiscount;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +67,7 @@ function stackTax(array $lines, string $mode): TaxContext
     return new TaxContext($taxable, $mode, null, pricingTaxDestination(), 'standard');
 }
 
-function stackQuote(array $lines, array $discounts, Money $shipping, TaxContext $tax): \App\Domain\Pricing\Data\PriceQuote
+function stackQuote(array $lines, array $discounts, Money $shipping, TaxContext $tax): PriceQuote
 {
     $priced = array_map(fn (CouponBasketLine $line): PricedLine => $line->line, $lines);
 
@@ -190,8 +195,8 @@ it('PricingPromotionStack stacks one automatic merchandise reduction then the en
         ->and($exclusiveQuote->discountedMerchandise->amount)->toBe(890)
         ->and($exclusiveQuote->tax->amount)->toBe(119)
         ->and($exclusiveQuote->grandTotal->amount)->toBe(1309);
-    $rules = app(\App\Domain\Pricing\Actions\ReadTaxRules::class)->staffRules();
-    app(\App\Domain\Pricing\Actions\SaveTaxRules::class)->save($owner, pricingTaxRulesInput([
+    $rules = app(ReadTaxRules::class)->staffRules();
+    app(SaveTaxRules::class)->save($owner, pricingTaxRulesInput([
         'price_mode' => 'inclusive',
         'version' => $rules['version'],
         'rules' => [pricingTaxRuleInput(['name' => 'US ten percent'])],
@@ -234,7 +239,7 @@ it('PricingPromotionStack uses sale prices as the discount base unless the rule 
         'max_redemptions_per_customer' => 5,
     ]);
     expect(fn () => app(SelectPromotions::class)->select([$saleLine], stackAt(), 'NOSALE'))
-        ->toThrow(\App\Domain\Pricing\Exceptions\PricingCouponRejected::class);
+        ->toThrow(PricingCouponRejected::class);
     $mixed = app(SelectPromotions::class)->select([$saleLine, $regularLine], stackAt(), 'NOSALE');
     $mixedQuote = (new CalculatePrice)->quote(new PriceRequest(
         [$saleLine->line, $regularLine->line],
@@ -293,5 +298,5 @@ it('PricingPromotionStack keeps at most one automatic offer and does not hold a 
         1,
         null,
         stackAt()->modify('+15 minutes'),
-    )))->not->toThrow(\App\Domain\Pricing\Exceptions\PricingCouponExhausted::class);
+    )))->not->toThrow(PricingCouponExhausted::class);
 });

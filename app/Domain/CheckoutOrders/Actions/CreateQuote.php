@@ -16,9 +16,9 @@ use App\Domain\Pricing\Contracts\PriceCalculator;
 use App\Domain\Pricing\Data\CouponBasketLine;
 use App\Domain\Pricing\Data\LineAllocation;
 use App\Domain\Pricing\Data\Money;
-use App\Domain\Pricing\Data\PromotionOffer;
 use App\Domain\Pricing\Data\PricedLine;
 use App\Domain\Pricing\Data\PriceRequest;
+use App\Domain\Pricing\Data\PromotionOffer;
 use App\Domain\Pricing\Data\TaxableLine;
 use App\Domain\Pricing\Data\TaxContext;
 use App\Domain\Pricing\Data\TaxDestination;
@@ -203,12 +203,20 @@ final class CreateQuote
             $shippingTax = $billing;
         }
         $taxContext = new TaxContext($taxable, $mode, $billing, $shippingTax, $shippingClass);
-        $quotedShipping = $untaxed->discountedMerchandise->withAmount((int) ($shippingQuote->charge ?? 0));
-        $selection = app(SelectPromotions::class)->select($coupons, $quotedAt, $data['coupon'], $owner->customerId, $quotedShipping, $taxContext);
+        $baseCharge = (int) ($shippingQuote->charge ?? 0);
+        $quotedShipping = $untaxed->discountedMerchandise->withAmount($baseCharge);
+        $selection = app(SelectPromotions::class)->select(
+            $coupons,
+            $quotedAt,
+            $data['coupon'],
+            $owner->customerId,
+            $quotedShipping,
+            $taxContext,
+        );
         $waivesShipping = $selection->waivesShipping;
         $couponCode = $selection->enteredCode;
         $discounts = $selection->discounts;
-        $charge = $waivesShipping ? 0 : (int) ($shippingQuote->charge ?? 0);
+        $charge = $waivesShipping ? 0 : $baseCharge;
         $shippingMoney = $untaxed->discountedMerchandise->withAmount($charge);
         $taxed = app(PriceCalculator::class)->quote(new PriceRequest(
             $priced,
