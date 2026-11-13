@@ -411,7 +411,7 @@ it('PricingCouponGrant versions scoped campaigns and rejects invalid grant paylo
     expect(fn () => app(ReadPromotionCampaigns::class)->staffCampaign((string) Str::uuid()))
         ->toThrow(NotFoundHttpException::class);
     DB::table('promotion_versions')->where('id', (string) DB::table('promotion_campaigns')->where('id', $campaign['id'])->value('current_version_id'))
-        ->update(['product_ids' => '{']);
+        ->update(['product_ids' => json_encode('not-an-id-list')]);
     expect(fn () => app(ReadPromotionCampaigns::class)->staffCampaign($campaign['id']))
         ->toThrow(InvalidArgumentException::class);
     DB::table('promotion_versions')->where('campaign_id', $campaign['id'])->where('version', 2)
@@ -603,6 +603,8 @@ it('PricingCouponGrant resumes a queued unique batch and refuses finished or inv
         'source_intent_id' => (string) Str::uuid(),
         'customer_ids' => [$alice->id],
     ]))->toThrow(AuthorizationException::class);
+    $owner->forceFill(['role' => 'owner', 'permissions' => StaffPermissions::forRole('owner')])->save();
+    $owner = $owner->fresh();
     $import = app(ImportRecipientGrants::class)->import($owner, [
         'campaign_id' => $recipient['id'],
         'source_intent_id' => (string) Str::uuid(),
@@ -660,8 +662,8 @@ it('PricingCouponGrant resumes a queued unique batch and refuses finished or inv
     expect($resumed['generated_count'])->toBe(51)
         ->and($resumed['status'])->toBe('completed')
         ->and(DB::table('coupon_grants')->where('batch_id', $resumed['id'])->count())->toBe(51);
-    $this->actingAs($owner, 'staff')->withSession(catalogStaffSession($owner));
-    $this->get('/admin/coupon-campaigns')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+    $this->actingAs($owner->fresh(), 'staff')->withSession(catalogStaffSession($owner->fresh()));
+    $this->get('/admin/coupon-campaigns')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page)
         ->component('CouponCampaignIndex')
         ->has('campaigns', 3));
     $this->post('/admin/coupon-campaigns/'.$reusable['id'].'/grants', [
