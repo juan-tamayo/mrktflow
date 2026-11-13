@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
-use InvalidArgumentException;
 use Tests\Fixtures\CustomerRegistration;
 
 beforeEach(function (): void {
@@ -332,7 +331,10 @@ it('PricingCouponGrant HTTP lets authorized staff issue batches and recipient gr
     $this->post('/admin/coupon-campaigns/'.$batchId.'/batches', [
         'batch' => ['source_intent_id' => $batchIntent, 'requested_count' => 2],
     ])->assertRedirect('/admin/coupon-campaigns/'.$batchId);
-    expect((int) DB::table('coupon_batches')->value('generated_count'))->toBe(2);
+    expect((int) DB::table('coupon_batches')->where('campaign_id', $batchId)->where('purpose', 'unique_codes')->value('generated_count'))->toBe(2)
+        ->and((int) DB::table('coupon_batches')->where('campaign_id', $batchId)->where('purpose', 'unique_codes')->value('requested_count'))->toBe(2)
+        ->and(DB::table('coupon_grants')->where('campaign_id', $batchId)->where('kind', 'batch')->count())->toBe(2)
+        ->and(DB::table('coupons')->whereIn('id', DB::table('coupon_grants')->where('campaign_id', $batchId)->where('kind', 'batch')->pluck('coupon_id'))->count())->toBe(2);
     foreach (['content_editor', 'fulfillment'] as $role) {
         DB::table('staff_accounts')->where('id', $owner->id)->update(['role' => $role, 'permissions' => json_encode(StaffPermissions::forRole($role))]);
         $this->actingAs($owner->fresh(), 'staff')->withSession(catalogStaffSession($owner->fresh()))
