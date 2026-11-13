@@ -663,7 +663,7 @@ it('PricingCouponGrant resumes a queued unique batch and refuses finished or inv
         ->and($resumed['status'])->toBe('completed')
         ->and(DB::table('coupon_grants')->where('batch_id', $resumed['id'])->count())->toBe(51);
     $this->actingAs($owner->fresh(), 'staff')->withSession(catalogStaffSession($owner->fresh()));
-    $this->get('/admin/coupon-campaigns')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page)
+    $this->get('/admin/coupon-campaigns')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
         ->component('CouponCampaignIndex')
         ->has('campaigns', 3));
     $this->post('/admin/coupon-campaigns/'.$reusable['id'].'/grants', [
