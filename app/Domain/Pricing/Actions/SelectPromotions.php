@@ -82,7 +82,7 @@ final class SelectPromotions
         }
         $winner = $candidates[$bestIndex] ?? ['auto' => null, 'coupon' => null, 'stack' => false];
         $built = $this->build($winner['auto'], $winner['coupon']);
-        $winnerTotal = $bestTotal ?? 0;
+        $winnerTotal = $bestTotal;
         $offers = [];
         if ($entered !== null) {
             if ($winner['coupon'] !== null) {
